@@ -1,0 +1,22 @@
+import { defineStore } from 'pinia'
+import axios from 'axios'
+
+export const useFileStore = defineStore('fileStore', {
+  state: () => ({
+    files: [],
+  }),
+  getters: {
+    getFiles: (state) => state.files,
+  },
+  actions: {
+    async fetchFiles() {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/list-files/')
+        this.files = response.data.available_files
+      } catch (error) {
+        alert(error)
+        console.error('Error fetching files:', error)
+      }
+    },
+  },
+})
