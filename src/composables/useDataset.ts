@@ -18,6 +18,7 @@ export function useDataset() {
 
     rawData.value = raw
     projection.value = matchProjection(raw, dr)
+    console.log('projection: ', projection.value)
     stats.value = s
   }
 

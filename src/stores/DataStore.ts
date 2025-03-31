@@ -3,8 +3,8 @@ import axios from 'axios'
 
 interface PCAData {
   id: string
-  x: number
-  y: number
+  PC1: number
+  PC2: number
 }
 
 export const useDataStore = defineStore('dataStore', {

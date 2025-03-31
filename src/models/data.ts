@@ -1,6 +1,6 @@
 export interface RawDataPoint {
   id: string
-  features: Record<string, number>
+  [feature: string]: number | string // id + feature fields
 }
 
 export interface DRProjectionRow {

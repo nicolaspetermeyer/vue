@@ -1,33 +1,58 @@
 <template>
-  <div class="canvas-container">
-    <canvas ref="canvasRef" width="800" height="600"></canvas>
-  </div>
+  <Scatterplot :points="datasetStore.projection" />
+  <RadialBarChart :stats="datasetStore.stats" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useDataset } from '@/composables/useDataset'
+import Scatterplot from '@/components/ScatterPlot.vue'
+import { useDatasetStore } from '@/stores/datasetStore'
+import RadialBarChart from './RadialBarChart.vue'
 
+const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-onMounted(() => {
+const { projection } = useDataset() // live projection data
+const datasetStore = useDatasetStore()
+let resizeObserver: ResizeObserver
+
+function resizeCanvas() {
+  const container = containerRef.value
   const canvas = canvasRef.value
-  const ctx = canvas?.getContext('2d')
-  if (ctx) {
-    ctx.fillStyle = 'black'
-    ctx.fillRect(50, 50, 10, 10) // Example placeholder
+  if (!canvas || !container) return
+
+  const { width, height } = container.getBoundingClientRect()
+  canvas.width = width
+  canvas.height = height
+}
+
+// Watch for projection updates or resize
+watch(projection, (newProj) => {})
+
+onMounted(() => {
+  resizeObserver = new ResizeObserver(resizeCanvas)
+  if (containerRef.value) {
+    resizeObserver.observe(containerRef.value)
+  }
+  resizeCanvas()
+})
+
+onBeforeUnmount(() => {
+  if (resizeObserver && containerRef.value) {
+    resizeObserver.unobserve(containerRef.value)
   }
 })
 </script>
 
 <style scoped>
 .canvas-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white;
+  width: 100%;
   height: 100%;
+  position: relative;
 }
 canvas {
-  border: 1px solid #ccc;
+  display: block;
+  background-color: white;
 }
 </style>
