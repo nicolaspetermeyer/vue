@@ -2,8 +2,9 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 
 interface PCAData {
-  PC1: number
-  PC2: number
+  id: string
+  x: number
+  y: number
 }
 
 export const useDataStore = defineStore('dataStore', {
@@ -21,7 +22,7 @@ export const useDataStore = defineStore('dataStore', {
       this.loading = true
       this.error = null
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/file-data/${file}`)
+        const response = await axios.get(`http://127.0.0.1:8000/api/datasets/${file}`)
         this.fileData = response.data
       } catch (error: any) {
         this.error = error.response?.data?.detail || error.message
@@ -33,7 +34,7 @@ export const useDataStore = defineStore('dataStore', {
       this.loading = true
       this.error = null
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/pca/${file}`)
+        const response = await axios.get(`http://127.0.0.1:8000/api/projection/${file}`)
         this.pcaData = response.data
         console.log('TEST' + response.data)
       } catch (error: any) {

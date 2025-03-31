@@ -11,7 +11,7 @@ export const useFileStore = defineStore('fileStore', {
   actions: {
     async fetchFiles() {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/list-files/')
+        const response = await axios.get('http://127.0.0.1:8000/api/datasets/')
         this.files = response.data.available_files
       } catch (error) {
         alert(error)
