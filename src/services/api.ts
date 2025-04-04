@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Data, DRProjectionRow, FeatureStats, Dataset } from '@/models/data'
+import type { Data, ProjectionRow, FeatureStats, Dataset } from '@/models/data'
 
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/', // adapt to your actual base path
@@ -10,8 +10,8 @@ export async function fetchRawData(filename: string): Promise<Data[]> {
   return response.data
 }
 
-export async function fetchProjection(filename: string): Promise<DRProjectionRow[]> {
-  const response = await api.get<DRProjectionRow[]>(`/projection/${filename}`)
+export async function fetchProjection(filename: string): Promise<ProjectionRow[]> {
+  const response = await api.get<ProjectionRow[]>(`/projection/${filename}`)
   return response.data
 }
 

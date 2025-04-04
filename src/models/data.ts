@@ -26,8 +26,3 @@ export interface FeatureStats {
   min: number
   max: number
 }
-
-export interface DatasetMetadata {
-  featureNames: string[]
-  stats: Record<string, FeatureStats>
-}

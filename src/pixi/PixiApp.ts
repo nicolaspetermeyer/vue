@@ -1,5 +1,5 @@
 import { Application, Container, Texture, Graphics, Rectangle } from 'pixi.js'
-import { PixiContainer } from '@/pixi/PixiContainer'
+import { PixiContainer } from './PixiContainer'
 
 export class PixiApp extends Application {
   public root: PixiContainer = new PixiContainer()

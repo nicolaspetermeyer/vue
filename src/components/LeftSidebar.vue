@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
-import { useDataStore } from '@/stores/DataStore'
+import { useDataStore } from '@/stores/dataStore'
 import { storeToRefs } from 'pinia'
 
 const datasetStore = useDatasetStore()
