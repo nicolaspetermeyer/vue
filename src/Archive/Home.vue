@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 //import RadialBarChart from './RadialBarChart.vue'
 
-import DataTable from './DataTable.vue'
+import DataTable from '../Archive/DataTable.vue'
 import ScatterPlot from './ScatterPlot.vue'
 import { useFileStore } from '@/stores/FileStore'
 import { useDataStore } from '@/stores/DataStore'
@@ -31,7 +31,6 @@ function handleGetData() {
 }
 
 function handlePCA() {
-  console.log(selected.value)
   if (selected.value) {
     dataStore.fetchPCAData(selected.value)
   }

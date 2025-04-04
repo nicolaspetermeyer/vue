@@ -26,3 +26,18 @@ export interface FeatureStats {
   min: number
   max: number
 }
+
+export interface Position {
+  x: number
+  y: number
+}
+
+export interface Point {
+  item_id: number
+  pos: Position
+}
+
+export type Fingerprint = {
+  id: string // simple UUID
+  points: Point[]
+}

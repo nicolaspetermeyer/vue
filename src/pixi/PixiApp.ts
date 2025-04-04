@@ -14,16 +14,19 @@ export class PixiApp extends Application {
 
     // init app
     this.init({
-      canvas: canvasElement,
+      canvas: canvasElement, // binds the existing DOM element (instead of creating a new one)
       width: width,
       height: height,
       backgroundColor: backgroundColor,
-      antialias: true,
-      resolution: 2,
-      // autoDensity: true, // not sure what this does
+      antialias: true, //enables smoothing
+      resolution: 2, //high-DPI (retina) support
+      autoDensity: true, //  adapts canvas size to device pixel ratio — useful if you want responsive sizing
     })
 
     this.root.updateLayoutProps({
+      // This enables PixiContainer’s layout engine, behaving similarly to CSS flexbox:
+      // Children are positioned automatically
+      // Padding, gap, alignment handled internally
       width: width,
       height: height,
       // padding: { top: 10, right: 10, bottom: 10, left: 10 },
@@ -37,12 +40,25 @@ export class PixiApp extends Application {
 
     this.stage.addChild(this.root)
   }
+  // Todo Fix
+  resize(width: number, height: number) {
+    // Resize the Pixi renderer
+    this.renderer.resize(width, height)
+    // Update layout props of the root container
+    this.root.updateLayoutProps({
+      width,
+      height,
+    })
+    // Trigger layout recalculation
+    this.root.applyLayout()
+  }
 
   addContainer(container: Container) {
     this.root.addChild(container)
     this.root.applyLayout()
   }
 
+  // Utility to visualize the scene tree in the console:
   debugSceneGraphRecursive(container: Container, depth: number) {
     for (let i = 0; i < container.children.length; i++) {
       const child = container.children[i]

@@ -23,11 +23,13 @@ export const useDataStore = defineStore('data', () => {
     try {
       const [raw, stat] = await Promise.all([fetchRawData(dataset), fetchStats(dataset)])
       rawData.value = raw
+      console.log('RAWDATA VAlues', rawData.value)
       globalStats.value = stat
     } catch {
       return null
     }
   }
+
   async function loadProjection() {
     const dataset = useDatasetStore().selectedDatasetName
     if (!dataset) {
@@ -37,7 +39,6 @@ export const useDataStore = defineStore('data', () => {
       const response: ProjectionRow[] = await fetchProjection(dataset)
 
       projectionRow.value = response
-      console.log(projectionRow.value)
       projectionMatch.value = matchProjection(rawData.value, projectionRow.value)
     } catch {
       return null

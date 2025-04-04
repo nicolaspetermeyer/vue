@@ -10,7 +10,6 @@ const { datasetsArray, selectedDataset, selectedDatasetId } = storeToRefs(datase
 const { setSelectedDatasetId } = datasetStore
 
 const dataStore = useDataStore()
-// const { data, items, attributes } = storeToRefs(dataStore);
 const { loadData, loadProjection } = dataStore
 
 const handleSelect = (event: Event) => {
@@ -25,9 +24,7 @@ const runDimRed = () => {
   loadProjection()
 }
 
-onMounted(async () => {
-  console.log('Datasets: ', datasetsArray)
-})
+onMounted(async () => {})
 </script>
 
 <template>
