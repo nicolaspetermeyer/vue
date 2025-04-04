@@ -2,22 +2,22 @@ export interface Dataset {
   id: number
   name: string
 }
-export interface RawDataPoint {
+export interface Data {
   id: string
   [feature: string]: number | string // id + feature fields
 }
 
-export interface DRProjectionRow {
+export interface ProjectionRow {
   id: string
   x: number
   y: number
 }
 
-export interface ProjectedPoint {
+export interface Projection {
   id: string
   x: number
   y: number
-  original: RawDataPoint
+  original: Data
 }
 
 export interface FeatureStats {

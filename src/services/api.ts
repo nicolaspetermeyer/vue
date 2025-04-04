@@ -1,12 +1,12 @@
 import axios from 'axios'
-import type { RawDataPoint, DRProjectionRow, FeatureStats, Dataset } from '@/models/data'
+import type { Data, DRProjectionRow, FeatureStats, Dataset } from '@/models/data'
 
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/', // adapt to your actual base path
 })
 
-export async function fetchRawData(filename: string): Promise<RawDataPoint[]> {
-  const response = await api.get<RawDataPoint[]>(`/data/${filename}`)
+export async function fetchRawData(filename: string): Promise<Data[]> {
+  const response = await api.get<Data[]>(`/data/${filename}`)
   return response.data
 }
 

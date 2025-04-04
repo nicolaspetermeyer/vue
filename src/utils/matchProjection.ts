@@ -1,10 +1,7 @@
-import type { RawDataPoint, DRProjectionRow, ProjectedPoint } from '@/models/data'
+import type { Data, ProjectionRow, Projection } from '@/models/data'
 
-export function matchProjection(
-  rawData: RawDataPoint[],
-  projection: DRProjectionRow[],
-): ProjectedPoint[] {
-  const rawMap = new Map<string, RawDataPoint>()
+export function matchProjection(rawData: Data[], projection: ProjectionRow[]): Projection[] {
+  const rawMap = new Map<string, Data>()
 
   for (const d of rawData) {
     rawMap.set(String(d.id).trim(), d) // <-- normalize to string
@@ -26,5 +23,5 @@ export function matchProjection(
         original,
       }
     })
-    .filter((p): p is ProjectedPoint => p !== null)
+    .filter((p): p is Projection => p !== null)
 }

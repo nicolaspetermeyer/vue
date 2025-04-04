@@ -2,19 +2,27 @@
 import { onMounted } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
+import { useDataStore } from '@/stores/DataStore'
 import { storeToRefs } from 'pinia'
 
 const datasetStore = useDatasetStore()
 const { datasetsArray, selectedDataset, selectedDatasetId } = storeToRefs(datasetStore)
-
 const { setSelectedDatasetId } = datasetStore
+
+const dataStore = useDataStore()
+// const { data, items, attributes } = storeToRefs(dataStore);
+const { loadData, loadProjection } = dataStore
 
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
   if (select) {
     setSelectedDatasetId(Number(select.value) || null)
-    // loadData(); To be implemented
+    loadData()
   }
+}
+
+const runDimRed = () => {
+  loadProjection()
 }
 
 onMounted(async () => {
@@ -33,6 +41,7 @@ onMounted(async () => {
           {{ dataset.name }}
         </option>
       </select>
+      <button @click="runDimRed()" class="btn btn-xs btn-content">Compute Points</button>
     </div>
   </div>
 </template>

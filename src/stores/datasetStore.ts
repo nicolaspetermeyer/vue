@@ -8,11 +8,12 @@ import { fetchDatasets } from '@/services/api'
 export const useDatasetStore = defineStore('dataset', () => {
   //state
   const datasets = ref(new Map<number, Dataset>()) // Store datasets
-  const selectedDatasetId = ref<number | null>(null) // Store selectedDataset
+  const selectedDatasetId = ref<number | null>(null) // Store selectedDatasetId
 
   // 🔹 COMPUTED
   const datasetsArray = computed(() => Array.from(datasets.value.values()))
   const selectedDataset = computed(() => getDataset(selectedDatasetId.value))
+  const selectedDatasetName = computed(() => selectedDataset.value?.name ?? null)
 
   // 🔹 STATE MUTATION FUNCTIONS (PURE)
   function getDataset(id: number | null | undefined) {
@@ -28,7 +29,6 @@ export const useDatasetStore = defineStore('dataset', () => {
     try {
       const response: Dataset[] = await fetchDatasets()
       datasets.value = new Map(response.map((dataset) => [dataset.id, dataset]))
-
       return response
     } catch {
       return []
@@ -40,6 +40,7 @@ export const useDatasetStore = defineStore('dataset', () => {
     datasetsArray,
     selectedDatasetId,
     selectedDataset,
+    selectedDatasetName,
     getDataset,
     setSelectedDatasetId,
     loadDatasets,
