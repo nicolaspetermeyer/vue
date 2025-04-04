@@ -1,3 +1,7 @@
+export interface Dataset {
+  id: number
+  name: string
+}
 export interface RawDataPoint {
   id: string
   [feature: string]: number | string // id + feature fields

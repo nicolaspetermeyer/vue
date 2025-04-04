@@ -12,7 +12,7 @@ export const useFileStore = defineStore('fileStore', {
     async fetchFiles() {
       try {
         const response = await axios.get('http://127.0.0.1:8000/api/datasets/')
-        this.files = response.data.available_files
+        this.files = response.data
       } catch (error) {
         alert(error)
         console.error('Error fetching files:', error)

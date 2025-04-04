@@ -10,6 +10,6 @@
 <style scoped>
 .panel {
   padding: 1rem;
-  background: #2e2d2d;
+  background: #f1f1f1;
 }
 </style>

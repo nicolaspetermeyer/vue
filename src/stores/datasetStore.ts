@@ -1,54 +1,47 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-import type { RawDataPoint, ProjectedPoint, FeatureStats } from '@/models/data'
+import type { Dataset } from '@/models/data'
 
-import { fetchRawData, fetchStats, fetchProjection } from '@/services/api'
+import { fetchDatasets } from '@/services/api'
 
-import { matchProjection } from '@/utils/matchProjection'
-import { normalizeZ } from '@/utils/normalize'
-
-export const useDatasetStore = defineStore('dataimport', () => {
+export const useDatasetStore = defineStore('dataset', () => {
   //state
-  const selectedDataset = ref<string | null>(null)
+  const datasets = ref(new Map<number, Dataset>()) // Store datasets
+  const selectedDatasetId = ref<number | null>(null) // Store selectedDataset
 
-  const rawData = ref<RawDataPoint[]>([])
-  const normalizedData = ref<RawDataPoint[]>([])
-  const projection = ref<ProjectedPoint[]>([])
-  const stats = ref<Record<string, FeatureStats>>({})
+  // 🔹 COMPUTED
+  const datasetsArray = computed(() => Array.from(datasets.value.values()))
+  const selectedDataset = computed(() => getDataset(selectedDatasetId.value))
 
-  //unified loader
-  async function load(filename: string) {
-    selectedDataset.value = filename
+  // 🔹 STATE MUTATION FUNCTIONS (PURE)
+  function getDataset(id: number | null | undefined) {
+    return id ? datasets.value.get(id) || null : null
+  }
 
-    const raw = await fetchRawData(filename)
-    const stat = await fetchStats(filename)
-    const proj = await fetchProjection(filename)
+  function setSelectedDatasetId(id: number | null) {
+    selectedDatasetId.value = id
+  }
 
-    const rawData: RawDataPoint[] = raw.map((row) => ({
-      ...row,
-      id: String(row.id),
-    }))
+  // 🔹 API CALLS
+  async function loadDatasets() {
+    try {
+      const response: Dataset[] = await fetchDatasets()
+      datasets.value = new Map(response.map((dataset) => [dataset.id, dataset]))
 
-    const normalized = normalizeZ(rawData, stat)
-    const matched = matchProjection(normalized, proj)
-
-    console.log('rawData: ', rawData)
-    console.log('normalized: ', normalized)
-    console.log('matched: ', matched)
-    console.log('proj: ', proj)
-
-    normalizedData.value = normalized
-    stats.value = stat
-    projection.value = matched
+      return response
+    } catch {
+      return []
+    }
   }
 
   return {
+    datasets,
+    datasetsArray,
+    selectedDatasetId,
     selectedDataset,
-    rawData,
-    normalizedData,
-    projection,
-    stats,
-    load,
+    getDataset,
+    setSelectedDatasetId,
+    loadDatasets,
   }
 })

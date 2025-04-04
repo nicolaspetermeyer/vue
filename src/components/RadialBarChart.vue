@@ -1,5 +1,5 @@
 <template>
-  <div ref="chart"></div>
+  <div ref="chartContainer" class="radial-chart-container"></div>
 </template>
 
 <script setup lang="ts">
@@ -17,7 +17,7 @@ const props = defineProps<{
   stats: Record<string, FeatureStats>
 }>()
 
-const chart = ref<HTMLElement | null>(null)
+const chartContainer = ref<HTMLElement | null>(null)
 
 // Transform stats object into array of { name, value }
 const chartData = computed(() =>
@@ -28,22 +28,24 @@ const chartData = computed(() =>
 )
 
 function drawChart(data: { name: string; value: number }[]) {
-  if (!chart.value) return
-  d3.select(chart.value).selectAll('*').remove()
+  if (!chartContainer.value) return
+  const container = chartContainer.value
 
-  const margin = { top: 10, right: 10, bottom: 10, left: 10 }
-  const width = 800 - margin.left - margin.right
-  const height = 800 - margin.top - margin.bottom
-  const innerRadius = 150
-  const outerRadius = Math.min(width, height) / 2
+  // Clear previous SVG
+  d3.select(container).selectAll('*').remove()
+
+  const width = container.clientWidth
+  const height = container.clientHeight
+  const innerRadius = Math.min(width, height) / 4
+  const outerRadius = Math.min(width, height) / 2.5
 
   const svg = d3
-    .select(chart.value)
+    .select(container)
     .append('svg')
-    .attr('width', width + margin.left + margin.right)
-    .attr('height', height + margin.top + margin.bottom)
+    .attr('width', width)
+    .attr('height', height)
     .append('g')
-    .attr('transform', `translate(${width / 2}, ${height / 2 + 100})`)
+    .attr('transform', `translate(${width / 2}, ${height / 2})`)
 
   const x = d3
     .scaleBand()

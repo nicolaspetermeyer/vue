@@ -1,56 +1,46 @@
+<script setup lang="ts">
+import { onMounted } from 'vue'
+
+import { useDatasetStore } from '@/stores/datasetStore'
+import { storeToRefs } from 'pinia'
+
+const datasetStore = useDatasetStore()
+const { datasetsArray, selectedDataset, selectedDatasetId } = storeToRefs(datasetStore)
+
+const { setSelectedDatasetId } = datasetStore
+
+const handleSelect = (event: Event) => {
+  const select = event.target as HTMLSelectElement
+  if (select) {
+    setSelectedDatasetId(Number(select.value) || null)
+    // loadData(); To be implemented
+  }
+}
+
+onMounted(async () => {
+  console.log('Datasets: ', datasetsArray)
+})
+</script>
+
 <template>
   <div class="sidebar">
     <h2>User Controls</h2>
-
-    <h2>Select Dataset</h2>
-
-    <div v-if="isLoading">Loading...</div>
-    <div v-else>
-      <ul class="dataset-list">
-        <li
-          v-for="file in datasets"
-          :key="file"
-          :class="{ active: file === datasetStore.selectedDataset }"
-          @click="selectDataset(file)"
-        >
-          {{ file }}
-        </li>
-      </ul>
+    <div class="flex flex-col gap-2">
+      <h2 class="text-xl font-bold">Dataset</h2>
+      <select class="select w-full max-w-xs" @change="handleSelect" v-model="selectedDatasetId">
+        <option disabled :value="null">Select Dataset</option>
+        <option v-for="dataset in datasetsArray" :key="dataset.id" :value="dataset.id">
+          {{ dataset.name }}
+        </option>
+      </select>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { fetchAvailableDatasets } from '@/services/api'
-import { useDatasetStore } from '@/stores/datasetStore'
-
-const datasetStore = useDatasetStore()
-
-const datasets = ref<string[]>([])
-const isLoading = ref(true)
-
-async function selectDataset(file: string) {
-  await datasetStore.load(file)
-}
-
-onMounted(async () => {
-  try {
-    const response = await fetchAvailableDatasets()
-    datasets.value = response
-    if (datasets.value.length > 0) {
-      await selectDataset(datasets.value[0])
-    }
-  } finally {
-    isLoading.value = false
-  }
-})
-</script>
-
 <style scoped>
 .sidebar {
   padding: 1rem;
-  background: #2e2d2d;
+  background: #f1f1f1;
 }
 
 .dataset-list {
@@ -67,11 +57,11 @@ onMounted(async () => {
 }
 
 .dataset-list li:hover {
-  background-color: #212433;
+  background-color: #9cada1;
 }
 
 .dataset-list li.active {
   font-weight: bold;
-  background-color: #212433;
+  background-color: #9cada1;
 }
 </style>

@@ -1,6 +1,5 @@
 <template>
-  <Scatterplot :points="datasetStore.projection" />
-  <RadialBarChart :stats="datasetStore.stats" />
+  <!-- <Scatterplot :points="datasetStore.projection" /> -->
 </template>
 
 <script setup lang="ts">

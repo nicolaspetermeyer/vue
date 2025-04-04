@@ -4,13 +4,20 @@
     <div v-if="isLoading" class="overlay">
       <p>Loading scatterplot...</p>
     </div>
+    <RadialBarChart class="overlay-chart" :stats="meanStats" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import RadialBarChart from '@/components/RadialBarChart.vue'
+import { useDatasetStore } from '@/stores/datasetStore'
+import { computed, ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import * as d3 from 'd3'
 import type { ProjectedPoint } from '@/models/data' // if needed
+
+const datasetStore = useDatasetStore()
+
+const meanStats = computed(() => datasetStore.stats)
 
 const props = defineProps<{
   points: { id: string; x: number; y: number }[]
@@ -35,27 +42,45 @@ function draw(points: typeof props.points) {
   const xExtent = d3.extent(points, (d) => d.x) as [number, number]
   const yExtent = d3.extent(points, (d) => d.y) as [number, number]
 
-  const padding = 40
-  const plotWidth = width - padding * 2
-  const plotHeight = height - padding * 2
+  const centerX = canvas.width / 2
+  const centerY = canvas.height / 2
+  const innerRadius = Math.min(canvas.width, canvas.height) / 4
 
-  const xScale = d3
-    .scaleLinear()
-    .domain(xExtent)
-    .range([padding, padding + plotWidth])
-  const yScale = d3
-    .scaleLinear()
-    .domain(yExtent)
-    .range([padding + plotHeight, padding]) // flip y
+  // 🔁 Normalize to [-1, 1] in both x and y
+  const xScaleRaw = d3.scaleLinear().domain(xExtent).range([-1, 1])
+  const yScaleRaw = d3.scaleLinear().domain(yExtent).range([-1, 1])
 
-  ctx.clearRect(0, 0, width, height)
   for (const point of points) {
-    const cx = xScale(point.x)
-    const cy = yScale(point.y)
+    const normX = xScaleRaw(point.x)
+    const normY = yScaleRaw(point.y)
+
+    // Compute scaled position inside circle
+    const px = centerX + normX * innerRadius
+    const py = centerY + normY * innerRadius
+
+    // const padding = 40
+    // const plotWidth = width - padding * 2
+    // const plotHeight = height - padding * 2
+
+    // const xScale = d3
+    //   .scaleLinear()
+    //   .domain(xExtent)
+    //   .range([padding, padding + plotWidth])
+    // const yScale = d3
+    //   .scaleLinear()
+    //   .domain(yExtent)
+    //   .range([padding + plotHeight, padding]) // flip y
+
+    // ctx.clearRect(0, 0, width, height)
+    // for (const point of points) {
+    //   const cx = xScale(point.x)
+    //   const cy = yScale(point.y)
 
     const isHovered = point.id === hoveredId.value
+    const radius = isHovered ? 6 : 4
+
     ctx.beginPath()
-    ctx.arc(cx, cy, isHovered ? 6 : 4, 0, 2 * Math.PI)
+    ctx.arc(px, py, radius, 0, 2 * Math.PI)
     ctx.fillStyle = isHovered ? '#e63946' : '#333'
     ctx.fill()
   }
@@ -154,3 +179,24 @@ onBeforeUnmount(() => {
   }
 })
 </script>
+<style scoped>
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+canvas {
+  display: block;
+  background-color: white;
+}
+
+.overlay-chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+</style>
