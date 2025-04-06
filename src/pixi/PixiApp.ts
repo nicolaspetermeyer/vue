@@ -40,7 +40,7 @@ export class PixiApp extends Application {
 
     this.stage.addChild(this.root)
   }
-  // Todo Fix
+
   resizeApp(width: number, height: number) {
     // Resize the Pixi renderer
     this.renderer.resize(width, height)

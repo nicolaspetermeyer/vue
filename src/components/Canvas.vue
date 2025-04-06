@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PixiApp } from '@/pixi/PixiApp'
 import { onMounted, onBeforeUnmount, ref } from 'vue'
-import { PixiDimred } from '@/pixi/PixiDimred'
+import { PixiProjection } from '@/pixi/PixiProjection'
 import type { ProjectionRow, Point } from '@/models/data'
 import { initDevtools } from '@pixi/devtools'
 
@@ -38,17 +38,17 @@ function init() {
   console.log('Mapped points:', points)
 
   // Create DR projection renderer
-  const dimred = new PixiDimred(points)
+  const projection = new PixiProjection(points)
 
   // Add to root
-  app.addContainer(dimred)
+  app.addContainer(projection)
 
   // Setup ResizeObserver
   resizeObserver = new ResizeObserver((entries) => {
     for (const entry of entries) {
       const { width, height } = entry.contentRect
       if (app) {
-        app.resize(width, height)
+        app.resizeApp(width, height)
       }
     }
   })
@@ -56,9 +56,9 @@ function init() {
   resizeObserver.observe(wrapperRef.value)
 }
 
-function getOrCreateProjection() {
-  const projection = app?.getProjection()
-}
+// function getOrCreateProjection() {
+//   const projection = app?.getProjection()
+// }
 
 onMounted(() => {
   init()

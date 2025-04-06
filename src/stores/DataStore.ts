@@ -13,14 +13,6 @@ export const useDataStore = defineStore('data', () => {
   const globalStats = ref<Record<string, FeatureStats>>({})
   const projectionMatch = ref<Projection[]>([])
 
-  // State Pixi
-  const pixiProjection = ref(new Map<string, Projection[]>([])) // Map of id to projection data
-
-  // State Access Functions
-  function getPixiProjection(id: string | null | undefined) {
-    return id ? pixiProjection.value.get(id) || null : null
-  }
-
   //unified loader
   async function loadData() {
     const dataset = useDatasetStore().selectedDatasetName
@@ -30,7 +22,6 @@ export const useDataStore = defineStore('data', () => {
     try {
       const [raw, stat] = await Promise.all([fetchRawData(dataset), fetchStats(dataset)])
       rawData.value = raw
-      console.log('RAWDATA VAlues', rawData.value)
       globalStats.value = stat
     } catch {
       return null
@@ -51,18 +42,6 @@ export const useDataStore = defineStore('data', () => {
       return null
     }
   }
-
-  //   const normalized = normalizeZ(rawData, stat)
-  //   const matched = matchProjection(normalized, proj)
-  // const matched = matchProjection(rawData.value, projectionRow)
-  //   console.log('rawData: ', rawData)
-  //   console.log('normalized: ', normalized)
-  //   console.log('matched: ', matched)
-  //   console.log('proj: ', proj)
-
-  //   normalizedData.value = normalized
-  //   stats.value = stat
-  //   projection.value = matched
 
   return {
     rawData,
