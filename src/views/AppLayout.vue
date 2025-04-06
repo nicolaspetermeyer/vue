@@ -4,17 +4,11 @@ import LeftSidebar from '@/components/LeftSidebar.vue'
 import MainCanvasView from '@/components/MainCanvasView.vue'
 import Canvas from '@/components/Canvas.vue'
 import RightPanel from '@/components/RightPanel.vue'
-import { storeToRefs } from 'pinia'
 
 import { useDatasetStore } from '@/stores/datasetStore'
-import { useDataStore } from '@/stores/dataStore'
 
 const datasetStore = useDatasetStore()
 const { loadDatasets } = datasetStore
-
-const dataStore = useDataStore()
-const { rawData, normalizedData, projectionRow, globalStats, projectionMatch } =
-  storeToRefs(dataStore)
 
 const isLoading = ref(true)
 
@@ -30,7 +24,7 @@ onMounted(async () => {
       <LeftSidebar />
     </div>
     <div class="h-full w-full flex-1 overflow-hidden">
-      <Canvas v-if="projectionRow.length" :projectionData="projectionRow"></Canvas>
+      <Canvas></Canvas>
     </div>
 
     <div class="right">

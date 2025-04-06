@@ -4,16 +4,17 @@ import { PixiContainer } from './PixiContainer'
 export class PixiApp extends Application {
   public root: PixiContainer = new PixiContainer()
 
-  constructor(
+  constructor() {
+    super()
+  }
+  // init app
+  async setup(
     canvasElement: HTMLCanvasElement,
     width: number,
     height: number,
     backgroundColor: number,
   ) {
-    super()
-
-    // init app
-    this.init({
+    await this.init({
       canvas: canvasElement, // binds the existing DOM element (instead of creating a new one)
       width: width,
       height: height,
@@ -55,6 +56,11 @@ export class PixiApp extends Application {
 
   addContainer(container: Container) {
     this.root.addChild(container)
+    this.root.applyLayout()
+  }
+
+  clearRoot() {
+    this.root.removeChildren()
     this.root.applyLayout()
   }
 

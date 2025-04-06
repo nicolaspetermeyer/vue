@@ -11,7 +11,7 @@ export class PixiDimred extends PixiContainer {
     super({
       width: 460,
       height: 460,
-      background: 0xdddddd,
+      background: 0x8ae6a2,
       positionAbsolute: true,
     })
 
@@ -24,7 +24,7 @@ export class PixiDimred extends PixiContainer {
     const id = point.item_id
     if (!this.pixiDimredPoints.has(id)) {
       const newPoint = new PixiDimredPoint(point)
-      console.log('PixiDimred -- Adding new point', id, newPoint)
+      //console.log('PixiDimred -- Adding new point', id, newPoint)
       this.pixiDimredPoints.set(id, newPoint)
       this.addChild(newPoint)
     }
@@ -32,8 +32,31 @@ export class PixiDimred extends PixiContainer {
   }
 
   updatePoints(points: Point[]) {
-    console.log('PixiDimred -- Updating points')
-    points.forEach((point: Point) => {
+    //console.log('PixiDimred -- Updating points')
+    if (points.length === 0) return
+
+    // Compute DR space bounding box
+    const xs = points.map((p) => p.pos.x)
+    const ys = points.map((p) => p.pos.y)
+
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+
+    const rangeX = maxX - minX || 1
+    const rangeY = maxY - minY || 1
+
+    // Normalize points to [0, 1] range, then scale to layout size
+    const normPoints = points.map((p) => ({
+      ...p,
+      pos: {
+        x: (p.pos.x - minX) / rangeX,
+        y: (p.pos.y - minY) / rangeY,
+      },
+    }))
+
+    normPoints.forEach((point: Point) => {
       const pixiDimredPoint = this.getOrCreatePoint(point)
       pixiDimredPoint.updatePosition(this.layoutProps.width)
     })

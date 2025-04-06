@@ -15,14 +15,14 @@ export class PixiDimredPoint extends PixiGraphic {
   }
 
   drawPoint(radius: number) {
-    console.log('Drawing point', this.point.item_id, radius)
+    //console.log('Drawing point', this.point.item_id, radius)
 
     this.circle(0, 0, radius)
     this.fill(0xbb0000)
   }
 
   updatePosition(size: number) {
-    console.log('Updating position', this.point)
+    //console.log('Updating position', this.point)
 
     this.position.set(this.point.pos.x * size, this.point.pos.y * size)
   }

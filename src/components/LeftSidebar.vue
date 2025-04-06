@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useDataStore } from '@/stores/dataStore'
+import { useProjectionStore } from '@/stores/projectionStore'
 import { storeToRefs } from 'pinia'
 
 const datasetStore = useDatasetStore()
@@ -10,7 +11,9 @@ const { datasetsArray, selectedDataset, selectedDatasetId } = storeToRefs(datase
 const { setSelectedDatasetId } = datasetStore
 
 const dataStore = useDataStore()
-const { loadData, loadProjection } = dataStore
+const { loadData } = dataStore
+const projectionStore = useProjectionStore()
+const { loadProjection } = projectionStore
 
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement

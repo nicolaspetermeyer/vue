@@ -8,8 +8,8 @@ export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
   constructor(points: Point[]) {
     super({
-      width: 460,
-      height: 460,
+      width: 690,
+      height: 690,
       padding: { top: 0, right: 0, bottom: 0, left: 0 },
       layout: 'flexColumn',
       justifyContent: 'center',

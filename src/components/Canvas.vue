@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { PixiApp } from '@/pixi/PixiApp'
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { Application } from 'pixi.js'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import type { ProjectionRow, Point } from '@/models/data'
 import { initDevtools } from '@pixi/devtools'
+import { useProjectionStore } from '@/stores/projectionStore'
+import { storeToRefs } from 'pinia'
 
-const props = defineProps<{ projectionData: ProjectionRow[] }>()
+const projectionStore = useProjectionStore()
+const { rawProjection, projectionMatch, matchedPoints, projectionInstance } =
+  storeToRefs(projectionStore)
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -16,7 +21,7 @@ function update() {
   console.log('update')
 }
 
-function init() {
+async function init() {
   console.log('init')
   console.log('Canvas size', wrapperRef.value?.getBoundingClientRect())
   if (!canvasRef.value || !wrapperRef.value) return
@@ -25,20 +30,17 @@ function init() {
   const { width, height } = wrapperRef.value.getBoundingClientRect()
 
   // Create Pixi App
-  app = new PixiApp(canvasRef.value, width, height, 0xeeeeee)
+  app = new PixiApp()
+  await app.setup(canvasRef.value, width, height, 0xeeeeee)
 
-  initDevtools({ app })
+  initDevtools({ app: app as Application })
 
-  // Transform to Pixi-compatible points
-  const points: Point[] = props.projectionData.map((row, i) => ({
-    item_id: i,
-    pos: { x: row.x, y: row.y },
-  }))
-  console.log('Projection props:', props.projectionData)
-  console.log('Mapped points:', points)
+  console.log('Projection props:', rawProjection.value)
+  console.log('Mapped points:', matchedPoints.value)
 
   // Create DR projection renderer
-  const projection = new PixiProjection(points)
+  const projection = new PixiProjection(matchedPoints.value)
+  projectionStore.setProjectionInstance(projection)
 
   // Add to root
   app.addContainer(projection)
@@ -56,9 +58,20 @@ function init() {
   resizeObserver.observe(wrapperRef.value)
 }
 
-// function getOrCreateProjection() {
-//   const projection = app?.getProjection()
-// }
+watch(
+  () => projectionStore.matchedPoints,
+  (matchedPoints) => {
+    if (!app) return
+
+    projectionStore.clearProjectionInstance()
+
+    const projection = new PixiProjection(matchedPoints)
+
+    app.addContainer(projection)
+
+    projectionStore.setProjectionInstance(projection)
+  },
+)
 
 onMounted(() => {
   init()
