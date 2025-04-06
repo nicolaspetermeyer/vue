@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Data, ProjectionRow, FeatureStats, Projection } from '@/models/data'
 import { fetchRawData, fetchStats, fetchProjection } from '@/services/api'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { matchProjection } from '@/utils/matchProjection'
-import { normalizeZ } from '@/utils/normalize'
 
 export const useDataStore = defineStore('data', () => {
   // 🔹 STATE
@@ -13,6 +12,14 @@ export const useDataStore = defineStore('data', () => {
   const projectionRow = ref<ProjectionRow[]>([])
   const globalStats = ref<Record<string, FeatureStats>>({})
   const projectionMatch = ref<Projection[]>([])
+
+  // State Pixi
+  const pixiProjection = ref(new Map<string, Projection[]>([])) // Map of id to projection data
+
+  // State Access Functions
+  function getPixiProjection(id: string | null | undefined) {
+    return id ? pixiProjection.value.get(id) || null : null
+  }
 
   //unified loader
   async function loadData() {

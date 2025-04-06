@@ -3,6 +3,7 @@ import { PixiApp } from '@/pixi/PixiApp'
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import type { ProjectionRow, Point } from '@/models/data'
+import { initDevtools } from '@pixi/devtools'
 
 const props = defineProps<{ projectionData: ProjectionRow[] }>()
 
@@ -25,6 +26,8 @@ function init() {
 
   // Create Pixi App
   app = new PixiApp(canvasRef.value, width, height, 0xeeeeee)
+
+  initDevtools({ app })
 
   // Transform to Pixi-compatible points
   const points: Point[] = props.projectionData.map((row, i) => ({
@@ -51,6 +54,10 @@ function init() {
   })
 
   resizeObserver.observe(wrapperRef.value)
+}
+
+function getOrCreateProjection() {
+  const projection = app?.getProjection()
 }
 
 onMounted(() => {

@@ -9,8 +9,8 @@ export class PixiDimred extends PixiContainer {
 
   constructor(points: Point[]) {
     super({
-      width: 230,
-      height: 230,
+      width: 460,
+      height: 460,
       background: 0xdddddd,
       positionAbsolute: true,
     })
