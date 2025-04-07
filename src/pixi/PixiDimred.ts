@@ -11,8 +11,12 @@ export class PixiDimred extends PixiContainer {
     super({
       width: 460,
       height: 460,
-      background: 0x8ae6a2,
+      background: 0xe1f7e9,
+      padding: { top: 0, right: 0, bottom: 0, left: 0 },
       positionAbsolute: true,
+      layout: 'flexColumn',
+      justifyContent: 'center',
+      alignItems: 'center',
     })
 
     this.updatePoints(points)

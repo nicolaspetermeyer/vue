@@ -21,10 +21,13 @@ export interface Projection {
 }
 
 export interface FeatureStats {
+  attributeName: string
   mean: number
   std: number
   min: number
   max: number
+  normMean?: number // mean normalized to [0, 1]
+  normStd?: number // std normalized to [0, 1]
 }
 
 export interface Position {

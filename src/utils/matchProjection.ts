@@ -1,4 +1,4 @@
-import type { Data, ProjectionRow, Projection } from '@/models/data'
+import type { Data, ProjectionRow, Projection, FeatureStats } from '@/models/data'
 
 export function matchProjection(rawData: Data[], projection: ProjectionRow[]): Projection[] {
   const rawMap = new Map<string, Data>()

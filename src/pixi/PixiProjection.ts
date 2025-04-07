@@ -1,12 +1,13 @@
 import { PixiContainer } from '@/pixi/PixiContainer'
 import { PixiText } from '@/pixi/PixiText'
 import { PixiDimred } from '@/pixi/PixiDimred'
-
-import type { Point } from '@/models/data'
+import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
+import type { FeatureStats, Point } from '@/models/data'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
-  constructor(points: Point[]) {
+  attributeRing: PixiAttributeRing
+  constructor(points: Point[], globalStats: Record<string, FeatureStats>) {
     super({
       width: 690,
       height: 690,
@@ -16,10 +17,15 @@ export class PixiProjection extends PixiContainer {
       alignItems: 'center',
       background: 0xffffff,
     })
-    //this.setPoints(points)
 
+    // The Dimred projection space for the items
     this.dimred = new PixiDimred(points)
     this.addChild(this.dimred)
+
+    // The attribute ring
+    this.attributeRing = new PixiAttributeRing(globalStats)
+    this.addChild(this.attributeRing)
+    this.applyLayout()
   }
 
   //setPoints(points: Point[]) {

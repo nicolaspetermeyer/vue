@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Data, ProjectionRow, FeatureStats, Projection } from '@/models/data'
+import type { Data, FeatureStats } from '@/models/data'
 import { fetchRawData, fetchStats } from '@/services/api'
 import { useDatasetStore } from '@/stores/datasetStore'
 
@@ -18,7 +18,6 @@ export const useDataStore = defineStore('data', () => {
     try {
       const [raw, stat] = await Promise.all([fetchRawData(dataset), fetchStats(dataset)])
       rawData.value = raw
-      console.log('Data:', rawData.value)
       globalStats.value = stat
     } catch {
       return null

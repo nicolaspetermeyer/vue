@@ -3,10 +3,13 @@ import { PixiApp } from '@/pixi/PixiApp'
 import { Application } from 'pixi.js'
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
-import type { ProjectionRow, Point } from '@/models/data'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { useDataStore } from '@/stores/dataStore'
 import { storeToRefs } from 'pinia'
+
+const dataStore = useDataStore()
+const { globalStats } = storeToRefs(dataStore)
 
 const projectionStore = useProjectionStore()
 const { rawProjection, projectionMatch, matchedPoints, projectionInstance } =
@@ -35,11 +38,8 @@ async function init() {
 
   initDevtools({ app: app as Application })
 
-  console.log('Projection props:', rawProjection.value)
-  console.log('Mapped points:', matchedPoints.value)
-
   // Create DR projection renderer
-  const projection = new PixiProjection(matchedPoints.value)
+  const projection = new PixiProjection(matchedPoints.value, globalStats.value)
   projectionStore.setProjectionInstance(projection)
 
   // Add to root
@@ -65,7 +65,7 @@ watch(
 
     projectionStore.clearProjectionInstance()
 
-    const projection = new PixiProjection(matchedPoints)
+    const projection = new PixiProjection(matchedPoints, globalStats.value)
 
     app.addContainer(projection)
 
