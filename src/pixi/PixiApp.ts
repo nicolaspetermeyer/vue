@@ -44,6 +44,7 @@ export class PixiApp extends Application {
     })
 
     this.stage.addChild(this.root)
+    this.stage.sortableChildren = true
   }
 
   resizeApp(width: number, height: number) {

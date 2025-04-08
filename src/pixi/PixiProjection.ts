@@ -3,12 +3,15 @@ import { PixiText } from '@/pixi/PixiText'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Point } from '@/models/data'
-import { PixiInteractionOverlay } from '@/pixi/PixiInteractionOverlay'
+import { PixiInteractionOverlay } from '@/pixi/InteractionOverlays/PixiInteractionOverlay'
+
+import { Rectangle } from 'pixi.js'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
   attributeRing: PixiAttributeRing
   interactionOverlay: PixiInteractionOverlay
+  //brushOverlay: PixiBrushOverlay
 
   constructor(points: Point[], globalStats: Record<string, FeatureStats>) {
     super({
@@ -31,6 +34,13 @@ export class PixiProjection extends PixiContainer {
 
     // Interaction overlay (transparent, non-blocking)
     this.interactionOverlay = new PixiInteractionOverlay(this.width, this.height)
+    this.interactionOverlay.setDimred(this.dimred)
+
+    // Bind brush event
+    this.interactionOverlay.on('brushend', (bounds: Rectangle) => {
+      const selected = this.dimred.getPointsInBounds(bounds)
+      this.dimred.setSelection(selected)
+    })
     this.addChild(this.interactionOverlay)
 
     // Tooltip setup

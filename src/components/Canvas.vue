@@ -74,7 +74,13 @@ function debug() {
 
 <template>
   <div ref="wrapperRef" class="relative w-full h-full">
-    <canvas class="w-full h-full" ref="canvasRef" @contextmenu.prevent></canvas>
+    <canvas
+      class="w-full h-full"
+      ref="canvasRef"
+      @contextmenu.prevent
+      @mousedown.prevent
+      @dragstart.prevent
+    ></canvas>
     <button @click="debug" class="btn btn-xs btn-content absolute bottom-0 right-0">
       Log Pixi Scene Graph
     </button>

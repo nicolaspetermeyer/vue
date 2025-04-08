@@ -3,7 +3,8 @@ import { PixiText } from '@/pixi/PixiText'
 import { PixiGraphic } from '@/pixi/PixiGraphic'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import type { Fingerprint, Point, Position } from '@/models/data'
-import { PixiTooltip } from '@/pixi/PixiTooltip'
+import { PixiTooltip } from '@/pixi/InteractionOverlays/PixiTooltip'
+import { Rectangle, PointData } from 'pixi.js'
 
 export class PixiDimred extends PixiContainer {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
@@ -31,7 +32,7 @@ export class PixiDimred extends PixiContainer {
       const newPoint = new PixiDimredPoint(point)
       //console.log('PixiDimred -- Adding new point', id, newPoint)
       this.pixiDimredPoints.set(id, newPoint)
-      console.log('[✓] Adding point:', point.item_id)
+
       this.addChild(newPoint)
     }
     return this.pixiDimredPoints.get(id)!
@@ -69,6 +70,37 @@ export class PixiDimred extends PixiContainer {
     // Force redraw by toggling tint (otherwise for strange reasons no rerendering happens)
     this.tint ^= 1
     this.tint ^= 1
+  }
+
+  getPointsInBounds(bounds: Rectangle): number[] {
+    const selected: number[] = []
+    this.pixiDimredPoints.forEach((point, id) => {
+      const global = point.getGlobalPosition()
+      if (bounds.contains(global.x, global.y)) {
+        selected.push(id)
+      }
+    })
+    return selected
+  }
+
+  findPointAtGlobal(global: PointData): PixiDimredPoint | null {
+    for (const point of this.pixiDimredPoints.values()) {
+      const local = this.toLocal(global)
+      const dx = local.x - point.x
+      const dy = local.y - point.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+
+      // Match within a reasonable hover radius (e.g. 5 px)
+      if (distance <= 5) return point
+    }
+    return null
+  }
+
+  setSelection(selectedIds: number[]) {
+    const selectedSet = new Set(selectedIds)
+    this.pixiDimredPoints.forEach((point, id) => {
+      point.setSelected(selectedSet.has(id))
+    })
   }
 
   bindTooltipEvents(tooltip: PixiTooltip) {
