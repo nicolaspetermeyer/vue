@@ -5,13 +5,12 @@ import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Point } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/InteractionOverlays/PixiInteractionOverlay'
 
-import { Rectangle } from 'pixi.js'
+import { Rectangle, Graphics } from 'pixi.js'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
   attributeRing: PixiAttributeRing
   interactionOverlay: PixiInteractionOverlay
-  //brushOverlay: PixiBrushOverlay
 
   constructor(points: Point[], globalStats: Record<string, FeatureStats>) {
     super({

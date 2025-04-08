@@ -21,6 +21,9 @@ export class PixiInteractionOverlay extends PixiContainer {
       background: null,
       positionAbsolute: true,
     })
+
+    this.sortableChildren = true
+
     this.eventMode = 'static'
 
     // Setup hit area for input
@@ -31,6 +34,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.addChild(this.hitAreaGraphic)
 
     // Setup brush rectangle
+    this.brushRect.zIndex = 1
     this.addChild(this.brushRect)
 
     // Setup tooltip
@@ -43,25 +47,20 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.hitAreaGraphic.on('pointerup', this.onPointerUp.bind(this))
     this.hitAreaGraphic.on('pointerupoutside', this.onPointerUp.bind(this))
     this.hitAreaGraphic.on('pointerover', this.onPointerOver.bind(this))
-
-    this.sortableChildren = true
-    this.brushRect.zIndex = 1000
   }
   setDimred(dimred: PixiDimred) {
     this.dimred = dimred
   }
 
   private onPointerDown(e: FederatedPointerEvent) {
-    const pos = e.global
+    const pos = this.toLocal(e.global)
     this.dragStart = { x: pos.x, y: pos.y }
     this.dragEnd = null
     this.isDragging = true
-    console.log('Brush start:', this.dragStart.x, this.dragStart.y)
   }
 
   private onPointerMove(e: FederatedPointerEvent) {
-    const pos = e.global
-
+    const pos = this.toLocal(e.global)
     if (this.dimred) {
       const hovered = this.dimred.findPointAtGlobal(pos)
       if (hovered !== this.currentHovered) {
@@ -77,6 +76,7 @@ export class PixiInteractionOverlay extends PixiContainer {
       this.drawBrush()
     }
   }
+
   private onPointerUp(e: FederatedPointerEvent) {
     if (this.isDragging && this.dragStart && this.dragEnd) {
       const bounds = this.getBrushBounds()
@@ -97,13 +97,13 @@ export class PixiInteractionOverlay extends PixiContainer {
     const w = Math.abs(this.dragEnd.x - this.dragStart.x)
     const h = Math.abs(this.dragEnd.y - this.dragStart.y)
 
-    console.log('Brush rect:', x, y, w, h)
-
     this.brushRect.clear()
     this.brushRect
       .setStrokeStyle({ width: 1, color: 0xff00ff, alpha: 1 })
       .fill({ color: 0xff00ff, alpha: 0.2 })
-      .rect(x, y, w, h).visible = true
+      .rect(x, y, w, h)
+      .fill()
+      .stroke()
   }
 
   private getBrushBounds(): Rectangle {
@@ -112,7 +112,18 @@ export class PixiInteractionOverlay extends PixiContainer {
     const y = Math.min(this.dragStart.y, this.dragEnd.y)
     const w = Math.abs(this.dragEnd.x - this.dragStart.x)
     const h = Math.abs(this.dragEnd.y - this.dragStart.y)
-    return new Rectangle(x, y, w, h)
+    const localRect = new Rectangle(x, y, w, h)
+
+    // Transform the top-left and bottom-right corners to global space
+    const topLeft = this.toGlobal({ x: x, y: y })
+    const bottomRight = this.toGlobal({ x: x + w, y: y + h })
+
+    const globalX = Math.min(topLeft.x, bottomRight.x)
+    const globalY = Math.min(topLeft.y, bottomRight.y)
+    const globalW = Math.abs(bottomRight.x - topLeft.x)
+    const globalH = Math.abs(bottomRight.y - topLeft.y)
+
+    return new Rectangle(globalX, globalY, globalW, globalH)
   }
 
   private onPointerOver(e: FederatedPointerEvent) {
