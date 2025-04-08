@@ -12,6 +12,16 @@ export class PixiDimredPoint extends PixiGraphic {
     this.point = point
     this.drawPoint(5)
     // this.position.set(point.pos.x, point.pos.y)
+
+    this.eventMode = 'static'
+    this.cursor = 'pointer'
+
+    this.on('pointerover', () => {
+      this.emit('hover', this.point)
+    })
+    this.on('pointerout', () => {
+      this.emit('unhover', this.point)
+    })
   }
 
   drawPoint(radius: number) {

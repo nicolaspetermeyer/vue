@@ -24,6 +24,10 @@ export class PixiApp extends Application {
       autoDensity: true, //  adapts canvas size to device pixel ratio — useful if you want responsive sizing
     })
 
+    // this.stage.eventMode = 'static'
+    // this.stage.hitArea = new Rectangle(0, 0, width, height)
+    // this.root.eventMode = 'static'
+
     this.root.updateLayoutProps({
       // This enables PixiContainer’s layout engine, behaving similarly to CSS flexbox:
       // Children are positioned automatically

@@ -3,6 +3,7 @@ import { PixiText } from '@/pixi/PixiText'
 import { PixiGraphic } from '@/pixi/PixiGraphic'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import type { Fingerprint, Point, Position } from '@/models/data'
+import { PixiTooltip } from '@/pixi/PixiTooltip'
 
 export class PixiDimred extends PixiContainer {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
@@ -30,13 +31,14 @@ export class PixiDimred extends PixiContainer {
       const newPoint = new PixiDimredPoint(point)
       //console.log('PixiDimred -- Adding new point', id, newPoint)
       this.pixiDimredPoints.set(id, newPoint)
+      console.log('[✓] Adding point:', point.item_id)
       this.addChild(newPoint)
     }
     return this.pixiDimredPoints.get(id)!
   }
 
   updatePoints(points: Point[]) {
-    //console.log('PixiDimred -- Updating points')
+    console.log('PixiDimred -- Updating points')
     if (points.length === 0) return
 
     // Compute DR space bounding box
@@ -67,5 +69,17 @@ export class PixiDimred extends PixiContainer {
     // Force redraw by toggling tint (otherwise for strange reasons no rerendering happens)
     this.tint ^= 1
     this.tint ^= 1
+  }
+
+  bindTooltipEvents(tooltip: PixiTooltip) {
+    this.pixiDimredPoints.forEach((pointComp) => {
+      pointComp.on('hover', (point) => {
+        const global = pointComp.getGlobalPosition()
+        tooltip.show(`ID: ${point.item_id}`, global.x + 8, global.y - 6)
+      })
+      pointComp.on('unhover', () => {
+        tooltip.hide()
+      })
+    })
   }
 }
