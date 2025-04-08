@@ -34,7 +34,7 @@ export class PixiAttributeRing extends PixiContainer {
   addAttributeSegment(attributeName: string, stat: FeatureStats) {
     console.log('Adding attribute segment', attributeName)
     const normalized = stat.normMean ?? 0
-
+    console.log('Adding normalized Mean', normalized)
     const segment = new PixiAttributeSegment(attributeName, normalized)
     this.segments.push(segment)
     this.addChild(segment)

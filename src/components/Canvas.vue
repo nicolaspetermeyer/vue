@@ -18,7 +18,6 @@ const { rawProjection, projectionMatch, matchedPoints, projectionInstance } =
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let app: PixiApp | null = null
-let resizeObserver: ResizeObserver | null = null
 
 function update() {
   console.log('update')
@@ -26,7 +25,7 @@ function update() {
 
 async function init() {
   console.log('init')
-  console.log('Canvas size', wrapperRef.value?.getBoundingClientRect())
+
   if (!canvasRef.value || !wrapperRef.value) return
 
   // Initialize dimensions
@@ -34,6 +33,7 @@ async function init() {
 
   // Create Pixi App
   app = new PixiApp()
+
   await app.setup(canvasRef.value, width, height, 0xeeeeee)
 
   initDevtools({ app: app as Application })
@@ -44,18 +44,6 @@ async function init() {
 
   // Add to root
   app.addContainer(projection)
-
-  // Setup ResizeObserver
-  resizeObserver = new ResizeObserver((entries) => {
-    for (const entry of entries) {
-      const { width, height } = entry.contentRect
-      if (app) {
-        app.resizeApp(width, height)
-      }
-    }
-  })
-
-  resizeObserver.observe(wrapperRef.value)
 }
 
 watch(
@@ -63,13 +51,12 @@ watch(
   (matchedPoints) => {
     if (!app) return
 
-    projectionStore.clearProjectionInstance()
+    app.clearRoot()
 
     const projection = new PixiProjection(matchedPoints, globalStats.value)
+    projectionStore.setProjectionInstance(projection)
 
     app.addContainer(projection)
-
-    projectionStore.setProjectionInstance(projection)
   },
 )
 
@@ -78,12 +65,7 @@ onMounted(() => {
   update()
 })
 
-onBeforeUnmount(() => {
-  if (resizeObserver && wrapperRef.value) {
-    resizeObserver.unobserve(wrapperRef.value)
-    resizeObserver.disconnect()
-  }
-})
+onBeforeUnmount(() => {})
 
 function debug() {
   app?.debugSceneGraphRecursive(app.root, 0)

@@ -20,14 +20,14 @@ export class PixiAttributeSegment extends PixiGraphic {
     centerX: number = 0,
     centerY: number = 0,
   ) {
-    console.log(
-      'Drawing segment',
-      this.attributeKey,
-      innerRadius,
-      maxOuterRadius,
-      startAngle,
-      endAngle,
-    )
+    // console.log(
+    //   'Drawing segment',
+    //   this.attributeKey,
+    //   innerRadius,
+    //   maxOuterRadius,
+    //   startAngle,
+    //   endAngle,
+    // )
     this.clear()
 
     const outerRadius = innerRadius + this.normMean * (maxOuterRadius - innerRadius)

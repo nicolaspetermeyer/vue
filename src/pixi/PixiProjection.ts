@@ -15,7 +15,7 @@ export class PixiProjection extends PixiContainer {
       layout: 'flexColumn',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 0xffffff,
+      background: 0x265738,
     })
 
     // The Dimred projection space for the items
