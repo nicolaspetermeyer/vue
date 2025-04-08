@@ -18,7 +18,7 @@ export class PixiAttributeRing extends PixiContainer {
 
     // calculate inner radius of the ring
     this.innerRadius = this.layoutProps.width / 2 - 25
-    this.maxOuterRadius = this.layoutProps.width
+    this.maxOuterRadius = this.layoutProps.width / 1.2
 
     // Add attribute segments
     for (const attributeName of Object.keys(globalStats)) {
