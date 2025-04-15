@@ -2,7 +2,7 @@ import { PixiContainer } from '@/pixi/PixiContainer'
 import { PixiText } from '@/pixi/PixiText'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
-import type { FeatureStats, Point } from '@/models/data'
+import type { FeatureStats, Projection } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/InteractionOverlays/PixiInteractionOverlay'
 
 import { Rectangle, Graphics } from 'pixi.js'
@@ -12,7 +12,7 @@ export class PixiProjection extends PixiContainer {
   attributeRing: PixiAttributeRing
   interactionOverlay: PixiInteractionOverlay
 
-  constructor(points: Point[], globalStats: Record<string, FeatureStats>) {
+  constructor(projectedPoints: Projection[], globalStats: Record<string, FeatureStats>) {
     super({
       width: 1000,
       height: 1000,
@@ -24,7 +24,7 @@ export class PixiProjection extends PixiContainer {
     })
 
     // The Dimred projection space for the items
-    this.dimred = new PixiDimred(points)
+    this.dimred = new PixiDimred(projectedPoints)
     this.addChild(this.dimred)
 
     // The attribute ring
@@ -41,9 +41,6 @@ export class PixiProjection extends PixiContainer {
       this.dimred.setSelection(selected)
     })
     this.addChild(this.interactionOverlay)
-
-    // Tooltip setup
-    this.dimred.bindTooltipEvents(this.interactionOverlay.getTooltip())
 
     this.applyLayout()
   }

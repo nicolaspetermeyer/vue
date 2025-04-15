@@ -17,8 +17,9 @@ export class PixiAttributeRing extends PixiContainer {
     })
 
     // calculate inner radius of the ring
-    this.innerRadius = this.layoutProps.width / 2 - 25
-    this.maxOuterRadius = this.layoutProps.width / 1.2
+    const base = Math.min(this.layoutProps.width, this.layoutProps.height)
+    this.innerRadius = base / 2 - 25
+    this.maxOuterRadius = base / 1.2
 
     // Add attribute segments
     for (const attributeName of Object.keys(globalStats)) {
@@ -52,6 +53,7 @@ export class PixiAttributeRing extends PixiContainer {
       const slotStart = i * slotAngle
       const startAngle = slotStart + gapAngle / 2
       const endAngle = slotStart + slotAngle - gapAngle / 2
+
       segment.drawSegment(
         this.innerRadius,
         this.maxOuterRadius,
@@ -60,6 +62,31 @@ export class PixiAttributeRing extends PixiContainer {
         this.layoutProps.width / 2,
         this.layoutProps.height / 2,
       )
+      const midAngle = (startAngle + endAngle) / 2
+      const outerRadius =
+        this.innerRadius + segment.normMeanValue * (this.maxOuterRadius - this.innerRadius)
+      const radius = (this.innerRadius + outerRadius) / 2 // midpoint radius
+
+      const labelX = this.layoutProps.width / 2 + radius * Math.cos(midAngle)
+      const labelY = this.layoutProps.height / 2 + radius * Math.sin(midAngle)
+
+      const label = new PixiText({
+        text: segment.attrkey,
+        x: labelX,
+        y: labelY,
+        anchor: 0.5,
+        style: {
+          fontSize: 16,
+          fill: 0x000000,
+          align: 'center',
+        },
+      })
+
+      //label.rotation = midAngle
+      // if (midAngle > Math.PI / 2 && midAngle < (3 * Math.PI) / 2) {
+      //   label.rotation += Math.PI
+      // }
+      this.addChild(label)
     }
   }
 }

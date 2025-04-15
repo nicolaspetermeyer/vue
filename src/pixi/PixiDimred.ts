@@ -2,14 +2,14 @@ import { PixiContainer } from '@/pixi/PixiContainer'
 import { PixiText } from '@/pixi/PixiText'
 import { PixiGraphic } from '@/pixi/PixiGraphic'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
-import type { Fingerprint, Point, Position } from '@/models/data'
+import type { Fingerprint, Projection, Position } from '@/models/data'
 import { PixiTooltip } from '@/pixi/InteractionOverlays/PixiTooltip'
 import { Rectangle, PointData } from 'pixi.js'
 
 export class PixiDimred extends PixiContainer {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
 
-  constructor(points: Point[]) {
+  constructor(projectedPoints: Projection[]) {
     super({
       width: 460,
       height: 460,
@@ -21,15 +21,15 @@ export class PixiDimred extends PixiContainer {
       alignItems: 'center',
     })
 
-    this.updatePoints(points)
+    this.updatePoints(projectedPoints)
 
     // this.applyLayout()
   }
 
-  getOrCreatePoint(point: Point): PixiDimredPoint {
-    const id = point.item_id
+  getOrCreatePoint(projectedPoints: Projection): PixiDimredPoint {
+    const id = projectedPoints.id
     if (!this.pixiDimredPoints.has(id)) {
-      const newPoint = new PixiDimredPoint(point)
+      const newPoint = new PixiDimredPoint(projectedPoints)
       //console.log('PixiDimred -- Adding new point', id, newPoint)
       this.pixiDimredPoints.set(id, newPoint)
 
@@ -38,13 +38,13 @@ export class PixiDimred extends PixiContainer {
     return this.pixiDimredPoints.get(id)!
   }
 
-  updatePoints(points: Point[]) {
-    console.log('PixiDimred -- Updating points')
-    if (points.length === 0) return
+  updatePoints(projectedPoints: Projection[]) {
+    console.log('PixiDimred -- Updating projectedPoints')
+    if (projectedPoints.length === 0) return
 
     // Compute DR space bounding box
-    const xs = points.map((p) => p.pos.x)
-    const ys = points.map((p) => p.pos.y)
+    const xs = projectedPoints.map((p) => p.pos.x)
+    const ys = projectedPoints.map((p) => p.pos.y)
 
     const minX = Math.min(...xs)
     const maxX = Math.max(...xs)
@@ -54,8 +54,8 @@ export class PixiDimred extends PixiContainer {
     const rangeX = maxX - minX || 1
     const rangeY = maxY - minY || 1
 
-    // Normalize points to [0, 1] range, then scale to layout size
-    const normPoints = points.map((p) => ({
+    // Normalize projectedPoints to [0, 1] range, then scale to layout size
+    const normPoints = projectedPoints.map((p) => ({
       ...p,
       pos: {
         x: (p.pos.x - minX) / rangeX,
@@ -63,7 +63,7 @@ export class PixiDimred extends PixiContainer {
       },
     }))
 
-    normPoints.forEach((point: Point) => {
+    normPoints.forEach((point: Projection) => {
       const pixiDimredPoint = this.getOrCreatePoint(point)
       pixiDimredPoint.updatePosition(this.layoutProps.width)
     })
@@ -84,8 +84,9 @@ export class PixiDimred extends PixiContainer {
   }
 
   findPointAtGlobal(global: PointData): PixiDimredPoint | null {
+    const local = this.toLocal(global)
+
     for (const point of this.pixiDimredPoints.values()) {
-      const local = this.toLocal(global)
       const dx = local.x - point.x
       const dy = local.y - point.y
       const distance = Math.sqrt(dx * dx + dy * dy)
@@ -100,18 +101,6 @@ export class PixiDimred extends PixiContainer {
     const selectedSet = new Set(selectedIds)
     this.pixiDimredPoints.forEach((point, id) => {
       point.setSelected(selectedSet.has(id))
-    })
-  }
-
-  bindTooltipEvents(tooltip: PixiTooltip) {
-    this.pixiDimredPoints.forEach((pointComp) => {
-      pointComp.on('hover', (point) => {
-        const global = pointComp.getGlobalPosition()
-        tooltip.show(`ID: ${point.item_id}`, global.x + 8, global.y - 6)
-      })
-      pointComp.on('unhover', () => {
-        tooltip.hide()
-      })
     })
   }
 }

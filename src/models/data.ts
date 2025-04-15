@@ -14,9 +14,8 @@ export interface ProjectionRow {
 }
 
 export interface Projection {
-  id: string
-  x: number
-  y: number
+  id: number
+  pos: Position
   original: Data
 }
 

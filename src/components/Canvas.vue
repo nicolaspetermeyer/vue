@@ -39,7 +39,7 @@ async function init() {
   initDevtools({ app: app as Application })
 
   // Create DR projection renderer
-  const projection = new PixiProjection(matchedPoints.value, globalStats.value)
+  const projection = new PixiProjection(projectionMatch.value, globalStats.value)
   projectionStore.setProjectionInstance(projection)
 
   // Add to root
@@ -47,13 +47,13 @@ async function init() {
 }
 
 watch(
-  () => projectionStore.matchedPoints,
-  (matchedPoints) => {
+  () => projectionStore.projectionMatch,
+  (projectionMatch) => {
     if (!app) return
 
     app.clearRoot()
 
-    const projection = new PixiProjection(matchedPoints, globalStats.value)
+    const projection = new PixiProjection(projectionMatch, globalStats.value)
     projectionStore.setProjectionInstance(projection)
 
     app.addContainer(projection)

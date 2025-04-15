@@ -18,8 +18,7 @@ export function matchProjection(rawData: Data[], projection: ProjectionRow[]): P
 
       return {
         id: key,
-        x,
-        y,
+        pos: { x, y },
         original,
       }
     })

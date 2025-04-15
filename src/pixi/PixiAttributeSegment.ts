@@ -51,4 +51,10 @@ export class PixiAttributeSegment extends PixiGraphic {
     this.stroke(0x000000)
     this.fill(0xbbbb12)
   }
+  get attrkey(): string {
+    return this.attributeKey
+  }
+  get normMeanValue(): number {
+    return this.normMean
+  }
 }
