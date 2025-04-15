@@ -27,6 +27,8 @@ const runDimRed = () => {
   loadProjection()
 }
 
+const addFingerprint = () => {}
+
 onMounted(async () => {})
 </script>
 
@@ -42,6 +44,7 @@ onMounted(async () => {})
         </option>
       </select>
       <button @click="runDimRed()" class="btn btn-xs btn-content">Compute Points</button>
+      <button @click="addFingerprint()" class="btn btn-xs btn-content">Create Fingerprint</button>
     </div>
   </div>
 </template>

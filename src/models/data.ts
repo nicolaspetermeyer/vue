@@ -29,6 +29,14 @@ export interface FeatureStats {
   normStd?: number // std normalized to [0, 1]
 }
 
+export interface FingerprintFeatureStat {
+  mean: number
+  stddev: number
+  globalMean: number
+  normMean: number // 0–1 scaled
+  meanDelta: number // relative to global mean
+}
+
 export interface Position {
   x: number
   y: number
@@ -41,5 +49,6 @@ export interface Point {
 
 export type Fingerprint = {
   id: string // simple UUID
-  points: Point[]
+  projectedPoints: Projection[]
+  localStats: Record<string, FingerprintFeatureStat> // stats over the selected data points
 }
