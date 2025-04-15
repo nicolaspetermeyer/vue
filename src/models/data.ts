@@ -49,6 +49,7 @@ export interface Point {
 
 export type Fingerprint = {
   id: string // simple UUID
+  name: string
   projectedPoints: Projection[]
   localStats: Record<string, FingerprintFeatureStat> // stats over the selected data points
 }

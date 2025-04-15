@@ -1,11 +1,12 @@
 import { PixiContainer } from '@/pixi/PixiContainer'
-import { PixiText } from '@/pixi/PixiText'
+import { Rectangle } from 'pixi.js'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Projection } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/InteractionOverlays/PixiInteractionOverlay'
 
-import { Rectangle, Graphics } from 'pixi.js'
+import { useProjectionStore } from '@/stores/projectionStore'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
@@ -23,6 +24,9 @@ export class PixiProjection extends PixiContainer {
       background: 0x265738,
     })
 
+    const fingerprintStore = useFingerprintStore()
+    const projectionStore = useProjectionStore()
+
     // The Dimred projection space for the items
     this.dimred = new PixiDimred(projectedPoints)
     this.addChild(this.dimred)
@@ -39,6 +43,8 @@ export class PixiProjection extends PixiContainer {
     this.interactionOverlay.on('brushend', (bounds: Rectangle) => {
       const selected = this.dimred.getPointsInBounds(bounds)
       this.dimred.setSelection(selected)
+
+      fingerprintStore.setSelectedProjections(this.dimred.getSelectedProjections())
     })
     this.addChild(this.interactionOverlay)
 

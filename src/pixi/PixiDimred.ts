@@ -103,4 +103,14 @@ export class PixiDimred extends PixiContainer {
       point.setSelected(selectedSet.has(id))
     })
   }
+
+  getSelectedProjections(): Projection[] {
+    const selected: Projection[] = []
+    this.pixiDimredPoints.forEach((point) => {
+      if (point.isSelected()) {
+        selected.push(point.dimredpoint)
+      }
+    })
+    return selected
+  }
 }

@@ -4,6 +4,7 @@ import { onMounted } from 'vue'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useDataStore } from '@/stores/dataStore'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 
 const datasetStore = useDatasetStore()
@@ -14,6 +15,8 @@ const dataStore = useDataStore()
 const { loadData } = dataStore
 const projectionStore = useProjectionStore()
 const { loadProjection } = projectionStore
+const fingerprintStore = useFingerprintStore()
+const { addFingerprint } = fingerprintStore
 
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
@@ -22,12 +25,6 @@ const handleSelect = (event: Event) => {
     loadData()
   }
 }
-
-const runDimRed = () => {
-  loadProjection()
-}
-
-const addFingerprint = () => {}
 
 onMounted(async () => {})
 </script>
@@ -43,7 +40,7 @@ onMounted(async () => {})
           {{ dataset.name }}
         </option>
       </select>
-      <button @click="runDimRed()" class="btn btn-xs btn-content">Compute Points</button>
+      <button @click="loadProjection()" class="btn btn-xs btn-content">Compute Points</button>
       <button @click="addFingerprint()" class="btn btn-xs btn-content">Create Fingerprint</button>
     </div>
   </div>

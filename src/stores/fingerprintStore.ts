@@ -1,22 +1,43 @@
 import { defineStore } from 'pinia'
-import { computeFingerprintStats } from '@/utils/calcFingerprintStats'
-import type { Fingerprint, FingerprintFeatureStat, FeatureStats } from '@/models/data'
+import { calcFingerprintStats } from '@/utils/calcFingerprintStats'
+import type { Fingerprint, Projection, FeatureStats, FingerprintFeatureStat } from '@/models/data'
 import { ref } from 'vue'
+import { useDataStore } from '@/stores/dataStore'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
-  // 🔹 STATE
+  //STATE
   const fingerprints = ref<Fingerprint[]>([])
+  const selectedProjections = ref<Projection[]>([])
   const selectedFingerprint = ref<Fingerprint | null>(null)
-  const fingerprintStats = ref<Record<string, FingerprintFeatureStat>>({})
-  const globalStats = ref<Record<string, FeatureStats>>({})
-  const selection = ref<Record<string, number>[]>([]) // array of selected data points
+  const globalStats = useDataStore().globalStats
 
-  // 🔹 ACTIONS
-  function setSelectedPoints(points: Record<string, number>[]) {
-    selection.value = points
+  //ACTIONS
+  function setSelectedProjections(points: Projection[]) {
+    selectedProjections.value = points
   }
-  function addFingerprint(fingerprint: Fingerprint) {
+  function addFingerprint() {
+    if (selectedProjections.value.length === 0) return
+    console.log('[addFingerprint] Selected projections:', selectedProjections.value)
+
+    const originals = selectedProjections.value.map((p) => p.original)
+    console.log('Selected originals', originals)
+    console.log('Global stats', globalStats.value)
+
+    const localStats = calcFingerprintStats(originals)
+    console.log('Computed local stats', localStats)
+    const id = crypto.randomUUID()
+    const name = `Fingerprint ${fingerprints.value.length + 1}`
+
+    const fingerprint: Fingerprint = {
+      id,
+      name,
+      projectedPoints: [...selectedProjections.value],
+      localStats,
+    }
+
     fingerprints.value.push(fingerprint)
+    console.log('Added fingerprint', fingerprint)
+    console.log('Fingerprints', fingerprints.value)
   }
   function removeFingerprint(id: string) {
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
@@ -33,10 +54,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   return {
     fingerprints,
     selectedFingerprint,
-    fingerprintStats,
-    globalStats,
-    selection,
-    setSelectedPoints,
+    setSelectedProjections,
     addFingerprint,
     removeFingerprint,
     clearFingerprints,

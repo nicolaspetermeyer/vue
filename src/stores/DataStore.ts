@@ -19,6 +19,7 @@ export const useDataStore = defineStore('data', () => {
       const [raw, stat] = await Promise.all([fetchRawData(dataset), fetchStats(dataset)])
       rawData.value = raw
       globalStats.value = stat
+      console.log('Loaded data', globalStats.value)
     } catch {
       return null
     }

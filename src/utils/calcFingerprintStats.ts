@@ -1,15 +1,20 @@
-import { FeatureStats, FingerprintFeatureStat } from '@/models/data'
+import { Data, FeatureStats, FingerprintFeatureStat } from '@/models/data'
+import { useDataStore } from '@/stores/dataStore'
 
-export function computeFingerprintStats(
-  selection: Record<string, number>[], // array of selected data points
-  globalStats: Record<string, FeatureStats>, // stats over the whole dataset
+export function calcFingerprintStats(
+  selection: Data[], // array of selected data points
 ): Record<string, FingerprintFeatureStat> {
+  console.log('Computing fingerprint stats', selection)
+  const dataStore = useDataStore()
+  const globalStats = dataStore.globalStats
   const result: Record<string, FingerprintFeatureStat> = {}
 
   const featureKeys = Object.keys(globalStats)
 
   for (const key of featureKeys) {
-    const values = selection.map((d) => d[key]).filter((v) => v !== undefined && !isNaN(v))
+    const values = selection
+      .map((d) => d[key])
+      .filter((v): v is number => typeof v === 'number' && !isNaN(v))
 
     if (values.length === 0) continue
 
