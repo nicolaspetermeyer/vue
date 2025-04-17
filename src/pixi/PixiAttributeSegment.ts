@@ -1,15 +1,24 @@
-import { PixiContainer } from '@/pixi/PixiContainer'
 import { PixiGraphic } from '@/pixi/PixiGraphic'
 
 export class PixiAttributeSegment extends PixiGraphic {
   private attributeKey: string
-  private normMean: number
+  private globalNorm: number
+  private localNorm: number | undefined
 
-  constructor(attributeKey: string, normMean: number) {
+  private startAngle: number = 0
+  private endAngle: number = 0
+  private innerRadius: number = 0
+  private maxOuterRadius: number = 0
+  private centerX: number = 0
+  private centerY: number = 0
+
+  constructor(attributeKey: string, norm: { globalNorm: number; localNorm?: number }) {
+    const { globalNorm, localNorm } = norm
     super()
 
     this.attributeKey = attributeKey
-    this.normMean = normMean
+    this.globalNorm = globalNorm
+    this.localNorm = localNorm
   }
 
   drawSegment(
@@ -20,17 +29,21 @@ export class PixiAttributeSegment extends PixiGraphic {
     centerX: number = 0,
     centerY: number = 0,
   ) {
-    // console.log(
-    //   'Drawing segment',
-    //   this.attributeKey,
-    //   innerRadius,
-    //   maxOuterRadius,
-    //   startAngle,
-    //   endAngle,
-    // )
     this.clear()
+    // Store geometry for redraws
+    this.startAngle = startAngle
+    this.endAngle = endAngle
+    this.innerRadius = innerRadius
+    this.maxOuterRadius = maxOuterRadius
+    this.centerX = centerX
+    this.centerY = centerY
 
-    const outerRadius = innerRadius + this.normMean * (maxOuterRadius - innerRadius)
+    const arcWidth = maxOuterRadius - innerRadius
+
+    const outerRadius = innerRadius + this.globalNorm * arcWidth
+
+    // === Global Layer ===
+    this.fill({ color: 0xbbbb12, alpha: 0.25 })
 
     this.moveTo(
       centerX + innerRadius * Math.cos(startAngle),
@@ -41,6 +54,7 @@ export class PixiAttributeSegment extends PixiGraphic {
       centerY + outerRadius * Math.sin(startAngle),
     )
     this.arc(centerX, centerY, outerRadius, startAngle, endAngle)
+
     this.lineTo(
       centerX + innerRadius * Math.cos(endAngle),
       centerY + innerRadius * Math.sin(endAngle),
@@ -50,11 +64,50 @@ export class PixiAttributeSegment extends PixiGraphic {
 
     this.stroke(0x000000)
     this.fill(0xbbbb12)
+
+    // === Local Layer ===
+    if (this.localNorm !== undefined) {
+      const localOuterRadius = innerRadius + this.localNorm * arcWidth
+      this.fill({ color: 0xff4444, alpha: 0.25 })
+
+      this.moveTo(
+        centerX + innerRadius * Math.cos(startAngle),
+        centerY + innerRadius * Math.sin(startAngle),
+      )
+      this.lineTo(
+        centerX + localOuterRadius * Math.cos(startAngle),
+        centerY + localOuterRadius * Math.sin(startAngle),
+      )
+      this.arc(centerX, centerY, localOuterRadius, startAngle, endAngle)
+
+      this.lineTo(
+        centerX + innerRadius * Math.cos(endAngle),
+        centerY + innerRadius * Math.sin(endAngle),
+      )
+      this.arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
+      this.closePath()
+
+      this.stroke(0x000000)
+      this.fill(0xff4444)
+    }
   }
+
+  setLocalOverlay(localNorm?: number) {
+    this.localNorm = localNorm
+    this.drawSegment(
+      this.innerRadius,
+      this.maxOuterRadius,
+      this.startAngle,
+      this.endAngle,
+      this.centerX,
+      this.centerY,
+    )
+  }
+
   get attrkey(): string {
     return this.attributeKey
   }
   get normMeanValue(): number {
-    return this.normMean
+    return this.globalNorm
   }
 }

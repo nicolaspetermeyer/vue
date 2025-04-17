@@ -1,9 +1,35 @@
 <script setup lang="ts">
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
+import { Fingerprint, FingerprintFeatureStat } from '@/models/data'
 
 const fingerprintStore = useFingerprintStore()
-const { fingerprints } = storeToRefs(fingerprintStore)
+const { fingerprints, selectedFingerprint } = storeToRefs(fingerprintStore)
+const { setSelectedFingerprint, clearSelectedFingerprint, removeFingerprint } = fingerprintStore
+
+function selectFingerprint(fingerprint: Fingerprint) {
+  if (selectedFingerprint.value?.id === fingerprint.id) {
+    clearSelectedFingerprint()
+    return
+  } else {
+    setSelectedFingerprint(fingerprint)
+  }
+}
+
+function deleteFingerprint(id: string) {
+  removeFingerprint(id)
+
+  if (selectedFingerprint.value?.id === id) {
+    fingerprintStore.clearSelectedFingerprint()
+  }
+}
+
+function topFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 3): string[] {
+  return Object.entries(stats)
+    .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
+    .slice(0, limit)
+    .map(([key]) => key)
+}
 </script>
 
 <template>
@@ -12,9 +38,37 @@ const { fingerprints } = storeToRefs(fingerprintStore)
     <p>(To be defined)</p>
     <div class="flex flex-col gap-2">
       <h2 class="text-xl font-bold">Fingerprints</h2>
-      <ul class="fingerprint-list">
-        <li v-for="fingerprint in fingerprints" :key="fingerprint.id">
-          {{ fingerprint.name }}
+      <ul class="fingerprint-list space-y-2">
+        <li
+          v-for="fingerprint in fingerprints"
+          :key="fingerprint.id"
+          :class="{ selected: selectedFingerprint?.id === fingerprint.id }"
+          @click="selectFingerprint(fingerprint)"
+          class="px-2 py-1 rounded hover:bg-gray-100 cursor-pointer bg-white shadow-sm"
+        >
+          <span>{{ fingerprint.name }}</span>
+
+          <!-- 📊 Summary block -->
+          <div class="text-sm text-gray-600 mt-1">
+            <div>Points: {{ fingerprint.projectedPoints.length }}</div>
+            <div>
+              Top Features:
+              <span
+                v-for="(key, i) in topFeatures(fingerprint.localStats)"
+                :key="key"
+                class="inline-block bg-gray-200 px-1.5 py-0.5 rounded text-xs mr-1"
+              >
+                {{ key }}
+              </span>
+            </div>
+          </div>
+          <button
+            class="text-black-500 hover:text-red-700 text-sm ml-2"
+            @click.stop="deleteFingerprint(fingerprint.id)"
+            title="Delete Fingerprint"
+          >
+            del ❌
+          </button>
         </li>
       </ul>
     </div>
@@ -25,5 +79,10 @@ const { fingerprints } = storeToRefs(fingerprintStore)
 .panel {
   padding: 1rem;
   background: #f1f1f1;
+}
+
+.fingerprint-list li.selected {
+  background-color: #d1e3ff;
+  font-weight: bold;
 }
 </style>

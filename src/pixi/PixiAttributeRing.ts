@@ -32,11 +32,15 @@ export class PixiAttributeRing extends PixiContainer {
     this.applyLayout()
   }
 
-  addAttributeSegment(attributeName: string, stat: FeatureStats) {
+  addAttributeSegment(attributeName: string, globalStat: FeatureStats, localStat?: FeatureStats) {
     // console.log('Adding attribute segment', attributeName)
-    const normalized = stat.normMean ?? 0
-    // console.log('Adding normalized Mean', normalized)
-    const segment = new PixiAttributeSegment(attributeName, normalized)
+    const globalNorm = globalStat.normMean ?? 0
+    const localNorm = localStat?.normMean
+
+    const segment = new PixiAttributeSegment(attributeName, {
+      globalNorm: globalNorm,
+      localNorm: localNorm,
+    })
     this.segments.push(segment)
     this.addChild(segment)
   }
@@ -62,31 +66,43 @@ export class PixiAttributeRing extends PixiContainer {
         this.layoutProps.width / 2,
         this.layoutProps.height / 2,
       )
-      const midAngle = (startAngle + endAngle) / 2
-      const outerRadius =
-        this.innerRadius + segment.normMeanValue * (this.maxOuterRadius - this.innerRadius)
-      const radius = (this.innerRadius + outerRadius) / 2 // midpoint radius
-
-      const labelX = this.layoutProps.width / 2 + radius * Math.cos(midAngle)
-      const labelY = this.layoutProps.height / 2 + radius * Math.sin(midAngle)
-
-      const label = new PixiText({
-        text: segment.attrkey,
-        x: labelX,
-        y: labelY,
-        anchor: 0.5,
-        style: {
-          fontSize: 16,
-          fill: 0x000000,
-          align: 'center',
-        },
-      })
-
-      //label.rotation = midAngle
-      // if (midAngle > Math.PI / 2 && midAngle < (3 * Math.PI) / 2) {
-      //   label.rotation += Math.PI
-      // }
-      this.addChild(label)
+      this.drawLabelForSegment(segment, startAngle, endAngle)
     }
+  }
+
+  public setLocalStats(localStats: Record<string, { normMean?: number }>) {
+    for (const segment of this.segments) {
+      const local = localStats[segment.attrkey]
+      const newNorm = local?.normMean ?? undefined
+      segment.setLocalOverlay(newNorm)
+    }
+  }
+
+  private drawLabelForSegment(segment: PixiAttributeSegment, startAngle: number, endAngle: number) {
+    const midAngle = (startAngle + endAngle) / 2
+    const outerRadius =
+      this.innerRadius + segment.normMeanValue * (this.maxOuterRadius - this.innerRadius)
+    const radius = (this.innerRadius + outerRadius) / 2 // midpoint radius
+
+    const labelX = this.layoutProps.width / 2 + radius * Math.cos(midAngle)
+    const labelY = this.layoutProps.height / 2 + radius * Math.sin(midAngle)
+
+    const label = new PixiText({
+      text: segment.attrkey,
+      x: labelX,
+      y: labelY,
+      anchor: 0.5,
+      style: {
+        fontSize: 16,
+        fill: 0x000000,
+        align: 'center',
+      },
+    })
+
+    //label.rotation = midAngle
+    // if (midAngle > Math.PI / 2 && midAngle < (3 * Math.PI) / 2) {
+    //   label.rotation += Math.PI
+    // }
+    this.addChild(label)
   }
 }

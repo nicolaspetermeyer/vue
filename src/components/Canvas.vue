@@ -6,14 +6,17 @@ import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useDataStore } from '@/stores/dataStore'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 
 const dataStore = useDataStore()
 const { globalStats } = storeToRefs(dataStore)
 
 const projectionStore = useProjectionStore()
-const { rawProjection, projectionMatch, matchedPoints, projectionInstance } =
-  storeToRefs(projectionStore)
+const { projectionMatch, projectionInstance } = storeToRefs(projectionStore)
+
+const fingerprintStore = useFingerprintStore()
+const { selectedFingerprint } = storeToRefs(fingerprintStore)
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -58,6 +61,18 @@ watch(
 
     app.addContainer(projection)
   },
+)
+
+watch(
+  selectedFingerprint,
+  (fp) => {
+    const ring = projectionInstance.value?.attributeRing
+    if (!ring) return
+
+    const localStats = fp?.localStats ?? {}
+    ring.setLocalStats(localStats)
+  },
+  { immediate: true },
 )
 
 onMounted(() => {

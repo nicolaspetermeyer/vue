@@ -5,14 +5,13 @@ import { matchProjection } from '@/utils/matchProjection'
 import { useDataStore } from '@/stores/dataStore'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection } from '@/services/api'
+import { PixiProjection } from '@/pixi/PixiProjection'
 
 export const useProjectionStore = defineStore('projection', () => {
   const rawProjection = ref<ProjectionRow[]>([])
   const projectionMatch = ref<Projection[]>([])
   const matchedPoints = ref<Point[]>([])
-  const projectionInstance = ref<any>(null) // Holds PixiProjection instance
-  const selectedPointIds = ref<number[]>([]) // Holds selected point IDs (to be implemented)
-  const activeProjectionId = ref('global')
+  const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
 
   async function loadProjection() {
     const dataset = useDatasetStore().selectedDatasetName
@@ -26,8 +25,7 @@ export const useProjectionStore = defineStore('projection', () => {
 
       rawProjection.value = response
       projectionMatch.value = matchProjection(rawData, rawProjection.value)
-      console.log('Running Dimensionality Reduction')
-      console.log('Projection data:', projectionMatch.value)
+
       mapToPoint(rawProjection.value)
     } catch {
       return null
@@ -41,19 +39,14 @@ export const useProjectionStore = defineStore('projection', () => {
     }))
   }
 
-  function setProjectionInstance(instance: any) {
+  function setProjectionInstance(instance: PixiProjection) {
     projectionInstance.value = instance
   }
 
   function clearProjectionInstance() {
     if (projectionInstance.value) {
-      projectionInstance.value.destroy({ children: true })
       projectionInstance.value = null
     }
-  }
-
-  function selectPoints(ids: number[]) {
-    selectedPointIds.value = ids
   }
 
   return {
@@ -61,12 +54,10 @@ export const useProjectionStore = defineStore('projection', () => {
     projectionMatch,
     matchedPoints,
     projectionInstance,
-    selectedPointIds,
-    activeProjectionId,
+
     loadProjection,
     mapToPoint,
     setProjectionInstance,
     clearProjectionInstance,
-    selectPoints,
   }
 })

@@ -7,6 +7,8 @@ import { useDataStore } from '@/stores/dataStore'
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //STATE
   const fingerprints = ref<Fingerprint[]>([])
+  const fingerprintCounter = ref(1)
+
   const selectedProjections = ref<Projection[]>([])
   const selectedFingerprint = ref<Fingerprint | null>(null)
   const globalStats = useDataStore().globalStats
@@ -17,16 +19,13 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   }
   function addFingerprint() {
     if (selectedProjections.value.length === 0) return
-    console.log('[addFingerprint] Selected projections:', selectedProjections.value)
 
     const originals = selectedProjections.value.map((p) => p.original)
-    console.log('Selected originals', originals)
-    console.log('Global stats', globalStats.value)
 
     const localStats = calcFingerprintStats(originals)
-    console.log('Computed local stats', localStats)
+
     const id = crypto.randomUUID()
-    const name = `Fingerprint ${fingerprints.value.length + 1}`
+    const name = `Fingerprint ${fingerprintCounter.value++}`
 
     const fingerprint: Fingerprint = {
       id,
