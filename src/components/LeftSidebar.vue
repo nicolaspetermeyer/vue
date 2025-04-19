@@ -13,8 +13,11 @@ const { setSelectedDatasetId } = datasetStore
 
 const dataStore = useDataStore()
 const { loadData } = dataStore
+
 const projectionStore = useProjectionStore()
 const { loadProjection } = projectionStore
+const { projectionMethod } = storeToRefs(projectionStore)
+
 const fingerprintStore = useFingerprintStore()
 const { addFingerprint } = fingerprintStore
 
@@ -39,6 +42,10 @@ onMounted(async () => {})
         <option v-for="dataset in datasetsArray" :key="dataset.id" :value="dataset.id">
           {{ dataset.name }}
         </option>
+      </select>
+      <select class="select max-w-[50%]" v-model="projectionMethod">
+        <option value="pca">PCA</option>
+        <option value="tsne">t-SNE</option>
       </select>
       <button @click="loadProjection()" class="btn btn-xs btn-content">Compute Points</button>
       <button @click="addFingerprint()" class="btn btn-xs btn-content">Create Fingerprint</button>

@@ -4,7 +4,7 @@ import type { ProjectionRow, Point, Projection } from '@/models/data'
 import { matchProjection } from '@/utils/matchProjection'
 import { useDataStore } from '@/stores/dataStore'
 import { useDatasetStore } from '@/stores/datasetStore'
-import { fetchProjection } from '@/services/api'
+import { fetchProjection, fetchProjectionbyMethod } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
 
 export const useProjectionStore = defineStore('projection', () => {
@@ -12,6 +12,7 @@ export const useProjectionStore = defineStore('projection', () => {
   const projectionMatch = ref<Projection[]>([])
   const matchedPoints = ref<Point[]>([])
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
+  const projectionMethod = ref<'pca' | 'tsne'>('pca')
 
   async function loadProjection() {
     const dataset = useDatasetStore().selectedDatasetName
@@ -21,9 +22,8 @@ export const useProjectionStore = defineStore('projection', () => {
       return null
     }
     try {
-      const response: ProjectionRow[] = await fetchProjection(dataset)
+      rawProjection.value = await fetchProjectionbyMethod(dataset, projectionMethod.value)
 
-      rawProjection.value = response
       projectionMatch.value = matchProjection(rawData, rawProjection.value)
 
       mapToPoint(rawProjection.value)
@@ -54,7 +54,7 @@ export const useProjectionStore = defineStore('projection', () => {
     projectionMatch,
     matchedPoints,
     projectionInstance,
-
+    projectionMethod,
     loadProjection,
     mapToPoint,
     setProjectionInstance,
