@@ -91,11 +91,21 @@ D. Fingerprints
         Overlay fingerprint stats on the projection view.
         Aggregate projection points on fingerprint creation.
 
+E. Backend 
+    (Python)
+     Data Loading:
+          Loads data from CSV files and computes global stats (mean, stddev, etc.).
+          Supports loading multiple datasets and switching between them.
+       
+    Backend Caching
+
+    
 
 
 F. Feature Stats Computation 
     Calculates per-feature statistics for any subset of data:
         mean, stddev, normMean, meanDelta, globalMean
+
 
 
 

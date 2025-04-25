@@ -3,12 +3,12 @@ export interface Dataset {
   name: string
 }
 export interface Data {
-  id: string
+  id: number
   [feature: string]: number | string // id + feature fields
 }
 
 export interface ProjectionRow {
-  id: string
+  id: number
   x: number
   y: number
 }
@@ -20,7 +20,7 @@ export interface Projection {
 }
 
 export interface FeatureStats {
-  attributeName: string
+  attributeName: number
   mean: number
   std: number
   min: number

@@ -23,6 +23,7 @@ export const useProjectionStore = defineStore('projection', () => {
     }
     try {
       rawProjection.value = await fetchProjectionbyMethod(dataset, projectionMethod.value)
+      console.log('rawProjection', rawProjection.value)
 
       projectionMatch.value = matchProjection(rawData, rawProjection.value)
 

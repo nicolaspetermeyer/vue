@@ -13,6 +13,8 @@
     Animated transitions between fingerprint comparisons.
     Semantic zooming into nested fingerprints (support recursion).
 
+    Clicking feature highlights the contribution of that feature for all points by hue.
+
 3. Fingerprint Management
     User-driven labeling/tagging of fingerprints.
     Glyph-based fingerprint representation (e.g., SVG or canvas).
@@ -30,11 +32,16 @@
         Maintaining visual traceability and hierarchy.
         zooming into sub-fingerprints for detailed analysis.
 
-4. Usability and UX
+4. Datamanagement
+   
+
+5. Usability and UX
     Annotation and externalization:
         Labels, notes tracking.
+    Projection efficiency, performance (Pixi)
 
-5. Non-Visual Support
+6. Non-Visual Support
+    Variance-based and Value-based contribution
     Advanced fingerprint operations:
         Difference, ratio, intersection/union.
         Dynamic stats configuration (mean, median, etc.).

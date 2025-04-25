@@ -43,7 +43,7 @@ export class PixiAttributeSegment extends PixiGraphic {
     const outerRadius = innerRadius + this.globalNorm * arcWidth
 
     // === Global Layer ===
-    this.fill({ color: 0xbbbb12, alpha: 0.25 })
+    this.fill({ color: 0xbbbb12, alpha: 1 })
 
     this.moveTo(
       centerX + innerRadius * Math.cos(startAngle),
@@ -63,12 +63,12 @@ export class PixiAttributeSegment extends PixiGraphic {
     this.closePath()
 
     this.stroke(0x000000)
-    this.fill(0xbbbb12)
+    this.fill({ color: 0xbbbb12, alpha: 1 })
 
     // === Local Layer ===
     if (this.localNorm !== undefined) {
       const localOuterRadius = innerRadius + this.localNorm * arcWidth
-      this.fill({ color: 0xff4444, alpha: 0.25 })
+      this.fill({ color: 0xff4444, alpha: 0.75 })
 
       this.moveTo(
         centerX + innerRadius * Math.cos(startAngle),
@@ -88,7 +88,7 @@ export class PixiAttributeSegment extends PixiGraphic {
       this.closePath()
 
       this.stroke(0x000000)
-      this.fill(0xff4444)
+      this.fill({ color: 0xff4444, alpha: 0.25 })
     }
   }
 
