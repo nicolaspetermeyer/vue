@@ -29,7 +29,6 @@ export class PixiAttributeSegment extends PixiGraphic {
     centerX: number = 0,
     centerY: number = 0,
   ) {
-    this.clear()
     // Store geometry for redraws
     this.startAngle = startAngle
     this.endAngle = endAngle
@@ -38,57 +37,44 @@ export class PixiAttributeSegment extends PixiGraphic {
     this.centerX = centerX
     this.centerY = centerY
 
+    this.clear()
+
     const arcWidth = maxOuterRadius - innerRadius
 
-    const outerRadius = innerRadius + this.globalNorm * arcWidth
+    const globalOuter = innerRadius + this.globalNorm * arcWidth
+    const localOuter = this.localNorm !== undefined ? innerRadius + this.localNorm * arcWidth : null
 
-    // === Global Layer ===
-    this.fill({ color: 0xbbbb12, alpha: 1 })
-
-    this.moveTo(
-      centerX + innerRadius * Math.cos(startAngle),
-      centerY + innerRadius * Math.sin(startAngle),
-    )
-    this.lineTo(
-      centerX + outerRadius * Math.cos(startAngle),
-      centerY + outerRadius * Math.sin(startAngle),
-    )
-    this.arc(centerX, centerY, outerRadius, startAngle, endAngle)
-
-    this.lineTo(
-      centerX + innerRadius * Math.cos(endAngle),
-      centerY + innerRadius * Math.sin(endAngle),
-    )
-    this.arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
-    this.closePath()
-
-    this.stroke(0x000000)
-    this.fill({ color: 0xbbbb12, alpha: 1 })
-
-    // === Local Layer ===
-    if (this.localNorm !== undefined) {
-      const localOuterRadius = innerRadius + this.localNorm * arcWidth
-      this.fill({ color: 0xff4444, alpha: 0.75 })
-
+    // Draw larger arc first to ensure visibility of smaller layer
+    const drawArc = (outerR: number, fillColor: number, alpha: number) => {
+      this.fill({ color: fillColor, alpha: alpha })
       this.moveTo(
         centerX + innerRadius * Math.cos(startAngle),
         centerY + innerRadius * Math.sin(startAngle),
       )
-      this.lineTo(
-        centerX + localOuterRadius * Math.cos(startAngle),
-        centerY + localOuterRadius * Math.sin(startAngle),
-      )
-      this.arc(centerX, centerY, localOuterRadius, startAngle, endAngle)
-
+      this.lineTo(centerX + outerR * Math.cos(startAngle), centerY + outerR * Math.sin(startAngle))
+      this.arc(centerX, centerY, outerR, startAngle, endAngle)
       this.lineTo(
         centerX + innerRadius * Math.cos(endAngle),
         centerY + innerRadius * Math.sin(endAngle),
       )
       this.arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
       this.closePath()
+      this.stroke(fillColor)
+      this.fill({ color: fillColor, alpha: alpha })
+    }
 
-      this.stroke(0x000000)
-      this.fill({ color: 0xff4444, alpha: 0.25 })
+    const globalColor = 0xffffff // golden yellow
+    const overlayColorSmaller = 0xff4444 // red
+    const overlayColorBigger = 0x44ff44 // green
+
+    if (localOuter !== null && localOuter > globalOuter) {
+      drawArc(localOuter, overlayColorBigger, 0.25)
+      drawArc(globalOuter, globalColor, 1.0)
+    } else {
+      drawArc(globalOuter, globalColor, 1.0)
+      if (localOuter !== null) {
+        drawArc(localOuter, overlayColorSmaller, 0.25)
+      }
     }
   }
 
