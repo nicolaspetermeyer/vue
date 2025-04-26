@@ -3,6 +3,8 @@ import { PixiContainer } from '@/pixi/PixiContainer'
 import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
+import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
+import { HoverManager } from '@/utils/HoverManager'
 
 export class PixiInteractionOverlay extends PixiContainer {
   private hitAreaGraphic: Graphics = new Graphics()
@@ -12,7 +14,9 @@ export class PixiInteractionOverlay extends PixiContainer {
   private dragEnd: PointData | null = null
   private isDragging = false
   private dimred: PixiDimred | null = null
-  private currentHovered: PixiDimredPoint | null = null
+  private attributeRing: PixiAttributeRing | null = null
+
+  private hoverManager: HoverManager
 
   constructor(width: number, height: number) {
     super({
@@ -23,7 +27,8 @@ export class PixiInteractionOverlay extends PixiContainer {
     })
 
     this.sortableChildren = true
-
+    this.zIndex = 1000
+    this.hitAreaGraphic.zIndex = 15
     this.eventMode = 'static'
 
     // Setup hit area for input
@@ -34,30 +39,46 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.addChild(this.hitAreaGraphic)
 
     // Setup brush rectangle
-    this.brushRect.zIndex = 1
+    this.brushRect.zIndex = 20
     this.addChild(this.brushRect)
 
     // Setup tooltip
     this.tooltip = new PixiTooltip()
     this.addChild(this.tooltip)
 
+    // Create hover manager
+    this.hoverManager = new HoverManager(this.tooltip)
+
     // Bind events
     this.hitAreaGraphic.on('pointermove', this.onPointerMove.bind(this))
     this.hitAreaGraphic.on('pointerdown', this.onPointerDown.bind(this))
     this.hitAreaGraphic.on('pointerup', this.onPointerUp.bind(this))
     this.hitAreaGraphic.on('pointerupoutside', this.onPointerUp.bind(this))
-    this.hitAreaGraphic.on('pointerover', this.onPointerOver.bind(this))
     this.hitAreaGraphic.on('pointertap', this.onPointerTap.bind(this))
   }
   setDimred(dimred: PixiDimred) {
+    if (this.dimred) {
+      this.hoverManager.removeProvider(this.dimred)
+    }
     this.dimred = dimred
+    this.dimred.zIndex = 5
+    this.hoverManager.addProvider(dimred)
+  }
+
+  setAttributeRing(attributeRing: PixiAttributeRing) {
+    if (this.attributeRing) {
+      this.hoverManager.removeProvider(this.attributeRing)
+    }
+    this.attributeRing = attributeRing
+    this.attributeRing.zIndex = 10
+    this.hoverManager.addProvider(attributeRing)
   }
 
   private onPointerTap(e: FederatedPointerEvent) {
     if (!this.dimred) return
 
     const global = e.global
-    const point = this.dimred.findPointAtGlobal(global)
+    const point = this.dimred.findElementAtGlobal(global)
 
     if (point) {
       this.dimred.setSelection([point.dimredpoint.id])
@@ -70,50 +91,18 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.dragEnd = null
     this.isDragging = true
 
-    if (this.currentHovered) {
-      this.currentHovered.setHovered(false)
-      this.currentHovered = null
-    }
-    this.tooltip.hide()
+    this.hoverManager.clearHover()
   }
 
   private onPointerMove(e: FederatedPointerEvent) {
     const pos = this.toLocal(e.global)
 
     // Suppress hover and tooltip logic if dragging
-    if (!this.isDragging && this.dimred) {
-      const hovered = this.dimred.findPointAtGlobal(e.global)
-
-      if (hovered !== this.currentHovered) {
-        if (this.currentHovered) {
-          this.currentHovered.setHovered(false)
-          this.tooltip.hide()
-        }
-
-        if (hovered) {
-          hovered.setHovered(true)
-          this.currentHovered = hovered
-
-          const local = this.tooltip.parent.toLocal(e.global)
-          const projection = hovered.dimredpoint
-
-          const featureLines = Object.entries(projection.original).map(([key, value]) => {
-            const valStr = typeof value === 'number' ? value.toFixed(2) : String(value)
-            return `${key}: ${valStr}`
-          })
-
-          const tooltipContent = [`ID: ${projection.id}`, '', 'Features:', ...featureLines].join(
-            '\n',
-          )
-
-          this.tooltip.show(tooltipContent, local.x + 8, local.y - 6)
-        } else {
-          this.currentHovered = null
-        }
-      }
+    if (!this.isDragging) {
+      const handled = this.hoverManager.handlePointerEvent(e)
     }
 
-    // Continue with drag selection logic
+    // drag selection logic
     if (this.isDragging && this.dragStart) {
       this.dragEnd = { x: pos.x, y: pos.y }
       this.drawBrush()
@@ -131,11 +120,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.dragEnd = null
     this.brushRect.clear()
 
-    if (this.currentHovered) {
-      this.currentHovered.setHovered(false)
-      this.currentHovered = null
-    }
-    this.tooltip.hide()
+    this.hoverManager.clearHover()
   }
 
   private drawBrush() {
@@ -173,23 +158,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     const globalH = Math.abs(bottomRight.y - topLeft.y)
 
     return new Rectangle(globalX, globalY, globalW, globalH)
-  }
-
-  private onPointerOver(e: FederatedPointerEvent) {
-    const dimred = this.parent?.children.find((child) => child instanceof PixiDimred) as
-      | PixiDimred
-      | undefined
-    if (!dimred) return
-
-    const hovered = dimred.findPointAtGlobal(e.global)
-
-    if (hovered) {
-      console.log('Pointer at:', e.global.x, e.global.y, hovered)
-
-      this.tooltip.show(`ID: ${hovered}`, hovered.x, hovered.y)
-    } else {
-      this.tooltip.hide()
-    }
   }
 
   getTooltip(): PixiTooltip {

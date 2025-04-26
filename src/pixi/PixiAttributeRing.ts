@@ -1,9 +1,15 @@
 import { PixiContainer } from '@/pixi/PixiContainer'
 import { PixiText } from '@/pixi/PixiText'
+import { PointData } from 'pixi.js'
+import { HoverableProvider } from '@/utils/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { FeatureStats } from '@/models/data'
+import { PixiGraphic } from '@/pixi/PixiGraphic'
 
-export class PixiAttributeRing extends PixiContainer {
+export class PixiAttributeRing
+  extends PixiContainer
+  implements HoverableProvider<PixiAttributeSegment>
+{
   segments: PixiAttributeSegment[] = []
   private innerRadius: number
   private maxOuterRadius: number
@@ -15,6 +21,9 @@ export class PixiAttributeRing extends PixiContainer {
       background: null,
       positionAbsolute: true,
     })
+
+    this.eventMode = 'static'
+    this.sortableChildren = true
 
     // calculate inner radius of the ring
     const base = Math.min(this.layoutProps.width, this.layoutProps.height)
@@ -46,17 +55,16 @@ export class PixiAttributeRing extends PixiContainer {
   }
 
   drawAttributeSegments() {
-    const totalAngle = Math.PI * 2
     const gapAngle = 0.02 // radians per gap
     const segmentCount = this.segments.length
 
-    const slotAngle = totalAngle / segmentCount
+    const anglePerSegment = (Math.PI * 2) / segmentCount
 
     for (let i = 0; i < segmentCount; i++) {
       const segment = this.segments[i]
-      const slotStart = i * slotAngle
+      const slotStart = i * anglePerSegment
       const startAngle = slotStart + gapAngle / 2
-      const endAngle = slotStart + slotAngle - gapAngle / 2
+      const endAngle = slotStart + anglePerSegment - gapAngle / 2
 
       segment.drawSegment(
         this.innerRadius,
@@ -66,6 +74,7 @@ export class PixiAttributeRing extends PixiContainer {
         this.layoutProps.width / 2,
         this.layoutProps.height / 2,
       )
+
       this.drawLabelForSegment(segment, startAngle, endAngle)
     }
   }
@@ -81,7 +90,7 @@ export class PixiAttributeRing extends PixiContainer {
   private drawLabelForSegment(segment: PixiAttributeSegment, startAngle: number, endAngle: number) {
     const midAngle = (startAngle + endAngle) / 2
     const outerRadius =
-      this.innerRadius + segment.normMeanValue * (this.maxOuterRadius - this.innerRadius)
+      this.innerRadius + segment.globValue * (this.maxOuterRadius - this.innerRadius)
     const radius = (this.innerRadius + outerRadius) / 2 // midpoint radius
 
     const labelX = this.layoutProps.width / 2 + radius * Math.cos(midAngle)
@@ -104,5 +113,13 @@ export class PixiAttributeRing extends PixiContainer {
     //   label.rotation += Math.PI
     // }
     this.addChild(label)
+  }
+  findElementAtGlobal(global: PointData): PixiAttributeSegment | null {
+    for (const seg of this.segments) {
+      if (seg.containsGlobal(global)) {
+        return seg
+      }
+    }
+    return null
   }
 }

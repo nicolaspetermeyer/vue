@@ -1,16 +1,20 @@
 import { PixiGraphic } from '@/pixi/PixiGraphic'
+import type { Position } from '@/models/data'
+import { Hoverable } from '@/utils/HoverManager'
 
-export class PixiAttributeSegment extends PixiGraphic {
-  private attributeKey: string
+export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
+  public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
 
-  private startAngle: number = 0
-  private endAngle: number = 0
-  private innerRadius: number = 0
-  private maxOuterRadius: number = 0
-  private centerX: number = 0
-  private centerY: number = 0
+  public startAngle: number = 0
+  public endAngle: number = 0
+  public innerRadius: number = 0
+  public maxOuterRadius: number = 0
+  public centerX: number = 0
+  public centerY: number = 0
+
+  private _isHovered: boolean = false
 
   constructor(attributeKey: string, norm: { globalNorm: number; localNorm?: number }) {
     const { globalNorm, localNorm } = norm
@@ -19,6 +23,9 @@ export class PixiAttributeSegment extends PixiGraphic {
     this.attributeKey = attributeKey
     this.globalNorm = globalNorm
     this.localNorm = localNorm
+
+    this.eventMode = 'static'
+    this.cursor = 'pointer'
   }
 
   drawSegment(
@@ -90,10 +97,93 @@ export class PixiAttributeSegment extends PixiGraphic {
     )
   }
 
+  containsGlobal(global: Position): boolean {
+    const local = this.parent.toLocal(global)
+
+    // Calculate distance from center
+    const dx = local.x - this.centerX
+    const dy = local.y - this.centerY
+    const dist = Math.sqrt(dx * dx + dy * dy)
+
+    // Calculate angle and normalize to [0, 2π]
+    let angle = Math.atan2(dy, dx)
+    if (angle < 0) angle += Math.PI * 2
+
+    // Check if point is within segment bounds
+    const isInside =
+      dist >= this.innerRadius &&
+      dist <= this.maxOuterRadius &&
+      angle >= this.startAngle &&
+      angle <= this.endAngle
+
+    console.log(`AttributeSegment hit test for "${this.attributeKey}":`, {
+      global,
+      local,
+
+      dx,
+      dy,
+      dist,
+      angle: (angle * 180) / Math.PI, // Convert to degrees for readability
+      bounds: {
+        radial: [this.innerRadius, this.maxOuterRadius],
+        angular: [(this.startAngle * 180) / Math.PI, (this.endAngle * 180) / Math.PI],
+      },
+      isInside,
+    })
+
+    return isInside
+  }
+
+  setHovered(hovered: boolean) {
+    if (this._isHovered !== hovered) {
+      this._isHovered = hovered
+      // Redraw with highlight effect if hovered
+      this.drawSegment(
+        this.innerRadius,
+        this.maxOuterRadius,
+        this.startAngle,
+        this.endAngle,
+        this.centerX,
+        this.centerY,
+      )
+
+      // Add visual feedback when hovered
+      if (hovered) {
+        this.alpha = 0.8 // Slightly dim when hovered
+      } else {
+        this.alpha = 1.0
+      }
+    }
+  }
+
+  getTooltipContent(): string {
+    const tooltipLines = [
+      `Feature: ${this.attributeKey}`,
+      `Global Mean: ${this.globalNorm.toFixed(2)}`,
+    ]
+
+    if (this.localNorm !== undefined) {
+      tooltipLines.push(`Local Mean: ${this.localNorm.toFixed(2)}`)
+    }
+
+    const delta = this.localNorm !== undefined ? this.localNorm - this.globalNorm : null
+    if (delta !== null && Math.abs(delta) > 0.01) {
+      tooltipLines.push(`Δ: ${delta.toFixed(2)}`)
+    }
+
+    return tooltipLines.join('\n')
+  }
+
+  getId(): string {
+    return this.attributeKey
+  }
   get attrkey(): string {
     return this.attributeKey
   }
-  get normMeanValue(): number {
+  get globValue(): number {
     return this.globalNorm
+  }
+  get locValue(): number | undefined {
+    return this.localNorm
   }
 }

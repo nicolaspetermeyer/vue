@@ -1,12 +1,10 @@
 import { PixiContainer } from '@/pixi/PixiContainer'
-import { PixiText } from '@/pixi/PixiText'
-import { PixiGraphic } from '@/pixi/PixiGraphic'
+import { HoverableProvider } from '@/utils/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
-import type { Fingerprint, Projection, Position } from '@/models/data'
-import { PixiTooltip } from '@/pixi/InteractionOverlays/PixiTooltip'
+import type { Projection } from '@/models/data'
 import { Rectangle, PointData } from 'pixi.js'
 
-export class PixiDimred extends PixiContainer {
+export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
 
   constructor(projectedPoints: Projection[]) {
@@ -83,7 +81,7 @@ export class PixiDimred extends PixiContainer {
     return selected
   }
 
-  findPointAtGlobal(global: PointData): PixiDimredPoint | null {
+  findElementAtGlobal(global: PointData): PixiDimredPoint | null {
     const local = this.toLocal(global)
 
     for (const point of this.pixiDimredPoints.values()) {

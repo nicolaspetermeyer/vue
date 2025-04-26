@@ -1,9 +1,9 @@
-import { PixiContainer } from '@/pixi/PixiContainer'
 import { PixiGraphic } from '@/pixi/PixiGraphic'
-import type { Fingerprint, Projection } from '@/models/data'
+import type { Projection } from '@/models/data'
+import { Hoverable } from '@/utils/HoverManager'
 
 // TODO: use Sprite instead of Graphic for performance
-export class PixiDimredPoint extends PixiGraphic {
+export class PixiDimredPoint extends PixiGraphic implements Hoverable {
   private projectedPoint: Projection
   private _isSelected: boolean = false
   private _isHovered: boolean = false
@@ -52,11 +52,19 @@ export class PixiDimredPoint extends PixiGraphic {
     return this._isSelected
   }
 
-  setHovered(hovered: boolean) {
-    if (this._isHovered !== hovered) {
-      this._isHovered = hovered
-      this.drawPoint(5)
-    }
+  setHovered(state: boolean): void {
+    this._isHovered = state
+    this.drawPoint(5)
+  }
+
+  getTooltipContent(): string {
+    const projection = this.dimredpoint
+    const featureLines = Object.entries(projection.original).map(([key, value]) => {
+      const valStr = typeof value === 'number' ? value.toFixed(2) : String(value)
+      return `${key}: ${valStr}`
+    })
+
+    return [`ID: ${projection.id}`, '', 'Features:', ...featureLines].join('\n')
   }
 
   get dimredpoint(): Projection {
@@ -64,5 +72,8 @@ export class PixiDimredPoint extends PixiGraphic {
       throw new Error('DimredPoint accessed before initialization')
     }
     return this.projectedPoint
+  }
+  getId(): number {
+    return this.dimredpoint.id
   }
 }
