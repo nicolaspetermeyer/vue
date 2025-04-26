@@ -1,4 +1,4 @@
-import { PixiContainer } from '@/pixi/PixiContainer'
+import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { Rectangle } from 'pixi.js'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'

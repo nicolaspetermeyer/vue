@@ -1,4 +1,4 @@
-import { PixiContainer } from '@/pixi/PixiContainer'
+import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { HoverableProvider } from '@/utils/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import type { Projection } from '@/models/data'

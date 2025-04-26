@@ -18,7 +18,6 @@ export const useDataStore = defineStore('data', () => {
     try {
       const [raw, stat] = await Promise.all([fetchRawData(dataset), fetchStats(dataset)])
       rawData.value = raw
-
       globalStats.value = stat
     } catch {
       return null

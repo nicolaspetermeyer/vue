@@ -1,10 +1,9 @@
-import { PixiContainer } from '@/pixi/PixiContainer'
-import { PixiText } from '@/pixi/PixiText'
+import { PixiContainer } from '@/pixi/Base/PixiContainer'
+import { PixiText } from '@/pixi/Base/PixiText'
 import { PointData } from 'pixi.js'
 import { HoverableProvider } from '@/utils/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { FeatureStats } from '@/models/data'
-import { PixiGraphic } from '@/pixi/PixiGraphic'
 
 export class PixiAttributeRing
   extends PixiContainer

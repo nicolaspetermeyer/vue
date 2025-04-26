@@ -1,4 +1,4 @@
-import { PixiGraphic } from '@/pixi/PixiGraphic'
+import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
 import type { Position } from '@/models/data'
 import { Hoverable } from '@/utils/HoverManager'
 
@@ -99,7 +99,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
   containsGlobal(global: Position): boolean {
     const local = this.parent.toLocal(global)
-
     // Calculate distance from center
     const dx = local.x - this.centerX
     const dy = local.y - this.centerY

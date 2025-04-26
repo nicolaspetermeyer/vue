@@ -1,4 +1,4 @@
-import { PixiGraphic } from '@/pixi/PixiGraphic'
+import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
 import type { Projection } from '@/models/data'
 import { Hoverable } from '@/utils/HoverManager'
 

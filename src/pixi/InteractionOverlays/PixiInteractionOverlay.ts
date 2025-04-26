@@ -1,5 +1,5 @@
 import { Graphics, FederatedPointerEvent, Rectangle, PointData } from 'pixi.js'
-import { PixiContainer } from '@/pixi/PixiContainer'
+import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'

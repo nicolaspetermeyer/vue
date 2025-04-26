@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PixiApp } from '@/pixi/PixiApp'
+import { PixiApp } from '@/pixi/Base/PixiApp'
 import { Application } from 'pixi.js'
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
