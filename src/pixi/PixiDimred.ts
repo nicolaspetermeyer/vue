@@ -28,7 +28,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     const id = projectedPoints.id
     if (!this.pixiDimredPoints.has(id)) {
       const newPoint = new PixiDimredPoint(projectedPoints)
-      //console.log('PixiDimred -- Adding new point', id, newPoint)
       this.pixiDimredPoints.set(id, newPoint)
 
       this.addChild(newPoint)
@@ -37,7 +36,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   }
 
   updatePoints(projectedPoints: Projection[]) {
-    console.log('PixiDimred -- Updating projectedPoints')
     if (projectedPoints.length === 0) return
 
     // Compute DR space bounding box

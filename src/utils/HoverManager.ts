@@ -39,7 +39,6 @@ export class HoverManager {
     let newHovered: Hoverable | null = null
 
     for (const provider of this.providers) {
-      console.log(`Checking ${provider.constructor.name}`)
       const element = provider.findElementAtGlobal(e.global)
       if (element) {
         newHovered = element
@@ -74,8 +73,5 @@ export class HoverManager {
       this.currentHovered = null
       this.tooltip.hide()
     }
-  }
-  get prov() {
-    return this.providers
   }
 }

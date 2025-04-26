@@ -42,7 +42,6 @@ export class PixiAttributeRing
   }
 
   addAttributeSegment(attributeName: string, globalStat: FeatureStats, localStat?: FeatureStats) {
-    // console.log('Adding attribute segment', attributeName)
     const globalNorm = globalStat.normMean ?? 0
     const localNorm = localStat?.normMean
 

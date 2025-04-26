@@ -5,8 +5,8 @@ import { Hoverable } from '@/utils/HoverManager'
 // TODO: use Sprite instead of Graphic for performance
 export class PixiDimredPoint extends PixiGraphic implements Hoverable {
   private projectedPoint: Projection
-  private _isSelected: boolean = false
-  private _isHovered: boolean = false
+  private Selected: boolean = false
+  private Hovered: boolean = false
 
   constructor(projectedPoint: Projection) {
     super()
@@ -20,40 +20,37 @@ export class PixiDimredPoint extends PixiGraphic implements Hoverable {
   }
 
   drawPoint(radius: number) {
-    //console.log('Drawing point', this.point.item_id, radius)
     this.clear()
     this.circle(0, 0, radius)
 
-    const fillColor = this._isSelected
+    const fillColor = this.Selected
       ? 0x0077ff
-      : this._isHovered
+      : this.Hovered
         ? 0xffaa00 // <-- hover highlight color
         : 0xbb0000
 
     this.fill(fillColor)
-    this.setStrokeStyle({ width: 1, color: this._isSelected ? 0xffffff : 0x000000 })
+    this.setStrokeStyle({ width: 1, color: this.Selected ? 0xffffff : 0x000000 })
     this.stroke()
   }
 
   updatePosition(size: number) {
-    //console.log('Updating position', this.projectedPoint)
-
     this.position.set(this.projectedPoint.pos.x * size, this.projectedPoint.pos.y * size)
   }
 
   setSelected(selected: boolean) {
-    if (this._isSelected !== selected) {
-      this._isSelected = selected
+    if (this.Selected !== selected) {
+      this.Selected = selected
       this.drawPoint(5)
     }
   }
 
   isSelected(): boolean {
-    return this._isSelected
+    return this.Selected
   }
 
   setHovered(state: boolean): void {
-    this._isHovered = state
+    this.Hovered = state
     this.drawPoint(5)
   }
 

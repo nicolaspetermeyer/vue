@@ -4,7 +4,6 @@ import { useDataStore } from '@/stores/dataStore'
 export function calcFingerprintStats(
   selection: Data[], // array of selected data points
 ): Record<string, FingerprintFeatureStat> {
-  console.log('Computing fingerprint stats', selection)
   const dataStore = useDataStore()
   const globalStats = dataStore.globalStats
   const result: Record<string, FingerprintFeatureStat> = {}

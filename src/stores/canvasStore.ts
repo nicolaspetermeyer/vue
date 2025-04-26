@@ -21,7 +21,6 @@ export const useCanvasStore = defineStore('canvas', () => {
   function setCanvasSize(width: number, height: number) {
     canvasWidth.value = width
     canvasHeight.value = height
-    console.log('Canvas size set to:', width, height)
   }
 
   function setCanvasScale(scale: number) {

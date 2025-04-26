@@ -14,7 +14,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public centerX: number = 0
   public centerY: number = 0
 
-  private _isHovered: boolean = false
+  private isHovered: boolean = false
 
   constructor(attributeKey: string, norm: { globalNorm: number; localNorm?: number }) {
     const { globalNorm, localNorm } = norm
@@ -116,27 +116,12 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       angle >= this.startAngle &&
       angle <= this.endAngle
 
-    console.log(`AttributeSegment hit test for "${this.attributeKey}":`, {
-      global,
-      local,
-
-      dx,
-      dy,
-      dist,
-      angle: (angle * 180) / Math.PI, // Convert to degrees for readability
-      bounds: {
-        radial: [this.innerRadius, this.maxOuterRadius],
-        angular: [(this.startAngle * 180) / Math.PI, (this.endAngle * 180) / Math.PI],
-      },
-      isInside,
-    })
-
     return isInside
   }
 
   setHovered(hovered: boolean) {
-    if (this._isHovered !== hovered) {
-      this._isHovered = hovered
+    if (this.isHovered !== hovered) {
+      this.isHovered = hovered
       // Redraw with highlight effect if hovered
       this.drawSegment(
         this.innerRadius,

@@ -35,8 +35,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     }
 
     fingerprints.value.push(fingerprint)
-    console.log('Added fingerprint', fingerprint)
-    console.log('Fingerprints', fingerprints.value)
   }
   function removeFingerprint(id: string) {
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
