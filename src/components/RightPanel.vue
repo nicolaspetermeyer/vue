@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
-import { Fingerprint, FingerprintFeatureStat } from '@/models/data'
+import { Fingerprint } from '@/models/data'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints, selectedFingerprint } = storeToRefs(fingerprintStore)
-const { setSelectedFingerprint, clearSelectedFingerprint, removeFingerprint } = fingerprintStore
+const { setSelectedFingerprint, clearSelectedFingerprint, removeFingerprint, getTopFeatures } =
+  fingerprintStore
 
 function selectFingerprint(fingerprint: Fingerprint) {
   if (selectedFingerprint.value?.id === fingerprint.id) {
@@ -22,13 +23,6 @@ function deleteFingerprint(id: string) {
   if (selectedFingerprint.value?.id === id) {
     fingerprintStore.clearSelectedFingerprint()
   }
-}
-
-function topFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 3): string[] {
-  return Object.entries(stats)
-    .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
-    .slice(0, limit)
-    .map(([key]) => key)
 }
 </script>
 
@@ -54,7 +48,7 @@ function topFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 3): 
             <div>
               Top Features:
               <span
-                v-for="(key, i) in topFeatures(fingerprint.localStats)"
+                v-for="(key, i) in getTopFeatures(fingerprint.localStats)"
                 :key="key"
                 class="inline-block bg-gray-200 px-1.5 py-0.5 rounded text-xs mr-1"
               >

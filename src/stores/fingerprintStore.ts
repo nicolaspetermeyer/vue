@@ -48,6 +48,13 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   function clearSelectedFingerprint() {
     selectedFingerprint.value = null
   }
+
+  function getTopFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 3): string[] {
+    return Object.entries(stats)
+      .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
+      .slice(0, limit)
+      .map(([key]) => key)
+  }
   return {
     fingerprints,
     selectedFingerprint,
@@ -57,5 +64,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     clearFingerprints,
     setSelectedFingerprint,
     clearSelectedFingerprint,
+    getTopFeatures,
   }
 })
