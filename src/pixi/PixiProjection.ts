@@ -19,7 +19,7 @@ export class PixiProjection extends PixiContainer {
       layout: 'flexColumn',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 0x265738,
+      background: 0x8a9493,
     })
 
     const fingerprintStore = useFingerprintStore()

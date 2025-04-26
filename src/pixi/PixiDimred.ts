@@ -11,7 +11,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     super({
       width: 460,
       height: 460,
-      background: 0xe1f7e9,
+      background: 0x8a9493,
       padding: { top: 0, right: 0, bottom: 0, left: 0 },
       positionAbsolute: true,
       layout: 'flexColumn',
