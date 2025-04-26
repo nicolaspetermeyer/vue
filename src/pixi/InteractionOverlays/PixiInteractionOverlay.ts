@@ -99,7 +99,7 @@ export class PixiInteractionOverlay extends PixiContainer {
 
     // Suppress hover and tooltip logic if dragging
     if (!this.isDragging) {
-      const handled = this.hoverManager.handlePointerEvent(e)
+      this.hoverManager.handlePointerEvent(e)
     }
 
     // drag selection logic

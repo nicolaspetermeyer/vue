@@ -6,6 +6,7 @@ import { Rectangle, PointData } from 'pixi.js'
 
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
+  private highlightedFingerprintPoints: Set<number> = new Set()
 
   constructor(projectedPoints: Projection[]) {
     super({
@@ -62,6 +63,10 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     normPoints.forEach((point: Projection) => {
       const pixiDimredPoint = this.getOrCreatePoint(point)
       pixiDimredPoint.updatePosition(this.layoutProps.width)
+
+      if (this.highlightedFingerprintPoints.has(point.id)) {
+        pixiDimredPoint.setInFingerprint(true)
+      }
     })
     // Force redraw by toggling tint (otherwise for strange reasons no rerendering happens)
     this.tint ^= 1
@@ -108,5 +113,15 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
       }
     })
     return selected
+  }
+  // highlight points that belong to the selected fingerprint
+  highlightFingerprintPoints(pointIds: number[]) {
+    // Update the set of highlighted fingerprint points
+    this.highlightedFingerprintPoints = new Set(pointIds)
+
+    // Update each point's highlight state
+    this.pixiDimredPoints.forEach((point, id) => {
+      point.setInFingerprint(this.highlightedFingerprintPoints.has(id))
+    })
   }
 }

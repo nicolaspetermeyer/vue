@@ -7,6 +7,7 @@ export class PixiDimredPoint extends PixiGraphic implements Hoverable {
   private projectedPoint: Projection
   private Selected: boolean = false
   private Hovered: boolean = false
+  private inFingerprint: boolean = false
 
   constructor(projectedPoint: Projection) {
     super()
@@ -23,14 +24,25 @@ export class PixiDimredPoint extends PixiGraphic implements Hoverable {
     this.clear()
     this.circle(0, 0, radius)
 
-    const fillColor = this.Selected
-      ? 0x0077ff
-      : this.Hovered
-        ? 0xffaa00 // <-- hover highlight color
-        : 0xbb0000
+    let fillColor: number
+
+    if (this.Selected) {
+      fillColor = 0x0077ff // Blue for selected
+    } else if (this.inFingerprint) {
+      fillColor = 0x00ff77 // Green for fingerprint
+    } else if (this.Hovered) {
+      fillColor = 0xffaa00 // Orange for hovered
+    } else {
+      fillColor = 0xaaaaaa // Grey for normal
+    }
 
     this.fill(fillColor)
-    this.setStrokeStyle({ width: 1, color: this.Selected ? 0xffffff : 0x000000 })
+    // Add a highlight stroke for fingerprint points that are not selected
+    if (this.inFingerprint && !this.Selected) {
+      this.setStrokeStyle({ width: 1.5, color: 0x00ff77, alpha: 0.8 })
+    } else {
+      this.setStrokeStyle({ width: 1, color: this.Selected ? 0xffffff : 0x000000 })
+    }
     this.stroke()
   }
 
@@ -47,6 +59,18 @@ export class PixiDimredPoint extends PixiGraphic implements Hoverable {
 
   isSelected(): boolean {
     return this.Selected
+  }
+
+  // New method to mark a point as part of the selected fingerprint
+  setInFingerprint(inFingerprint: boolean) {
+    if (this.inFingerprint !== inFingerprint) {
+      this.inFingerprint = inFingerprint
+      this.drawPoint(5)
+    }
+  }
+
+  isInFingerprint(): boolean {
+    return this.inFingerprint
   }
 
   setHovered(state: boolean): void {

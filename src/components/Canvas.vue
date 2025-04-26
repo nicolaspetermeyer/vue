@@ -67,10 +67,24 @@ watch(
   selectedFingerprint,
   (fp) => {
     const ring = projectionInstance.value?.attributeRing
-    if (!ring) return
+    if (ring) {
+      // Update the attribute ring with local stats if fingerprint is selected
+      if (fp) {
+        ring.setLocalStats(fp?.localStats)
 
-    const localStats = fp?.localStats ?? {}
-    ring.setLocalStats(localStats)
+        // Get the points from the selected fingerprint to highlight
+        const fingerprintPointIds = fp.projectedPoints.map((point) => point.id)
+
+        // Highlight the points in the dimred visualization
+        if (projectionInstance.value?.dimred) {
+          projectionInstance.value.dimred.highlightFingerprintPoints(fingerprintPointIds)
+        }
+      } else {
+        ring.setLocalStats({})
+        // Clear the highlight if no fingerprint is selected
+        projectionInstance.value?.dimred?.highlightFingerprintPoints([])
+      }
+    }
   },
   { immediate: true },
 )
