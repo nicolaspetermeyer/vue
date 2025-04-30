@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import LeftSidebar from '@/components/LeftSidebar.vue'
-import MainCanvasView from '@/components/MainCanvasView.vue'
 import Canvas from '@/components/Canvas.vue'
 import RightPanel from '@/components/RightPanel.vue'
 

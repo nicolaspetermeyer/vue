@@ -6,14 +6,24 @@
         Visual difference encodings (e.g., delta or variance).
         Comparative overlays (difference fingerprints).
     Zoom and pan interaction for large projections.
+
+    BellCurve in Attribute segment
+    Add a small glyph in the center of the attribute ring to show the value of the selected attribute for the selected point.
+    Encoding what color for what? How to compare two fingerprints?
     
 
 2. Interaction Features
     Lasso selection (freeform instead of rectangular).
+    Point selection with ctrl+click.
+    Extend Point selection with attribute ring highlight.
+    Drawing a line to split the projection canvas into two halves.
     Animated transitions between fingerprint comparisons.
     Semantic zooming into nested fingerprints (support recursion).
 
     Clicking feature highlights the contribution of that feature for all points by hue.
+
+    Hovering an attribute in the attribute ring highlights the attribute in the small glyph
+
 
 3. Fingerprint Management
     User-driven labeling/tagging of fingerprints.
@@ -55,6 +65,7 @@ Optional if time allows:
         Mini-map or breadcrumbs for nested fingerprints.
     Guided onboarding/tutorial mode
     DR quality metric overlays (trustworthiness, continuity).
+    Depending on where the attribute Segment is clicked, highlight the corresponding points in the quartile.
 
 
 

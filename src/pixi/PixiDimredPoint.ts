@@ -1,6 +1,7 @@
 import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
 import type { Projection } from '@/models/data'
 import { Hoverable } from '@/utils/HoverManager'
+import { useProjectionStore } from '@/stores/projectionStore'
 
 // TODO: use Sprite instead of Graphic for performance
 export class PixiDimredPoint extends PixiGraphic implements Hoverable {
@@ -80,12 +81,32 @@ export class PixiDimredPoint extends PixiGraphic implements Hoverable {
 
   getTooltipContent(): string {
     const projection = this.dimredpoint
-    const featureLines = Object.entries(projection.original).map(([key, value]) => {
-      const valStr = typeof value === 'number' ? value.toFixed(2) : String(value)
-      return `${key}: ${valStr}`
-    })
+    const pointId = String(projection.id)
 
-    return [`ID: ${projection.id}`, '', 'Features:', ...featureLines].join('\n')
+    const featureLines = Object.entries(projection.original)
+      .filter(([key]) => key.toLowerCase() !== 'id')
+      .map(([key, value]) => {
+        const valStr = typeof value === 'number' ? value.toFixed(2) : String(value)
+        return `${key}: ${valStr}`
+      })
+    // Get feature ranking information
+    const projectionStore = useProjectionStore()
+    const topFeatures = projectionStore.getTopFeaturesForPoint(pointId, 3)
+
+    let rankingSection = ''
+    if (topFeatures.length > 0) {
+      rankingSection =
+        '\n\nTop Features by Importance:\n' +
+        topFeatures
+          .map((f, idx) => {
+            // Format score as percentage with 1 decimal place
+            const scorePercent = (f.score * 100).toFixed(1)
+            return `${idx + 1}. ${f.name} (${scorePercent}%)`
+          })
+          .join('\n')
+    }
+
+    return [`ID: ${projection.id}`, '', 'Features:', ...featureLines, rankingSection].join('\n')
   }
 
   get dimredpoint(): Projection {

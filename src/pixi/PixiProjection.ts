@@ -28,6 +28,10 @@ export class PixiProjection extends PixiContainer {
     this.dimred = new PixiDimred(projectedPoints)
     this.addChild(this.dimred)
 
+    // Set initial position (center the dimred)
+    this.dimred.position.x = (this.width - this.dimred.width) / 2
+    this.dimred.position.y = (this.height - this.dimred.height) / 2
+
     // The attribute ring
     this.attributeRing = new PixiAttributeRing(globalStats)
     this.addChild(this.attributeRing)
@@ -47,5 +51,9 @@ export class PixiProjection extends PixiContainer {
     this.addChild(this.interactionOverlay)
 
     this.applyLayout()
+  }
+  // method to reset the view (zoom and position)
+  resetView() {
+    this.interactionOverlay.resetView()
   }
 }

@@ -53,3 +53,9 @@ export type Fingerprint = {
   projectedPoints: Projection[]
   localStats: Record<string, FingerprintFeatureStat> // stats over the selected data points
 }
+
+export type FeatureRanking = {
+  id: string
+  features: string[]
+  scores: number[]
+}

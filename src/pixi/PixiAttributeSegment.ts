@@ -1,11 +1,12 @@
 import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
-import type { Position } from '@/models/data'
+import type { FeatureStats, Position } from '@/models/data'
 import { Hoverable } from '@/utils/HoverManager'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
+  private stats: FeatureStats
 
   public startAngle: number = 0
   public endAngle: number = 0
@@ -16,13 +17,18 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
   private isHovered: boolean = false
 
-  constructor(attributeKey: string, norm: { globalNorm: number; localNorm?: number }) {
+  constructor(
+    attributeKey: string,
+    norm: { globalNorm: number; localNorm?: number },
+    stats: FeatureStats,
+  ) {
     const { globalNorm, localNorm } = norm
     super()
 
     this.attributeKey = attributeKey
     this.globalNorm = globalNorm
     this.localNorm = localNorm
+    this.stats = stats
 
     this.eventMode = 'static'
     this.cursor = 'pointer'
@@ -143,7 +149,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   getTooltipContent(): string {
     const tooltipLines = [
       `Feature: ${this.attributeKey}`,
-      `Global Mean: ${this.globalNorm.toFixed(2)}`,
+      `Global Norm Mean: ${this.globalNorm.toFixed(2)}`,
+      `Global Mean: ${this.stats.mean.toFixed(2)}`,
+      `Global Std: ${this.stats.std.toFixed(2)}`,
+      `Global Min: ${this.stats.min.toFixed(2)}`,
+      `Global Max: ${this.stats.max.toFixed(2)}`,
     ]
 
     if (this.localNorm !== undefined) {

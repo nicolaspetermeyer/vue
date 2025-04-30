@@ -1,4 +1,4 @@
-import { Graphics, FederatedPointerEvent, Rectangle, PointData } from 'pixi.js'
+import { Graphics, FederatedPointerEvent, FederatedWheelEvent, Rectangle, PointData } from 'pixi.js'
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
@@ -15,6 +15,13 @@ export class PixiInteractionOverlay extends PixiContainer {
   private isDragging = false
   private dimred: PixiDimred | null = null
   private attributeRing: PixiAttributeRing | null = null
+
+  // pan and zoom variables
+  private isPanning = false
+  private lastPanPosition: PointData | null = null
+  private minZoom = 0.1
+  private maxZoom = 10
+  private zoomSpeed = 0.1
 
   private hoverManager: HoverManager
 
@@ -55,6 +62,9 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.hitAreaGraphic.on('pointerup', this.onPointerUp.bind(this))
     this.hitAreaGraphic.on('pointerupoutside', this.onPointerUp.bind(this))
     this.hitAreaGraphic.on('pointertap', this.onPointerTap.bind(this))
+
+    // Add wheel event listener for zoom
+    this.hitAreaGraphic.on('wheel', this.onWheel.bind(this))
   }
   setDimred(dimred: PixiDimred) {
     if (this.dimred) {
@@ -87,18 +97,39 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   private onPointerDown(e: FederatedPointerEvent) {
     const pos = this.toLocal(e.global)
-    this.dragStart = { x: pos.x, y: pos.y }
-    this.dragEnd = null
-    this.isDragging = true
+    // Detect if we should pan or drag-select
+    if (e.buttons === 1 && e.ctrlKey) {
+      // Left button + ctrl for panning
+      this.isPanning = true
+      this.lastPanPosition = { x: pos.x, y: pos.y }
+      this.cursor = 'grab'
+    } else {
+      // Normal drag behavior (selection)
+      this.dragStart = { x: pos.x, y: pos.y }
+      this.dragEnd = null
+      this.isDragging = true
 
-    this.hoverManager.clearHover()
+      this.hoverManager.clearHover()
+    }
   }
 
   private onPointerMove(e: FederatedPointerEvent) {
     const pos = this.toLocal(e.global)
 
-    // Suppress hover and tooltip logic if dragging
-    if (!this.isDragging) {
+    // Handle panning
+    if (this.isPanning && this.lastPanPosition && this.dimred) {
+      const dx = pos.x - this.lastPanPosition.x
+      const dy = pos.y - this.lastPanPosition.y
+
+      this.dimred.position.x += dx
+      this.dimred.position.y += dy
+
+      this.lastPanPosition = { x: pos.x, y: pos.y }
+      return
+    }
+
+    // Standard hover behavior
+    if (!this.isPanning && !this.isDragging) {
       this.hoverManager.handlePointerEvent(e)
     }
 
@@ -110,7 +141,11 @@ export class PixiInteractionOverlay extends PixiContainer {
   }
 
   private onPointerUp(e: FederatedPointerEvent) {
-    if (this.isDragging && this.dragStart && this.dragEnd) {
+    if (this.isPanning) {
+      // End panning mode
+      this.isPanning = false
+      this.lastPanPosition = null
+    } else if (this.isDragging && this.dragStart && this.dragEnd) {
       const bounds = this.getBrushBounds()
       this.emit('brushend', bounds)
     }
@@ -146,7 +181,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     const y = Math.min(this.dragStart.y, this.dragEnd.y)
     const w = Math.abs(this.dragEnd.x - this.dragStart.x)
     const h = Math.abs(this.dragEnd.y - this.dragStart.y)
-    const localRect = new Rectangle(x, y, w, h)
 
     // Transform the top-left and bottom-right corners to global space
     const topLeft = this.toGlobal({ x: x, y: y })
@@ -162,5 +196,60 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   getTooltip(): PixiTooltip {
     return this.tooltip
+  }
+
+  // handle zooming with the mouse wheel
+  private onWheel(e: FederatedWheelEvent) {
+    if (!this.dimred) return
+
+    e.preventDefault?.()
+
+    // Get the mouse position relative to the stage
+    const mousePosition = this.toLocal(e.global)
+
+    // Calculate the position before zoom
+    const worldPos = {
+      x: (mousePosition.x - this.dimred.position.x) / this.dimred.scale.x,
+      y: (mousePosition.y - this.dimred.position.y) / this.dimred.scale.y,
+    }
+
+    // Calculate zoom factor based on wheel delta
+    // Normalize wheel delta across browsers
+    const delta = e.deltaY > 0 ? -1 : 1
+    const zoomFactor = 1 + delta * this.zoomSpeed
+
+    // Calculate new scale, clamped to min/max
+    const newScaleX = Math.max(
+      this.minZoom,
+      Math.min(this.maxZoom, this.dimred.scale.x * zoomFactor),
+    )
+    const newScaleY = Math.max(
+      this.minZoom,
+      Math.min(this.maxZoom, this.dimred.scale.y * zoomFactor),
+    )
+
+    // Apply new scale
+    this.dimred.scale.set(newScaleX, newScaleY)
+
+    // Calculate the position after zoom
+    const newPos = {
+      x: mousePosition.x - worldPos.x * newScaleX,
+      y: mousePosition.y - worldPos.y * newScaleY,
+    }
+
+    // Apply position to zoom around mouse position
+    this.dimred.position.set(newPos.x, newPos.y)
+  }
+
+  // Method to reset zoom and pan
+  resetView() {
+    if (!this.dimred) return
+
+    // Reset scale and position
+    this.dimred.scale.set(1, 1)
+
+    // Center the dimred in the container
+    this.dimred.position.x = (this.width - this.dimred.width) / 2
+    this.dimred.position.y = (this.height - this.dimred.height) / 2
   }
 }

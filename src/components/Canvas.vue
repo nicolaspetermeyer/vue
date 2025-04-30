@@ -22,6 +22,14 @@ const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let app: PixiApp | null = null
 
+const currentProjection = ref<PixiProjection | null>(null)
+
+function resetView() {
+  if (currentProjection.value) {
+    currentProjection.value.resetView()
+  }
+}
+
 function update() {
   console.log('update')
 }
@@ -47,6 +55,7 @@ async function init() {
 
   // Add to root
   app.addContainer(projection)
+  currentProjection.value = projection
 }
 
 watch(
@@ -60,6 +69,7 @@ watch(
     projectionStore.setProjectionInstance(projection)
 
     app.addContainer(projection)
+    currentProjection.value = projection
   },
 )
 
@@ -113,7 +123,28 @@ function debug() {
     <button @click="debug" class="btn btn-xs btn-content absolute bottom-0 right-0">
       Log Pixi Scene Graph
     </button>
+    <div class="canvas-controls">
+      <button @click="resetView" class="reset-view-btn">Reset View</button>
+    </div>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.canvas-controls {
+  position: absolute;
+  bottom: 25px;
+  right: 10px;
+  z-index: 100;
+}
+.reset-view-btn {
+  background-color: #555;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.reset-view-btn:hover {
+  background-color: #777;
+}
+</style>
