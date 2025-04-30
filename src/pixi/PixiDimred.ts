@@ -114,6 +114,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     })
     return selected
   }
+
   // highlight points that belong to the selected fingerprint
   highlightFingerprintPoints(pointIds: number[]) {
     // Update the set of highlighted fingerprint points
@@ -123,5 +124,12 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.pixiDimredPoints.forEach((point, id) => {
       point.setInFingerprint(this.highlightedFingerprintPoints.has(id))
     })
+  }
+
+  updateAllPointScales(inverseScale: number) {
+    // Iterate through all points and update their scale
+    for (const [id, point] of this.pixiDimredPoints) {
+      point.updatePointScale(inverseScale)
+    }
   }
 }

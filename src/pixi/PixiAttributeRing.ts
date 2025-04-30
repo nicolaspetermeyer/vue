@@ -15,8 +15,8 @@ export class PixiAttributeRing
 
   constructor(globalStats: Record<string, FeatureStats>) {
     super({
-      width: 700,
-      height: 700,
+      width: 1000,
+      height: 1000,
       background: null,
       positionAbsolute: true,
     })
@@ -26,8 +26,8 @@ export class PixiAttributeRing
 
     // calculate inner radius of the ring
     const base = Math.min(this.layoutProps.width, this.layoutProps.height)
-    this.innerRadius = base / 2 - 25
-    this.maxOuterRadius = base / 1.2
+    this.innerRadius = base * 0.35
+    this.maxOuterRadius = base * 0.6
 
     // Add attribute segments
     for (const attributeName of Object.keys(globalStats)) {
@@ -117,6 +117,7 @@ export class PixiAttributeRing
     // }
     this.addChild(label)
   }
+
   findElementAtGlobal(global: PointData): PixiAttributeSegment | null {
     for (const seg of this.segments) {
       if (seg.containsGlobal(global)) {

@@ -1,5 +1,5 @@
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
-import { Rectangle } from 'pixi.js'
+import { Rectangle, Graphics } from 'pixi.js'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Projection } from '@/models/data'
@@ -10,6 +10,7 @@ export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
   attributeRing: PixiAttributeRing
   interactionOverlay: PixiInteractionOverlay
+  private maskGraphic: Graphics
 
   constructor(projectedPoints: Projection[], globalStats: Record<string, FeatureStats>) {
     super({
@@ -24,17 +25,20 @@ export class PixiProjection extends PixiContainer {
 
     const fingerprintStore = useFingerprintStore()
 
-    // The Dimred projection space for the items
-    this.dimred = new PixiDimred(projectedPoints)
-    this.addChild(this.dimred)
-
-    // Set initial position (center the dimred)
-    this.dimred.position.x = (this.width - this.dimred.width) / 2
-    this.dimred.position.y = (this.height - this.dimred.height) / 2
-
     // The attribute ring
     this.attributeRing = new PixiAttributeRing(globalStats)
     this.addChild(this.attributeRing)
+
+    this.maskGraphic = new Graphics()
+    this.maskGraphic.fill({ color: 0xffffff })
+    this.maskGraphic.circle(349, 349, 349) // Circle slightly smaller than inner radius of the attribute ring
+    this.maskGraphic.fill({ color: 0xffffff })
+    this.addChild(this.maskGraphic)
+
+    // The Dimred projection space for the items
+    this.dimred = new PixiDimred(projectedPoints)
+    this.dimred.mask = this.maskGraphic
+    this.addChild(this.dimred)
 
     // Interaction overlay (transparent, non-blocking)
     this.interactionOverlay = new PixiInteractionOverlay(this.width, this.height)
@@ -52,6 +56,7 @@ export class PixiProjection extends PixiContainer {
 
     this.applyLayout()
   }
+
   // method to reset the view (zoom and position)
   resetView() {
     this.interactionOverlay.resetView()

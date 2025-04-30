@@ -23,6 +23,14 @@ export class PixiInteractionOverlay extends PixiContainer {
   private maxZoom = 10
   private zoomSpeed = 0.1
 
+  // Track viewport transform
+  private viewportScale: number = 1
+  private viewportX = 0
+  private viewportY = 0
+
+  // Keep track of base point size for constant-size rendering
+  private basePointSize = 5
+
   private hoverManager: HoverManager
 
   constructor(width: number, height: number) {
@@ -73,6 +81,9 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.dimred = dimred
     this.dimred.zIndex = 5
     this.hoverManager.addProvider(dimred)
+
+    // Initialize viewport position to center the dimred
+    this.resetView()
   }
 
   setAttributeRing(attributeRing: PixiAttributeRing) {
@@ -82,6 +93,22 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.attributeRing = attributeRing
     this.attributeRing.zIndex = 10
     this.hoverManager.addProvider(attributeRing)
+  }
+
+  // Transform a screen position to world position
+  private screenToWorld(screenPos: PointData): PointData {
+    return {
+      x: (screenPos.x - this.viewportX) / this.viewportScale,
+      y: (screenPos.y - this.viewportY) / this.viewportScale,
+    }
+  }
+
+  // Transform a world position to screen position
+  private worldToScreen(worldPos: PointData): PointData {
+    return {
+      x: worldPos.x * this.viewportScale + this.viewportX,
+      y: worldPos.y * this.viewportScale + this.viewportY,
+    }
   }
 
   private onPointerTap(e: FederatedPointerEvent) {
@@ -121,8 +148,12 @@ export class PixiInteractionOverlay extends PixiContainer {
       const dx = pos.x - this.lastPanPosition.x
       const dy = pos.y - this.lastPanPosition.y
 
-      this.dimred.position.x += dx
-      this.dimred.position.y += dy
+      // Update viewport position directly
+      this.viewportX += dx
+      this.viewportY += dy
+
+      // Apply transforms to the dimred container
+      this.applyViewportTransform() // todo
 
       this.lastPanPosition = { x: pos.x, y: pos.y }
       return
@@ -205,51 +236,75 @@ export class PixiInteractionOverlay extends PixiContainer {
     e.preventDefault?.()
 
     // Get the mouse position relative to the stage
-    const mousePosition = this.toLocal(e.global)
+    const mouseScreenPos = this.toLocal(e.global)
+
+    // Convert screen position to world position before zoom
+    const mouseWorldPos = this.screenToWorld(mouseScreenPos)
 
     // Calculate the position before zoom
     const worldPos = {
-      x: (mousePosition.x - this.dimred.position.x) / this.dimred.scale.x,
-      y: (mousePosition.y - this.dimred.position.y) / this.dimred.scale.y,
+      x: (mouseScreenPos.x - this.dimred.position.x) / this.dimred.scale.x,
+      y: (mouseScreenPos.y - this.dimred.position.y) / this.dimred.scale.y,
     }
 
     // Calculate zoom factor based on wheel delta
-    // Normalize wheel delta across browsers
     const delta = e.deltaY > 0 ? -1 : 1
     const zoomFactor = 1 + delta * this.zoomSpeed
 
     // Calculate new scale, clamped to min/max
-    const newScaleX = Math.max(
-      this.minZoom,
-      Math.min(this.maxZoom, this.dimred.scale.x * zoomFactor),
-    )
-    const newScaleY = Math.max(
-      this.minZoom,
-      Math.min(this.maxZoom, this.dimred.scale.y * zoomFactor),
-    )
+    const newScale = Math.max(this.minZoom, Math.min(this.maxZoom, this.viewportScale * zoomFactor))
 
-    // Apply new scale
-    this.dimred.scale.set(newScaleX, newScaleY)
+    // Calculate how much the scale is changing
+    const scaleFactor = newScale / this.viewportScale
 
-    // Calculate the position after zoom
-    const newPos = {
-      x: mousePosition.x - worldPos.x * newScaleX,
-      y: mousePosition.y - worldPos.y * newScaleY,
-    }
+    // Update the viewport scale
+    this.viewportScale = newScale
 
-    // Apply position to zoom around mouse position
-    this.dimred.position.set(newPos.x, newPos.y)
+    // Adjust viewport position to keep mouse position fixed
+    this.viewportX = mouseScreenPos.x - mouseWorldPos.x * newScale
+    this.viewportY = mouseScreenPos.y - mouseWorldPos.y * newScale
+
+    // Apply transforms to the dimred container and points
+    this.applyViewportTransform()
+  }
+
+  // Apply viewport transforms to the dimred container and all points
+  private applyViewportTransform() {
+    if (!this.dimred) return
+
+    // Position the dimred container based on viewport transform
+    this.dimred.position.set(this.viewportX, this.viewportY)
+
+    // Scale the container based on viewport scale
+    this.dimred.scale.set(this.viewportScale, this.viewportScale)
+
+    // Adjust point scales to maintain constant visual size
+    this.updatePointSizes()
+  }
+
+  // Update all point scales to maintain constant visual size
+  private updatePointSizes() {
+    if (!this.dimred) return
+
+    // Calculate inverse scale to maintain constant visual size
+    const inverseScale = 1 / this.viewportScale
+
+    // Apply to all points in the dimred container
+    this.dimred.updateAllPointScales(inverseScale)
   }
 
   // Method to reset zoom and pan
   resetView() {
     if (!this.dimred) return
 
-    // Reset scale and position
-    this.dimred.scale.set(1, 1)
+    // Reset viewport state
+    this.viewportScale = 1
 
     // Center the dimred in the container
-    this.dimred.position.x = (this.width - this.dimred.width) / 2
-    this.dimred.position.y = (this.height - this.dimred.height) / 2
+    this.viewportX = 270 // tested value dont know why
+    this.viewportY = 270
+
+    // Apply transforms
+    this.applyViewportTransform()
   }
 }
