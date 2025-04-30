@@ -25,11 +25,12 @@ export const useProjectionStore = defineStore('projection', () => {
     }
     try {
       rawProjection.value = await fetchProjection(dataset, projectionMethod.value)
+      console.log('rawProjection', rawProjection.value)
 
       projectionMatch.value = matchProjection(rawData, rawProjection.value)
-
+      console.log('projectionMatch', projectionMatch.value)
       mapToPoint(rawProjection.value)
-      await loadFeatureRanking()
+      // await loadFeatureRanking()
     } catch {
       return null
     }

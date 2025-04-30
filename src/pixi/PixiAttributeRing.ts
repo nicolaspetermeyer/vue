@@ -58,9 +58,13 @@ export class PixiAttributeRing
   }
 
   drawAttributeSegments() {
-    const gapAngle = 0.02 // radians per gap
+    let gapAngle = 0.02
     const segmentCount = this.segments.length
-
+    if (segmentCount < 50) {
+      gapAngle = 0.02
+    } else {
+      gapAngle = 0.005
+    }
     const anglePerSegment = (Math.PI * 2) / segmentCount
 
     for (let i = 0; i < segmentCount; i++) {
@@ -77,8 +81,9 @@ export class PixiAttributeRing
         this.layoutProps.width / 2,
         this.layoutProps.height / 2,
       )
-
-      this.drawLabelForSegment(segment, startAngle, endAngle)
+      if (segmentCount < 20) {
+        this.drawLabelForSegment(segment, startAngle, endAngle)
+      }
     }
   }
 
