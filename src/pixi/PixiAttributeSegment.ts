@@ -76,15 +76,15 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.fill({ color: fillColor, alpha: alpha })
     }
 
-    const globalColor = 0xffffff // golden yellow
+    const globalColor = 0xffffff // white
     const overlayColorSmaller = 0xff4444 // red
     const overlayColorBigger = 0x44ff44 // green
 
     if (localOuter !== null && localOuter > globalOuter) {
       drawArc(localOuter, overlayColorBigger, 0.25)
-      drawArc(globalOuter, globalColor, 1.0)
+      drawArc(globalOuter, globalColor, 0.2)
     } else {
-      drawArc(globalOuter, globalColor, 1.0)
+      drawArc(globalOuter, globalColor, 0.2)
       if (localOuter !== null) {
         drawArc(localOuter, overlayColorSmaller, 0.25)
       }

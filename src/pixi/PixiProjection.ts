@@ -10,7 +10,7 @@ export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
   attributeRing: PixiAttributeRing
   interactionOverlay: PixiInteractionOverlay
-  private maskGraphic: Graphics
+  maskGraphic: Graphics
 
   constructor(projectedPoints: Projection[], globalStats: Record<string, FeatureStats>) {
     super({

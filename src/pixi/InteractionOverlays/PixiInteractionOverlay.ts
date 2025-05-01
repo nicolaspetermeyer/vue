@@ -15,6 +15,7 @@ export class PixiInteractionOverlay extends PixiContainer {
   private isDragging = false
   private dimred: PixiDimred | null = null
   private attributeRing: PixiAttributeRing | null = null
+  private maskBoundary: Graphics | null = null
 
   // pan and zoom variables
   private isPanning = false
@@ -84,6 +85,10 @@ export class PixiInteractionOverlay extends PixiContainer {
 
     // Initialize viewport position to center the dimred
     this.resetView()
+
+    if (this.dimred.mask instanceof Graphics) {
+      this.maskBoundary = this.dimred.mask as Graphics
+    }
   }
 
   setAttributeRing(attributeRing: PixiAttributeRing) {
@@ -100,14 +105,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     return {
       x: (screenPos.x - this.viewportX) / this.viewportScale,
       y: (screenPos.y - this.viewportY) / this.viewportScale,
-    }
-  }
-
-  // Transform a world position to screen position
-  private worldToScreen(worldPos: PointData): PointData {
-    return {
-      x: worldPos.x * this.viewportScale + this.viewportX,
-      y: worldPos.y * this.viewportScale + this.viewportY,
     }
   }
 
@@ -148,12 +145,10 @@ export class PixiInteractionOverlay extends PixiContainer {
       const dx = pos.x - this.lastPanPosition.x
       const dy = pos.y - this.lastPanPosition.y
 
-      // Update viewport position directly
+      // Update viewport position
       this.viewportX += dx
       this.viewportY += dy
-
-      // Apply transforms to the dimred container
-      this.applyViewportTransform() // todo
+      this.applyViewportTransform()
 
       this.lastPanPosition = { x: pos.x, y: pos.y }
       return
@@ -161,7 +156,9 @@ export class PixiInteractionOverlay extends PixiContainer {
 
     // Standard hover behavior
     if (!this.isPanning && !this.isDragging) {
-      this.hoverManager.handlePointerEvent(e)
+      if (this.isPointInMask(e.global)) this.hoverManager.handlePointerEvent(e)
+    } else {
+      this.hoverManager.clearHover()
     }
 
     // drag selection logic
@@ -169,6 +166,22 @@ export class PixiInteractionOverlay extends PixiContainer {
       this.dragEnd = { x: pos.x, y: pos.y }
       this.drawBrush()
     }
+  }
+
+  private isPointInMask(point: PointData): boolean {
+    if (!this.maskBoundary) return true
+
+    const localPoint = this.maskBoundary.toLocal(point)
+
+    const centerX = 349
+    const centerY = 349
+    const radius = 349
+
+    const dx = localPoint.x - centerX
+    const dy = localPoint.y - centerY
+    const distanceSquared = dx * dx + dy * dy
+
+    return distanceSquared <= radius * radius
   }
 
   private onPointerUp(e: FederatedPointerEvent) {
@@ -229,7 +242,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     return this.tooltip
   }
 
-  // handle zooming with the mouse wheel
   private onWheel(e: FederatedWheelEvent) {
     if (!this.dimred) return
 
@@ -257,39 +269,30 @@ export class PixiInteractionOverlay extends PixiContainer {
     // Calculate how much the scale is changing
     const scaleFactor = newScale / this.viewportScale
 
-    // Update the viewport scale
     this.viewportScale = newScale
 
     // Adjust viewport position to keep mouse position fixed
     this.viewportX = mouseScreenPos.x - mouseWorldPos.x * newScale
     this.viewportY = mouseScreenPos.y - mouseWorldPos.y * newScale
 
-    // Apply transforms to the dimred container and points
     this.applyViewportTransform()
   }
 
-  // Apply viewport transforms to the dimred container and all points
   private applyViewportTransform() {
     if (!this.dimred) return
 
-    // Position the dimred container based on viewport transform
+    // Position and scale the dimred container based on viewport transform
     this.dimred.position.set(this.viewportX, this.viewportY)
-
-    // Scale the container based on viewport scale
     this.dimred.scale.set(this.viewportScale, this.viewportScale)
-
-    // Adjust point scales to maintain constant visual size
     this.updatePointSizes()
   }
 
-  // Update all point scales to maintain constant visual size
   private updatePointSizes() {
     if (!this.dimred) return
 
     // Calculate inverse scale to maintain constant visual size
     const inverseScale = 1 / this.viewportScale
 
-    // Apply to all points in the dimred container
     this.dimred.updateAllPointScales(inverseScale)
   }
 
@@ -301,7 +304,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.viewportScale = 1
 
     // Center the dimred in the container
-    this.viewportX = 270 // tested value dont know why
+    this.viewportX = 270
     this.viewportY = 270
 
     // Apply transforms
