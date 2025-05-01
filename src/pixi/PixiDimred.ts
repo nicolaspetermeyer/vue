@@ -21,8 +21,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     })
 
     this.updatePoints(projectedPoints)
-
-    // this.applyLayout()
   }
 
   getOrCreatePoint(projectedPoints: Projection): PixiDimredPoint {
@@ -93,7 +91,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
       const distance = Math.sqrt(dx * dx + dy * dy)
 
       // Match within a reasonable hover radius (e.g. 5 px)
-      if (distance <= 5) return point
+      if (distance <= 1) return point
     }
     return null
   }
@@ -117,17 +115,14 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
 
   // highlight points that belong to the selected fingerprint
   highlightFingerprintPoints(pointIds: number[]) {
-    // Update the set of highlighted fingerprint points
     this.highlightedFingerprintPoints = new Set(pointIds)
-
-    // Update each point's highlight state
     this.pixiDimredPoints.forEach((point, id) => {
       point.setInFingerprint(this.highlightedFingerprintPoints.has(id))
     })
   }
 
+  //  update scale
   updateAllPointScales(inverseScale: number) {
-    // Iterate through all points and update their scale
     for (const [id, point] of this.pixiDimredPoints) {
       point.updatePointScale(inverseScale)
     }
