@@ -7,6 +7,7 @@ import { Rectangle, PointData } from 'pixi.js'
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
   private highlightedFingerprintPoints: Set<number> = new Set()
+  private detectRadius: number = 5
 
   constructor(projectedPoints: Projection[]) {
     super({
@@ -91,7 +92,8 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
       const distance = Math.sqrt(dx * dx + dy * dy)
 
       // Match within a reasonable hover radius (e.g. 5 px)
-      if (distance <= 1) return point
+
+      if (distance <= this.detectRadius) return point
     }
     return null
   }
@@ -126,5 +128,10 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     for (const [id, point] of this.pixiDimredPoints) {
       point.updatePointScale(inverseScale)
     }
+  }
+
+  setDetectRadius(radius: number) {
+    this.detectRadius = radius
+    console.log('Detect radius set to:', this.detectRadius)
   }
 }

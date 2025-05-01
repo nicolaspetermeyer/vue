@@ -1,8 +1,15 @@
-import { Graphics, FederatedPointerEvent, FederatedWheelEvent, Rectangle, PointData } from 'pixi.js'
+import {
+  Graphics,
+  FederatedPointerEvent,
+  FederatedWheelEvent,
+  Rectangle,
+  PointData,
+  Circle,
+} from 'pixi.js'
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
-import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
+
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import { HoverManager } from '@/utils/HoverManager'
 
@@ -88,6 +95,7 @@ export class PixiInteractionOverlay extends PixiContainer {
 
     if (this.dimred.mask instanceof Graphics) {
       this.maskBoundary = this.dimred.mask as Graphics
+      this.maskBoundary.hitArea = new Circle(350, 350, 350)
     }
   }
 
@@ -210,13 +218,11 @@ export class PixiInteractionOverlay extends PixiContainer {
     const w = Math.abs(this.dragEnd.x - this.dragStart.x)
     const h = Math.abs(this.dragEnd.y - this.dragStart.y)
 
-    this.brushRect.clear()
     this.brushRect
-      .setStrokeStyle({ width: 1, color: 0xff00ff, alpha: 1 })
-      .fill({ color: 0xff00ff, alpha: 0.2 })
+      .clear()
       .rect(x, y, w, h)
-      .fill()
-      .stroke()
+      .fill({ color: 0xff00ff, alpha: 0.2 })
+      .stroke({ width: 1, color: 0xff00ff })
   }
 
   private getBrushBounds(): Rectangle {
@@ -266,15 +272,13 @@ export class PixiInteractionOverlay extends PixiContainer {
     // Calculate new scale, clamped to min/max
     const newScale = Math.max(this.minZoom, Math.min(this.maxZoom, this.viewportScale * zoomFactor))
 
-    // Calculate how much the scale is changing
-    const scaleFactor = newScale / this.viewportScale
-
     this.viewportScale = newScale
 
     // Adjust viewport position to keep mouse position fixed
     this.viewportX = mouseScreenPos.x - mouseWorldPos.x * newScale
     this.viewportY = mouseScreenPos.y - mouseWorldPos.y * newScale
-
+    // Adjust hover detection radius to scale with zoom
+    this.dimred.setDetectRadius((5 * 1) / this.viewportScale)
     this.applyViewportTransform()
   }
 
@@ -284,6 +288,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     // Position and scale the dimred container based on viewport transform
     this.dimred.position.set(this.viewportX, this.viewportY)
     this.dimred.scale.set(this.viewportScale, this.viewportScale)
+
     this.updatePointSizes()
   }
 

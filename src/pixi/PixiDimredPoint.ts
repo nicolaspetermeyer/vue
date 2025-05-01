@@ -38,7 +38,6 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
   private Selected: boolean = false
   private Hovered: boolean = false
   private inFingerprint: boolean = false
-  private baseRadius: number = 5
 
   constructor(projectedPoint: Projection) {
     // Create with default texture
