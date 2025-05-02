@@ -12,7 +12,7 @@ export interface HoverableProvider<T extends Hoverable> {
 }
 
 export class HoverManager {
-  private currentHovered: Hoverable | null = null
+  public currentHovered: Hoverable | null = null
   private tooltip: PixiTooltip
   private providers: HoverableProvider<Hoverable>[] = []
 
@@ -33,7 +33,10 @@ export class HoverManager {
 
   handlePointerEvent(e: FederatedPointerEvent) {
     // Skip hover logic if no providers
-    if (this.providers.length === 0) return false
+
+    if (this.providers.length === 0) {
+      return false
+    }
 
     // Try to find a hoverable element from any provider
     let newHovered: Hoverable | null = null

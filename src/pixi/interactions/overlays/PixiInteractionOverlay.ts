@@ -18,7 +18,6 @@ import {
 } from '@/pixi/interactions/controllers/SelectionController'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
-import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
 import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
 
 export class PixiInteractionOverlay extends PixiContainer {
@@ -42,7 +41,7 @@ export class PixiInteractionOverlay extends PixiContainer {
 
     this.sortableChildren = true
     this.zIndex = 1000
-    this.hitAreaGraphic.zIndex = 15
+
     this.eventMode = 'static'
 
     // Setup hit area for input
@@ -79,7 +78,6 @@ export class PixiInteractionOverlay extends PixiContainer {
       this.hoverManager.removeProvider(this.dimred)
     }
     this.dimred = dimred
-    this.dimred.zIndex = 5
     this.hoverManager.addProvider(dimred)
 
     this.viewportController = new ViewportController(
@@ -99,7 +97,6 @@ export class PixiInteractionOverlay extends PixiContainer {
       this.hoverManager.removeProvider(this.attributeRing)
     }
     this.attributeRing = attributeRing
-    this.attributeRing.zIndex = 10
     this.hoverManager.addProvider(attributeRing)
   }
 
@@ -125,14 +122,12 @@ export class PixiInteractionOverlay extends PixiContainer {
     const segmentStatsMap = new Map(
       this.attributeRing.segments.filter((seg) => seg.stats).map((seg) => [seg.attrkey, seg.stats]),
     )
-    console.log('segmentStatsMap', segmentStatsMap)
 
     const normalizedValues = StatisticalNormalizer.normalizeAttributes(
       attributes,
       segmentStatsMap,
       'minmax',
     )
-    console.log('normalizedValues', normalizedValues)
 
     const localStats: Record<string, { normMean?: number }> = {}
     for (const [key, value] of Object.entries(normalizedValues)) {
@@ -185,9 +180,8 @@ export class PixiInteractionOverlay extends PixiContainer {
     }
 
     // Standard hover behavior (when not panning or selecting)
-    if (this.isPointInMask(e.global)) {
-      this.hoverManager.handlePointerEvent(e)
-    }
+
+    this.hoverManager.handlePointerEvent(e)
   }
 
   private isPointInMask(point: PointData): boolean {
