@@ -3,8 +3,7 @@ import { Rectangle, Graphics } from 'pixi.js'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Projection } from '@/models/data'
-import { PixiInteractionOverlay } from '@/pixi/InteractionOverlays/PixiInteractionOverlay'
-import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
@@ -22,8 +21,6 @@ export class PixiProjection extends PixiContainer {
       alignItems: 'center',
       background: 0x8a9493,
     })
-
-    const fingerprintStore = useFingerprintStore()
 
     // The attribute ring
     this.attributeRing = new PixiAttributeRing(globalStats)
@@ -45,13 +42,6 @@ export class PixiProjection extends PixiContainer {
     this.interactionOverlay.setDimred(this.dimred)
     this.interactionOverlay.setAttributeRing(this.attributeRing)
 
-    // Bind brush event
-    this.interactionOverlay.on('brushend', (bounds: Rectangle) => {
-      const selected = this.dimred.getPointsInBounds(bounds)
-      this.dimred.setSelection(selected)
-
-      fingerprintStore.setSelectedProjections(this.dimred.getSelectedProjections())
-    })
     this.addChild(this.interactionOverlay)
 
     this.applyLayout()

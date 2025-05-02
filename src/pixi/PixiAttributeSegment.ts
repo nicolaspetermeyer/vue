@@ -57,7 +57,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     const globalOuter = innerRadius + this.globalNorm * arcWidth
     const localOuter = this.localNorm !== undefined ? innerRadius + this.localNorm * arcWidth : null
 
-    // Draw larger arc first to ensure visibility of smaller layer
     const drawArc = (outerR: number, fillColor: number, alpha: number) => {
       this.fill({ color: fillColor, alpha: alpha })
       this.moveTo(

@@ -3,6 +3,7 @@ import { PixiSprite } from './Base/PixiSprite'
 import type { Projection } from '@/models/data'
 import { Hoverable } from '@/utils/HoverManager'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { Colors } from '@/Themes/Colors'
 
 // Create a static texture cache
 const textureCache = new Map<number, Texture>()
@@ -53,13 +54,13 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
 
   updateVisualState() {
     if (this.Selected) {
-      this.tint = 0x0077ff // Blue for selected
+      this.tint = Colors.SELECTED
     } else if (this.inFingerprint) {
-      this.tint = 0x00ff77 // Green for fingerprint
+      this.tint = Colors.IN_FINGERPRINT
     } else if (this.Hovered) {
-      this.tint = 0xffaa00 // Orange for hovered
+      this.tint = Colors.HOVERED
     } else {
-      this.tint = 0x000000 // Grey for normal
+      this.tint = Colors.NORMAL
     }
 
     if (this.inFingerprint && !this.Selected) {

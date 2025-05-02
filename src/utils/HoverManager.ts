@@ -1,5 +1,5 @@
 import { FederatedPointerEvent, PointData } from 'pixi.js'
-import { PixiTooltip } from '@/pixi/InteractionOverlays/PixiTooltip'
+import { PixiTooltip } from '@/pixi/interactions/overlays/PixiTooltip'
 
 export interface Hoverable {
   setHovered(hovered: boolean): void

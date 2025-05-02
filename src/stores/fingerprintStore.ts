@@ -22,8 +22,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //ACTIONS
   function setSelectedProjections(points: Projection[]) {
     selectedProjections.value = points
+    console.log('Selected projections:', selectedProjections.value)
   }
   function addFingerprint() {
+    console.log('Adding fingerprint')
     if (selectedProjections.value.length === 0) return
 
     const originals = selectedProjections.value.map((p) => p.original)

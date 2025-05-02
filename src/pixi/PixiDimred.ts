@@ -3,11 +3,13 @@ import { HoverableProvider } from '@/utils/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import type { Projection } from '@/models/data'
 import { Rectangle, PointData } from 'pixi.js'
+import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
+import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransformer'
 
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
   private highlightedFingerprintPoints: Set<number> = new Set()
-  private detectRadius: number = 5
+  public detectRadius: number = 5
 
   constructor(projectedPoints: Projection[]) {
     super({
@@ -38,49 +40,30 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   updatePoints(projectedPoints: Projection[]) {
     if (projectedPoints.length === 0) return
 
-    // Compute DR space bounding box
-    const xs = projectedPoints.map((p) => p.pos.x)
-    const ys = projectedPoints.map((p) => p.pos.y)
+    const normPoints = ProjectionTransformer.normalizeToSize(
+      projectedPoints,
+      this.width,
+      this.height,
+    )
 
-    const minX = Math.min(...xs)
-    const maxX = Math.max(...xs)
-    const minY = Math.min(...ys)
-    const maxY = Math.max(...ys)
-
-    const rangeX = maxX - minX || 1
-    const rangeY = maxY - minY || 1
-
-    // Normalize projectedPoints to [0, 1] range, then scale to layout size
-    const normPoints = projectedPoints.map((p) => ({
-      ...p,
-      pos: {
-        x: (p.pos.x - minX) / rangeX,
-        y: (p.pos.y - minY) / rangeY,
-      },
-    }))
-
-    normPoints.forEach((point: Projection) => {
+    normPoints.forEach((point) => {
       const pixiDimredPoint = this.getOrCreatePoint(point)
-      pixiDimredPoint.updatePosition(this.layoutProps.width)
+      pixiDimredPoint.dimredpoint.pos = point.pos
+      pixiDimredPoint.position.set(point.pos.x, point.pos.y)
+      pixiDimredPoint.updateVisualState()
 
       if (this.highlightedFingerprintPoints.has(point.id)) {
         pixiDimredPoint.setInFingerprint(true)
       }
     })
-    // Force redraw by toggling tint (otherwise for strange reasons no rerendering happens)
-    this.tint ^= 1
-    this.tint ^= 1
   }
 
   getPointsInBounds(bounds: Rectangle): number[] {
-    const selected: number[] = []
-    this.pixiDimredPoints.forEach((point, id) => {
-      const global = point.getGlobalPosition()
-      if (bounds.contains(global.x, global.y)) {
-        selected.push(id)
-      }
-    })
-    return selected
+    const localBounds = CoordinateTransformer.globalToLocalRect(bounds, this)
+
+    return Array.from(this.pixiDimredPoints.values())
+      .filter((point) => localBounds.contains(point.x, point.y))
+      .map((point) => point.getId())
   }
 
   findElementAtGlobal(global: PointData): PixiDimredPoint | null {
@@ -132,6 +115,5 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
 
   setDetectRadius(radius: number) {
     this.detectRadius = radius
-    console.log('Detect radius set to:', this.detectRadius)
   }
 }

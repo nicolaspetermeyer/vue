@@ -1,5 +1,5 @@
 import { Graphics, Text } from 'pixi.js'
-import { PixiContainer } from '../Base/PixiContainer'
+import { PixiContainer } from '../../Base/PixiContainer'
 
 export class PixiTooltip extends PixiContainer {
   private bg: Graphics
