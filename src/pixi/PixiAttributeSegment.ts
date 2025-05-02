@@ -6,7 +6,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
-  private stats: FeatureStats
+  public stats: FeatureStats
 
   public startAngle: number = 0
   public endAngle: number = 0

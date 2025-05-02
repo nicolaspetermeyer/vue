@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { calcFingerprintStats } from '@/utils/calcFingerprintStats'
+import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
 import type { Fingerprint, Projection, FeatureStats, FingerprintFeatureStat } from '@/models/data'
 import { ref, computed } from 'vue'
 import { useDataStore } from '@/stores/dataStore'

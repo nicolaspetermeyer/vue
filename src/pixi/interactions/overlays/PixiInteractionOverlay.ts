@@ -17,7 +17,8 @@ import {
   SelectionEvents,
 } from '@/pixi/interactions/controllers/SelectionController'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
-import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransformer'
+import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
+import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
 
 export class PixiInteractionOverlay extends PixiContainer {
   private hitAreaGraphic: Graphics = new Graphics()
@@ -107,6 +108,54 @@ export class PixiInteractionOverlay extends PixiContainer {
     }
   }
 
+  private updateAttributeRingForPoint(point: PixiDimredPoint | null) {
+    if (!this.attributeRing || !point) return
+
+    const projection = point.dimredpoint
+    const localStats: Record<string, { normMean?: number }> = {}
+
+    // Get all global stats from the attribute ring segments to access min/max for normalization
+    const segments = this.attributeRing.segments
+    const segmentMap = new Map(segments.map((seg) => [seg.attrkey, seg]))
+
+    // Process all features
+    for (const [key, value] of Object.entries(projection.original)) {
+      if (key.toLowerCase() === 'id') continue
+
+      if (typeof value === 'number') {
+        const segment = segmentMap.get(key)
+
+        if (segment) {
+          // Get the global stats for this attribute from the segment
+          const stats = segment.stats || {
+            min: 0,
+            max: 1,
+            mean: 0.5,
+            std: 0.1,
+          }
+
+          // Normalize the value using the same logic as for fingerprints
+          let normVal: number
+
+          if (stats.max === stats.min) {
+            // Avoid division by zero
+            normVal = 0.5
+          } else {
+            // Min-max normalization
+            normVal = (value - stats.min) / (stats.max - stats.min)
+            // Clamp to [0,1]
+            normVal = Math.max(0, Math.min(1, normVal))
+          }
+
+          localStats[key] = { normMean: normVal }
+        }
+      }
+    }
+    console.log('Local stats:', localStats)
+    // Update the attribute ring with normalized values
+    this.attributeRing.setLocalStats(localStats)
+  }
+
   // Handle tap selection events from the selection controller
   private onTapSelect(position: PointData) {
     if (!this.dimred) return
@@ -115,6 +164,10 @@ export class PixiInteractionOverlay extends PixiContainer {
     if (point) {
       this.dimred.setSelection([point.dimredpoint.id])
       this.fingerprintStore.setSelectedProjections(this.dimred.getSelectedProjections())
+      this.updateAttributeRingForPoint(point)
+    } else if (this.attributeRing) {
+      // Clear the attribute ring if no point is selected
+      this.attributeRing.setLocalStats({})
     }
   }
 
