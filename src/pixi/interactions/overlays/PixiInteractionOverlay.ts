@@ -19,6 +19,7 @@ import {
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
+import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
 
 export class PixiInteractionOverlay extends PixiContainer {
   private hitAreaGraphic: Graphics = new Graphics()
@@ -112,47 +113,32 @@ export class PixiInteractionOverlay extends PixiContainer {
     if (!this.attributeRing || !point) return
 
     const projection = point.dimredpoint
-    const localStats: Record<string, { normMean?: number }> = {}
 
-    // Get all global stats from the attribute ring segments to access min/max for normalization
-    const segments = this.attributeRing.segments
-    const segmentMap = new Map(segments.map((seg) => [seg.attrkey, seg]))
-
-    // Process all features
+    const attributes: Record<string, number> = {}
     for (const [key, value] of Object.entries(projection.original)) {
       if (key.toLowerCase() === 'id') continue
-
       if (typeof value === 'number') {
-        const segment = segmentMap.get(key)
-
-        if (segment) {
-          // Get the global stats for this attribute from the segment
-          const stats = segment.stats || {
-            min: 0,
-            max: 1,
-            mean: 0.5,
-            std: 0.1,
-          }
-
-          // Normalize the value using the same logic as for fingerprints
-          let normVal: number
-
-          if (stats.max === stats.min) {
-            // Avoid division by zero
-            normVal = 0.5
-          } else {
-            // Min-max normalization
-            normVal = (value - stats.min) / (stats.max - stats.min)
-            // Clamp to [0,1]
-            normVal = Math.max(0, Math.min(1, normVal))
-          }
-
-          localStats[key] = { normMean: normVal }
-        }
+        attributes[key] = value
       }
     }
-    console.log('Local stats:', localStats)
-    // Update the attribute ring with normalized values
+
+    const segmentStatsMap = new Map(
+      this.attributeRing.segments.filter((seg) => seg.stats).map((seg) => [seg.attrkey, seg.stats]),
+    )
+    console.log('segmentStatsMap', segmentStatsMap)
+
+    const normalizedValues = StatisticalNormalizer.normalizeAttributes(
+      attributes,
+      segmentStatsMap,
+      'minmax',
+    )
+    console.log('normalizedValues', normalizedValues)
+
+    const localStats: Record<string, { normMean?: number }> = {}
+    for (const [key, value] of Object.entries(normalizedValues)) {
+      localStats[key] = { normMean: value }
+    }
+
     this.attributeRing.setLocalStats(localStats)
   }
 

@@ -61,6 +61,7 @@ export class HoverManager {
       }
 
       this.currentHovered = newHovered
+
       return true
     }
 

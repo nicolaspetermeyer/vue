@@ -8,6 +8,7 @@ import { useProjectionStore } from '@/stores/projectionStore'
 import { useDataStore } from '@/stores/dataStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
+import { Colors } from '@/Themes/Colors'
 
 const dataStore = useDataStore()
 const { globalStats } = storeToRefs(dataStore)
@@ -45,7 +46,7 @@ async function init() {
   // Create Pixi App
   app = new PixiApp()
 
-  await app.setup(canvasRef.value, width, height, 0xeeeeee)
+  await app.setup(canvasRef.value, width, height, Colors.CANVAS_BACKGROUND)
 
   initDevtools({ app: app as Application })
 

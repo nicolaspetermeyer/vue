@@ -101,4 +101,45 @@ export class StatisticalNormalizer {
 
     return normalized
   }
+
+  /**
+   * Formats normalized data for use in Attribute Ring components
+   *
+   * @param normalizedValues - Record of normalized values
+   * @returns Object formatted for attribute ring consumption
+   */
+  static formatForAttributeRing(
+    normalizedValues: Record<string, number>,
+  ): Record<string, { normMean: number }> {
+    const formattedStats: Record<string, { normMean: number }> = {}
+
+    for (const [key, value] of Object.entries(normalizedValues)) {
+      formattedStats[key] = { normMean: value }
+    }
+
+    return formattedStats
+  }
+
+  /**
+   * Extract numeric attributes from an object
+   *
+   * @param obj - Object with mixed type properties
+   * @param excludeKeys - Optional array of keys to exclude
+   * @returns Record with only numeric properties
+   */
+  static extractNumericAttributes(
+    obj: Record<string, any>,
+    excludeKeys: string[] = ['id'],
+  ): Record<string, number> {
+    const attributes: Record<string, number> = {}
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (excludeKeys.includes(key.toLowerCase())) continue
+      if (typeof value === 'number') {
+        attributes[key] = value
+      }
+    }
+
+    return attributes
+  }
 }

@@ -1,4 +1,5 @@
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
+import { Colors } from '@/Themes/Colors'
 import { HoverableProvider } from '@/utils/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import type { Projection } from '@/models/data'
@@ -15,7 +16,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     super({
       width: 460,
       height: 460,
-      background: 0x8a9493,
+      background: Colors.CANVAS_BACKGROUND,
       padding: { top: 0, right: 0, bottom: 0, left: 0 },
       positionAbsolute: true,
       layout: 'flexColumn',

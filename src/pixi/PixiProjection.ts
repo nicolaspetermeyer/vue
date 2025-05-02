@@ -4,6 +4,7 @@ import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Projection } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
+import { Colors } from '@/Themes/Colors'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
@@ -19,7 +20,7 @@ export class PixiProjection extends PixiContainer {
       layout: 'flexColumn',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 0x8a9493,
+      background: Colors.CANVAS_BACKGROUND,
     })
 
     // The attribute ring
