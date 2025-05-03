@@ -16,6 +16,7 @@ import {
   SelectionController,
   SelectionEvents,
 } from '@/pixi/interactions/controllers/SelectionController'
+import { useDataStore } from '@/stores/dataStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
@@ -78,6 +79,7 @@ export class PixiInteractionOverlay extends PixiContainer {
       this.hoverManager.removeProvider(this.dimred)
     }
     this.dimred = dimred
+
     this.hoverManager.addProvider(dimred)
 
     this.viewportController = new ViewportController(
@@ -108,24 +110,19 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   private updateAttributeRingForPoint(point: PixiDimredPoint | null) {
     if (!this.attributeRing || !point) return
-
-    const projection = point.dimredpoint
+    const globalStats = useDataStore().globalStats
 
     const attributes: Record<string, number> = {}
-    for (const [key, value] of Object.entries(projection.original)) {
+    for (const [key, value] of Object.entries(point.dimredpoint.original)) {
       if (key.toLowerCase() === 'id') continue
       if (typeof value === 'number') {
         attributes[key] = value
       }
     }
 
-    const segmentStatsMap = new Map(
-      this.attributeRing.segments.filter((seg) => seg.stats).map((seg) => [seg.attrkey, seg.stats]),
-    )
-
     const normalizedValues = StatisticalNormalizer.normalizeAttributes(
       attributes,
-      segmentStatsMap,
+      globalStats,
       'minmax',
     )
 
@@ -184,6 +181,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.hoverManager.handlePointerEvent(e)
   }
 
+  // Check if the point is within the mask boundary
   private isPointInMask(point: PointData): boolean {
     if (!this.maskBoundary) return true
 

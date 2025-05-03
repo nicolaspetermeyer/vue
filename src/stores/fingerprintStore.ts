@@ -4,6 +4,8 @@ import type { Fingerprint, Projection, FeatureStats, FingerprintFeatureStat } fr
 import { ref, computed } from 'vue'
 import { useDataStore } from '@/stores/dataStore'
 
+export type ComparisonMode = 'global' | 'fingerprint'
+
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //STATE
   const fingerprints = ref<Fingerprint[]>([])
@@ -20,10 +22,12 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   })
 
   //ACTIONS
+  // triggers on brush select
   function setSelectedProjections(points: Projection[]) {
     selectedProjections.value = points
-    console.log('Selected projections:', selectedProjections.value)
   }
+
+  // on button click computes fingerprint from brush selection
   function addFingerprint() {
     console.log('Adding fingerprint')
     if (selectedProjections.value.length === 0) return
@@ -57,12 +61,13 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     selectedFingerprint.value = null
   }
 
-  function getTopFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 3): string[] {
+  function getTopFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 1): string[] {
     return Object.entries(stats)
       .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
       .slice(0, limit)
       .map(([key]) => key)
   }
+
   return {
     fingerprints,
     selectedFingerprint,

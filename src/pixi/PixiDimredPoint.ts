@@ -11,9 +11,8 @@ const textureCache = new Map<number, Texture>()
 // Function to generate circular texture
 function getOrCreateCircleTexture(radius: number): Texture {
   if (!textureCache.has(radius)) {
-    // Create a circle texture at the requested radius
     const canvas = document.createElement('canvas')
-    const size = radius * 2 + 2 // Add padding for antialiasing
+    const size = radius * 2 + 2 // padding for antialiasing
     canvas.width = size
     canvas.height = size
 
@@ -41,7 +40,6 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
   private inFingerprint: boolean = false
 
   constructor(projectedPoint: Projection) {
-    // Create with default texture
     super(getOrCreateCircleTexture(5))
 
     this.projectedPoint = projectedPoint
@@ -63,6 +61,7 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
       this.tint = Colors.NORMAL
     }
 
+    // Set alpha based on selection and fingerprint state
     if (this.inFingerprint && !this.Selected) {
       this.alpha = 0.9
     } else {

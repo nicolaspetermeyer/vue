@@ -75,12 +75,12 @@ export class SegmentRenderer {
 
     // Draw segments based on local vs global comparison
     if (localOuter !== null && localOuter > globalOuter) {
-      drawArc(localOuter, overlayColorBigger, 0.25 * alphaMultiplier, lineWidth)
-      drawArc(globalOuter, globalColor, 0.2 * alphaMultiplier, lineWidth)
+      drawArc(localOuter, overlayColorBigger, 0.25, lineWidth)
+      drawArc(globalOuter, globalColor, 0.2, lineWidth)
     } else {
-      drawArc(globalOuter, globalColor, 0.2 * alphaMultiplier, lineWidth)
+      drawArc(globalOuter, globalColor, 0.2, lineWidth)
       if (localOuter !== null) {
-        drawArc(localOuter, overlayColorSmaller, 0.25 * alphaMultiplier, lineWidth)
+        drawArc(localOuter, overlayColorSmaller, 0.25, lineWidth)
       }
     }
   }

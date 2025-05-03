@@ -43,12 +43,46 @@ onMounted(async () => {})
           {{ dataset.name }}
         </option>
       </select>
+      <h2 class="text-xl font-bold">Projection</h2>
       <select class="select max-w-[50%]" v-model="projectionMethod">
         <option value="pca">PCA</option>
         <option value="tsne">t-SNE</option>
       </select>
       <button @click="loadProjection()" class="btn btn-xs btn-content">Compute Points</button>
+      <h2 class="text-xl font-bold">Fingerprint</h2>
+
       <button @click="addFingerprint()" class="btn btn-xs btn-content">Create Fingerprint</button>
+      <h2 class="text-xl font-bold">Comparison</h2>
+      <!-- Radio buttons -->
+      <div class="flex items-center mb-4">
+        <input
+          id="global-delta"
+          type="radio"
+          value=""
+          name="default-radio"
+          class="w-4 h-4 text-blue-600 bg-black-100 dark:bg-black-700"
+        />
+        <label
+          for="global-delta"
+          class="ms-2 text-sm font-medium text-black-900 dark:text-black-300"
+          >Global Delta</label
+        >
+      </div>
+      <div class="flex items-center">
+        <input
+          checked
+          id="fingerprint-delta"
+          type="radio"
+          value=""
+          name="default-radio"
+          class="w-4 h-4 text-blue-600 bg-black-100 dark:bg-black-700"
+        />
+        <label
+          for="fingerprint-delta"
+          class="ms-2 text-sm font-medium text-black-900 dark:text-black-300"
+          >Fingerprint Delta</label
+        >
+      </div>
     </div>
   </div>
 </template>
