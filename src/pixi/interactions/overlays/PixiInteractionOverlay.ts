@@ -112,6 +112,13 @@ export class PixiInteractionOverlay extends PixiContainer {
   }
 
   private onPointerTap(e: FederatedPointerEvent) {
+    if (e.button === 2) {
+      if (this.dimred) {
+        this.dimred.setSelection([])
+        this.fingerprintStore.setSelection([])
+      }
+      return
+    }
     if (this.selectionController) {
       this.selectionController.handleTap(e)
     }
@@ -152,11 +159,10 @@ export class PixiInteractionOverlay extends PixiContainer {
       this.dimred.setSelection([point.dimredpoint.id])
       this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
       this.attributeRing?.clearLocalStats()
+
       this.updateAttributeRingForPoint(point)
     } else if (this.attributeRing) {
       // Clear the attribute ring if no point is selected
-
-      this.attributeRing.clearLocalStats()
     }
   }
 
@@ -222,6 +228,7 @@ export class PixiInteractionOverlay extends PixiContainer {
   private onBrushEnd(bounds: Rectangle) {
     if (!this.dimred) return
     const selected = this.dimred.getPointsInBounds(bounds)
+
     this.dimred.setSelection(selected)
     if (selected.length > 0) {
       this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())

@@ -14,4 +14,6 @@ export const Colors = {
   OVERLAY_SEGMENT_SMALLER: 0xff4444, // Green for local segment
   OVERLAY_SEGMENT_BIGGER: 0x44ff44, // Red for overlay segment
   STANDARD_OVERLAY: 0xff4444, // Black for standard overlay
+
+  FINGERPRINT_COLORS: [0x3498db, 0xe74c3c, 0x2ecc71, 0xf39c12, 0x9b59b6, 0x1abc9c],
 }
