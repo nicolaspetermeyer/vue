@@ -87,11 +87,19 @@ export class PixiAttributeRing
     }
   }
 
-  public setLocalStats(localStats: Record<string, { normMean?: number }>) {
+  public clearLocalStats() {
+    for (const segment of this.segments) {
+      segment.clearLocalOverlay()
+    }
+  }
+
+  public setLocalStats(localStats: Record<string, { normMean?: number }>, color: number) {
     for (const segment of this.segments) {
       const local = localStats[segment.attrkey]
       const newNorm = local?.normMean ?? undefined
-      segment.setLocalOverlay(newNorm)
+      if (newNorm !== undefined) {
+        segment.setLocalOverlay(newNorm, color)
+      }
     }
   }
 

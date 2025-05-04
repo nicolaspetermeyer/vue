@@ -100,10 +100,28 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   }
 
   // highlight points that belong to the selected fingerprint
-  highlightFingerprintPoints(pointIds: number[]) {
-    this.highlightedFingerprintPoints = new Set(pointIds)
+  highlightFingerprintPoints(pointColorMap: Record<string, number>): void {
+    this.clearHighlightedPoints()
+
+    const pointIds = Object.keys(pointColorMap)
+    const numericIds = pointIds.map((id) => parseInt(id))
+    const numericIdSet = new Set(numericIds)
+
     this.pixiDimredPoints.forEach((point, id) => {
-      point.setInFingerprint(this.highlightedFingerprintPoints.has(id))
+      if (numericIdSet.has(id)) {
+        const color = pointColorMap[id.toString()]
+        point.setInFingerprint(true, color)
+      } else {
+        // Dim other points
+        point.setInFingerprint(false)
+      }
+    })
+    this.highlightedFingerprintPoints = numericIdSet
+  }
+
+  clearHighlightedPoints(): void {
+    this.pixiDimredPoints.forEach((point) => {
+      point.setInFingerprint(false)
     })
   }
 

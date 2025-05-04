@@ -6,7 +6,6 @@ import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useDataStore } from '@/stores/dataStore'
-import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import { Colors } from '@/Themes/Colors'
 
@@ -14,10 +13,7 @@ const dataStore = useDataStore()
 const { globalStats } = storeToRefs(dataStore)
 
 const projectionStore = useProjectionStore()
-const { projectionMatch, projectionInstance } = storeToRefs(projectionStore)
-
-const fingerprintStore = useFingerprintStore()
-const { selectedFingerprint } = storeToRefs(fingerprintStore)
+const { projectionMatch } = storeToRefs(projectionStore)
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -72,32 +68,6 @@ watch(
     app.addContainer(projection)
     currentProjection.value = projection
   },
-)
-
-watch(
-  selectedFingerprint,
-  (fp) => {
-    const ring = projectionInstance.value?.attributeRing
-    if (ring) {
-      // Update the attribute ring with local stats if fingerprint is selected
-      if (fp) {
-        ring.setLocalStats(fp?.localStats)
-
-        // Get the points from the selected fingerprint to highlight
-        const fingerprintPointIds = fp.projectedPoints.map((point) => point.id)
-
-        // Highlight the points in the dimred visualization
-        if (projectionInstance.value?.dimred) {
-          projectionInstance.value.dimred.highlightFingerprintPoints(fingerprintPointIds)
-        }
-      } else {
-        ring.setLocalStats({})
-        // Clear the highlight if no fingerprint is selected
-        projectionInstance.value?.dimred?.highlightFingerprintPoints([])
-      }
-    }
-  },
-  { immediate: true },
 )
 
 onMounted(() => {

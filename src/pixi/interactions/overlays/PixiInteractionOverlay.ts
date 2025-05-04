@@ -1,3 +1,4 @@
+// Pixi Base Classes
 import {
   Graphics,
   FederatedPointerEvent,
@@ -7,18 +8,26 @@ import {
   Circle,
 } from 'pixi.js'
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
+
+// Pixi Components
 import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
+import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
+
+// Controllers
 import { HoverManager } from '@/utils/HoverManager'
 import { ViewportController } from '@/pixi/interactions/controllers/ViewportController'
 import {
   SelectionController,
   SelectionEvents,
 } from '@/pixi/interactions/controllers/SelectionController'
+
+// Stores
 import { useDataStore } from '@/stores/dataStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
-import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
+
+// Utils
 import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
 
 export class PixiInteractionOverlay extends PixiContainer {
@@ -131,7 +140,7 @@ export class PixiInteractionOverlay extends PixiContainer {
       localStats[key] = { normMean: value }
     }
 
-    this.attributeRing.setLocalStats(localStats)
+    this.attributeRing.setLocalStats(localStats, 0x3498db)
   }
 
   // Handle tap selection events from the selection controller
@@ -141,11 +150,13 @@ export class PixiInteractionOverlay extends PixiContainer {
     const point = this.dimred.findElementAtGlobal(position)
     if (point) {
       this.dimred.setSelection([point.dimredpoint.id])
-      this.fingerprintStore.setSelectedProjections(this.dimred.getSelectedProjections())
+      this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
+      this.attributeRing?.clearLocalStats()
       this.updateAttributeRingForPoint(point)
     } else if (this.attributeRing) {
       // Clear the attribute ring if no point is selected
-      this.attributeRing.setLocalStats({})
+
+      this.attributeRing.clearLocalStats()
     }
   }
 
@@ -213,7 +224,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     const selected = this.dimred.getPointsInBounds(bounds)
     this.dimred.setSelection(selected)
     if (selected.length > 0) {
-      this.fingerprintStore.setSelectedProjections(this.dimred.getSelectedProjections())
+      this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
     }
   }
 

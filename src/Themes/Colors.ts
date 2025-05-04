@@ -13,4 +13,5 @@ export const Colors = {
   GLOBAL_SEGMENT: 0xffffff, // White for global segment
   OVERLAY_SEGMENT_SMALLER: 0xff4444, // Green for local segment
   OVERLAY_SEGMENT_BIGGER: 0x44ff44, // Red for overlay segment
+  STANDARD_OVERLAY: 0xff4444, // Black for standard overlay
 }

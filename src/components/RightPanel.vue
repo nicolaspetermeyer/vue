@@ -2,6 +2,7 @@
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import { Fingerprint } from '@/models/data'
+import FingerprintList from '@/components/FingerprintList.vue'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints, selectedFingerprint } = storeToRefs(fingerprintStore)
@@ -32,7 +33,8 @@ function deleteFingerprint(id: string) {
     <p>(To be defined)</p>
     <div class="flex flex-col gap-2">
       <h2 class="text-xl font-bold">Fingerprints</h2>
-      <ul class="fingerprint-list space-y-2">
+      <FingerprintList />
+      <!-- <ul class="fingerprint-list space-y-2">
         <li
           v-for="fingerprint in fingerprints"
           :key="fingerprint.id"
@@ -42,7 +44,7 @@ function deleteFingerprint(id: string) {
         >
           <span>{{ fingerprint.name }}</span>
 
-          <!-- 📊 Summary block -->
+          📊 Summary block 
           <div class="text-sm text-gray-600 mt-1">
             <div>Points: {{ fingerprint.projectedPoints.length }}</div>
             <div>
@@ -64,7 +66,7 @@ function deleteFingerprint(id: string) {
             del ❌
           </button>
         </li>
-      </ul>
+      </ul> -->
     </div>
   </div>
 </template>

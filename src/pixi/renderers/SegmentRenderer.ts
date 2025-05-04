@@ -14,6 +14,7 @@ export interface SegmentRenderParams {
   globalNorm: number
   localNorm?: number
   isHovered?: boolean
+  color: number
 }
 
 /**
@@ -37,6 +38,7 @@ export class SegmentRenderer {
       globalNorm,
       localNorm,
       isHovered = false,
+      color,
     } = params
 
     graphics.clear()
@@ -68,20 +70,85 @@ export class SegmentRenderer {
     const globalColor = Colors.GLOBAL_SEGMENT
     const overlayColorSmaller = Colors.OVERLAY_SEGMENT_SMALLER
     const overlayColorBigger = Colors.OVERLAY_SEGMENT_BIGGER
+    const overlayColor = color ?? Colors.STANDARD_OVERLAY
 
     // Apply hover effect
     const alphaMultiplier = isHovered ? 1.2 : 1.0
     const lineWidth = isHovered ? 2 : 1
-
-    // Draw segments based on local vs global comparison
-    if (localOuter !== null && localOuter > globalOuter) {
-      drawArc(localOuter, overlayColorBigger, 0.25, lineWidth)
+    if (localOuter !== null) {
+      drawArc(localOuter, overlayColor, 0.25, lineWidth)
       drawArc(globalOuter, globalColor, 0.2, lineWidth)
     } else {
       drawArc(globalOuter, globalColor, 0.2, lineWidth)
-      if (localOuter !== null) {
-        drawArc(localOuter, overlayColorSmaller, 0.25, lineWidth)
-      }
     }
+
+    // // Draw segments based on local vs global comparison
+    // if (localOuter !== null && localOuter > globalOuter) {
+    //   drawArc(localOuter, overlayColorBigger, 0.25, lineWidth)
+    //   drawArc(globalOuter, globalColor, 0.2, lineWidth)
+    // } else {
+    //   drawArc(globalOuter, globalColor, 0.2, lineWidth)
+    //   if (localOuter !== null) {
+    //     drawArc(localOuter, overlayColorSmaller, 0.25, lineWidth)
+    //   }
+    // }
+  }
+
+  // Add a new method for rendering overlays
+
+  /**
+   * Render a local overlay on top of the segment
+   */
+  static renderOverlay(
+    graphics: Graphics,
+    params: {
+      innerRadius: number
+      maxOuterRadius: number
+      startAngle: number
+      endAngle: number
+      centerX: number
+      centerY: number
+      localNorm: number
+      isHovered?: boolean
+      color: number
+    },
+  ): void {
+    const {
+      innerRadius,
+      maxOuterRadius,
+      startAngle,
+      endAngle,
+      centerX,
+      centerY,
+      localNorm,
+      isHovered = false,
+      color,
+    } = params
+
+    const arcWidth = maxOuterRadius - innerRadius
+    const localOuter = innerRadius + localNorm * arcWidth
+
+    // Helper function to draw an arc segment with transparency
+    const drawArc = (outerR: number, fillColor: number, alpha: number, lineWidth: number = 1) => {
+      graphics
+        .moveTo(
+          centerX + innerRadius * Math.cos(startAngle),
+          centerY + innerRadius * Math.sin(startAngle),
+        )
+        .lineTo(centerX + outerR * Math.cos(startAngle), centerY + outerR * Math.sin(startAngle))
+        .arc(centerX, centerY, outerR, startAngle, endAngle)
+        .lineTo(
+          centerX + innerRadius * Math.cos(endAngle),
+          centerY + innerRadius * Math.sin(endAngle),
+        )
+        .arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
+        .closePath()
+        .stroke({ color: fillColor, width: lineWidth })
+        .fill({ color: fillColor, alpha: alpha })
+    }
+
+    // Apply the overlay with a semi-transparent fill
+    const lineWidth = isHovered ? 2 : 1
+    drawArc(localOuter, color, 0.25, lineWidth)
   }
 }

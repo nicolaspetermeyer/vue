@@ -38,6 +38,8 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
   private Selected: boolean = false
   private Hovered: boolean = false
   private inFingerprint: boolean = false
+  setHighlighted: any
+  private highlightColor: number
 
   constructor(projectedPoint: Projection) {
     super(getOrCreateCircleTexture(5))
@@ -45,6 +47,8 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     this.projectedPoint = projectedPoint
     this.anchor.set(0.5) // Set origin to center of sprite
     this.updateVisualState()
+
+    this.highlightColor = Colors.NORMAL
 
     this.eventMode = 'static'
     this.cursor = 'pointer'
@@ -54,7 +58,7 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     if (this.Selected) {
       this.tint = Colors.SELECTED
     } else if (this.inFingerprint) {
-      this.tint = Colors.IN_FINGERPRINT
+      this.tint = this.highlightColor
     } else if (this.Hovered) {
       this.tint = Colors.HOVERED
     } else {
@@ -84,12 +88,15 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     return this.Selected
   }
 
-  // New method to mark a point as part of the selected fingerprint
-  setInFingerprint(inFingerprint: boolean) {
-    if (this.inFingerprint !== inFingerprint) {
-      this.inFingerprint = inFingerprint
-      this.updateVisualState()
+  // mark a points of selected fingerprint by color
+  setInFingerprint(highlighted: boolean, color?: number): void {
+    this.inFingerprint = highlighted
+    if (highlighted && color !== undefined) {
+      this.highlightColor = color
+    } else {
+      this.highlightColor = Colors.NORMAL
     }
+    this.updateVisualState()
   }
 
   isInFingerprint(): boolean {

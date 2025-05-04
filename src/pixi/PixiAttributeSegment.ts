@@ -10,6 +10,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private globalNorm: number
   private localNorm: number | undefined
   public stats: FeatureStats
+  private localOverlays: Array<{ color: number; norm: number }> = []
 
   public startAngle: number = 0
   public endAngle: number = 0
@@ -17,6 +18,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public maxOuterRadius: number = 0
   public centerX: number = 0
   public centerY: number = 0
+  public color: number = 0x000000
 
   private isHovered: boolean = false
 
@@ -53,7 +55,9 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.centerX = centerX
     this.centerY = centerY
 
-    // Use the SegmentRenderer to render the segment
+    this.clear()
+
+    // First draw the base global segment
     SegmentRenderer.renderSegment(this, {
       innerRadius,
       maxOuterRadius,
@@ -64,11 +68,35 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       globalNorm: this.globalNorm,
       localNorm: this.localNorm,
       isHovered: this.isHovered,
+      color: this.color,
+    })
+    // Then draw each local overlay
+    this.localOverlays.forEach((overlay) => {
+      SegmentRenderer.renderOverlay(this, {
+        innerRadius,
+        maxOuterRadius,
+        startAngle,
+        endAngle,
+        centerX,
+        centerY,
+        localNorm: overlay.norm,
+        color: overlay.color,
+        isHovered: this.isHovered,
+      })
     })
   }
 
-  setLocalOverlay(localNorm?: number): void {
+  clearLocalOverlay(): void {
+    this.localOverlays = []
+    this.localNorm = undefined
+    this.color = 0x000000
+    this.redraw()
+  }
+
+  setLocalOverlay(localNorm: number, color: number): void {
+    this.localOverlays.push({ norm: localNorm, color })
     this.localNorm = localNorm
+    this.color = color
     this.redraw()
   }
 

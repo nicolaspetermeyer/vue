@@ -1,38 +1,35 @@
 import { defineStore } from 'pinia'
 import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
-import type { Fingerprint, Projection, FeatureStats, FingerprintFeatureStat } from '@/models/data'
+import type { Fingerprint, Projection, FingerprintFeatureStat } from '@/models/data'
 import { ref, computed } from 'vue'
-import { useDataStore } from '@/stores/dataStore'
-
-export type ComparisonMode = 'global' | 'fingerprint'
+import { PixiProjection } from '@/pixi/PixiProjection'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //STATE
   const fingerprints = ref<Fingerprint[]>([])
   const fingerprintCounter = ref(1)
-
-  const selectedProjections = ref<Projection[]>([])
-  const selectedFingerprint = ref<Fingerprint | null>(null)
-  const globalStats = useDataStore().globalStats
+  const selection = ref<Projection[]>([])
+  const selectedFingerprints = ref<Fingerprint[]>([])
 
   // Computed property for the selected fingerprint's points
   const selectedFingerprintPoints = computed(() => {
-    if (!selectedFingerprint.value) return []
-    return selectedFingerprint.value.projectedPoints
+    if (selectedFingerprints.value.length === 0) return []
+
+    return selectedFingerprints.value.flatMap((fingerprint) => fingerprint.projectedPoints)
   })
 
   //ACTIONS
   // triggers on brush select
-  function setSelectedProjections(points: Projection[]) {
-    selectedProjections.value = points
+  function setSelection(points: Projection[]) {
+    selection.value = points
   }
 
   // on button click computes fingerprint from brush selection
   function addFingerprint() {
     console.log('Adding fingerprint')
-    if (selectedProjections.value.length === 0) return
+    if (selection.value.length === 0) return
 
-    const originals = selectedProjections.value.map((p) => p.original)
+    const originals = selection.value.map((p) => p.original)
 
     const localStats = calcFingerprintStats(originals)
 
@@ -42,23 +39,79 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const fingerprint: Fingerprint = {
       id,
       name,
-      projectedPoints: [...selectedProjections.value],
+      projectedPoints: [...selection.value],
       localStats,
     }
 
     fingerprints.value.push(fingerprint)
   }
+
   function removeFingerprint(id: string) {
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
+    selectedFingerprints.value = selectedFingerprints.value.filter((f) => f.id !== id)
   }
-  function clearFingerprints() {
-    fingerprints.value = []
+
+  function setSelectedFingerprint(fingerprint: Fingerprint) {
+    if (!selectedFingerprints.value.find((f) => f.id === fingerprint.id)) {
+      selectedFingerprints.value.push(fingerprint)
+    }
   }
-  function setSelectedFingerprint(fingerprint: Fingerprint | null) {
-    selectedFingerprint.value = fingerprint
+
+  function toggleSelectedFingerprint(
+    fingerprint: Fingerprint,
+    projectionInstance: any | null | undefined,
+  ) {
+    const index = selectedFingerprints.value.findIndex((f) => f.id === fingerprint.id)
+    if (index === -1) {
+      selectedFingerprints.value.push(fingerprint)
+    } else {
+      selectedFingerprints.value.splice(index, 1)
+    }
+
+    updateAttributeRingVisualization(projectionInstance)
   }
-  function clearSelectedFingerprint() {
-    selectedFingerprint.value = null
+
+  function updateAttributeRingVisualization(projectionInstance: PixiProjection | null | undefined) {
+    const ring = projectionInstance?.attributeRing
+    if (ring) {
+      if (selectedFingerprints.value.length > 0) {
+        ring.clearLocalStats()
+        const colorMap = getComparisonColors()
+        selectedFingerprints.value.forEach((fp) => {
+          const color = colorMap[fp.id]
+          ring.setLocalStats(fp.localStats, color)
+        })
+
+        // Highlight points if dimred is available
+        if (projectionInstance?.dimred) {
+          const pointColorMap: Record<string, number> = {}
+          selectedFingerprints.value.forEach((fp) => {
+            const color = colorMap[fp.id]
+            fp.projectedPoints.forEach((point) => {
+              pointColorMap[point.id] = color
+            })
+          })
+          projectionInstance.dimred.highlightFingerprintPoints(pointColorMap)
+        }
+      } else {
+        // Clear visualization when no fingerprints are selected
+        ring.clearLocalStats()
+        projectionInstance?.dimred?.highlightFingerprintPoints({})
+      }
+    }
+  }
+
+  function getComparisonColors(): Record<string, number> {
+    // Define a set of distinct colors for comparisons
+    const colors = [0x3498db, 0xe74c3c, 0x2ecc71, 0xf39c12, 0x9b59b6, 0x1abc9c]
+
+    const colorMap: Record<string, number> = {}
+
+    selectedFingerprints.value.forEach((fp, index) => {
+      colorMap[fp.id] = colors[index % colors.length]
+    })
+
+    return colorMap
   }
 
   function getTopFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 1): string[] {
@@ -70,14 +123,14 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
   return {
     fingerprints,
-    selectedFingerprint,
+    selectedFingerprints,
     selectedFingerprintPoints,
-    setSelectedProjections,
+    setSelection,
     addFingerprint,
     removeFingerprint,
-    clearFingerprints,
     setSelectedFingerprint,
-    clearSelectedFingerprint,
+    toggleSelectedFingerprint,
+    getComparisonColors,
     getTopFeatures,
   }
 })
