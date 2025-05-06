@@ -46,9 +46,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     fingerprints.value.push(fingerprint)
   }
 
-  function removeFingerprint(id: string) {
+  function removeFingerprint(id: string, projectionInstance: any | null | undefined) {
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
     selectedFingerprints.value = selectedFingerprints.value.filter((f) => f.id !== id)
+    updateAttributeRingVisualization(projectionInstance)
   }
 
   function setSelectedFingerprint(fingerprint: Fingerprint) {

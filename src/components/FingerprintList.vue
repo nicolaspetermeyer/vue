@@ -25,7 +25,7 @@ function getColor(id: string): string {
 
 function removeFingerprint(id: string, event: Event) {
   event.stopPropagation()
-  fingerprintStore.removeFingerprint(id)
+  fingerprintStore.removeFingerprint(id, projectionInstance.value)
 }
 </script>
 

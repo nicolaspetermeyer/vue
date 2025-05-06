@@ -51,7 +51,7 @@ export class SegmentRenderer {
     // Apply hover effect
     const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
     const alpha = 0.25
-    // Draw only global segment (with border color)
+    // Draw global segment
     this.drawArcSegment(graphics, {
       centerX,
       centerY,
@@ -65,8 +65,6 @@ export class SegmentRenderer {
       lineWidth,
     })
   }
-
-  // Add a new method for rendering overlays
 
   /**
    * Render a local overlay on top of the segment
@@ -95,9 +93,7 @@ export class SegmentRenderer {
 
     const overlayColorSmaller = Colors.OVERLAY_SEGMENT_SMALLER
     const overlayColorBigger = Colors.OVERLAY_SEGMENT_BIGGER
-    const overlayColor = color ?? Colors.STANDARD_OVERLAY
 
-    console.log('singleComparison', singleComparison)
     if (singleComparison) {
       // if only one local overlay, compare it with the global overlay
       if (localOuter !== null && localOuter > globalOuter) {
