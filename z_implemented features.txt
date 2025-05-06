@@ -1,0 +1,131 @@
+Implemented Features Summary
+
+A. Core Visualization 
+    Normalized Layout
+        Projection coordinates are normalized and scaled to maintain a clean, centered layout.
+
+    Projection View with Pixi.js
+        Composite container that includes projection points, attribute ring, and interaction overlay.
+        High-dimensional data is projected PCA and visualized in a 2D canvas using PixiDimred.
+        Todo: Add more projection methods (UMAP, t-SNE)
+
+    PixiDimred:
+        A custom Pixi.js renderer for high-dimensional data projection.
+        Utilizes WebGL for efficient rendering of large datasets.
+    
+    PixiAttributeRing:
+        Renders a circular layout with radial segments for each feature.
+        Each segment's size encodes the normalized mean of the feature.
+        Modular design supports future styling (e.g., variance, delta encoding).
+        Todo: Add more styling options (e.g., variance, delta encoding)
+
+    PixiAttributeSegment:
+        Each segment is a radial bar representing a feature.
+        The size of the segment is proportional to the normalized mean of the feature.
+        Labels are positioned inside the segment using angular placement.
+        Todo: Encode local feature stats (e.g., stddev, meanDelta) in the segment.
+
+B. Interactive Exploration
+    PixiInteractionOverlay:
+        A specialized overlay for handling mouse events in the Pixi canvas.
+        Supports hover, click, and drag interactions.
+
+    Hover Tooltip
+        Hovering a point displays a dynamically sized tooltip with ID and selected features.
+        Tooltip is styled, non-interactive (eventMode = 'none'), and suppressed during brushing.
+
+    Point Highlighting
+        Points visually highlight on hover using a distinct fill color.
+        Hover state is centralized in PixiInteractionOverlay.
+
+    Drag Selection (Brush):
+        User can brush rectangular regions in the projection view.
+        Brushed points are selected and highlighted.
+        Brush bounds are calculated and converted to global coordinates.
+
+    Point Click Selection:
+        Clicking a single point selects it.
+        Clicking another point or empty space deselects the current point selection.
+        Clicking a point overlays its values in the attribute ring.
+        Brush and click selections are unified through centralized event handling.
+    
+    PixiTooltip:
+        Renders styled label next to hovered point.
+        Toggled via hover emitters.
+
+    Zoom and Pan interaction:
+        Users can zoom in/out and pan the projection view.
+        Zoom level is controlled by mouse wheel.
+        Pan is achieved through CTRL + mouse drag events.
+    
+    TODO:
+        Add more interaction modes (e.g., lasso selection).
+        Support for multi-point selection (e.g., Ctrl+click).
+
+
+C. State Management (Pinia)
+    DatasetStore: loads the available datasets and manages the currently selected dataset.
+    DataStore: holds the data and global stats for the currently selected dataset.
+    ProjectionStore: manages the current projection and mapping of features to projections.
+    FingerprintStore: stores user-created fingerprints and the selected fingerprint.
+    
+
+D. Fingerprints
+    Add Fingerprint:
+        Brushed or clicked points update selectedProjections in the store.
+        Selection can be saved as a fingerprint.
+        Fingerprint creation computes local feature stats based on selection.
+        Generates a named Fingerprint object with a UUID and stores it.
+
+    Delete Fingerprint:
+        Fingerprints can be deleted via ❌ buttons in the UI list.
+        Automatically deselects if the deleted fingerprint was selected.
+
+    Fingerprint Panel
+        List Display:
+            Fingerprints are listed in a vertical Vue component.
+            Clicking a fingerprint selects it visually and in the store.
+            Selecting a fingerprint highlights the corresponding points in the projection view.
+
+    Expandable Summary:
+        Each fingerprint can be expanded to show a pop-out summary panel.
+        Summary includes count of points and most distinctive features (sorted by meanDelta).
+
+    Fingerprint Comparison
+        overlay
+            The global value is drawn as a gray thick background bar.
+            The local values are overlayed with bars in different colors and hues.
+
+        If one Fingerprint is selected, it is compared to the global value of the projection
+        If more than one Fingerprint is selected, they are compared to each other with different colors.
+        
+    TODO:
+        Enable user-based labeling of fingerprints.
+        Allow for fingerprint comparison (e.g., side-by-side view).
+        Overlay fingerprint stats on the projection view.
+        Aggregate projection points on fingerprint creation.
+
+E. Backend 
+    (Python)
+     Data Loading:
+          Loads data from CSV files and computes global stats (mean, stddev, etc.).
+          Supports loading multiple datasets and switching between them.
+       
+    Backend Caching
+
+    
+
+
+F. Feature Stats Computation 
+    Calculates per-feature statistics for any subset of data:
+        mean, stddev, normMean, meanDelta, globalMean
+
+
+
+
+
+
+
+
+
+
