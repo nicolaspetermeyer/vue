@@ -27,7 +27,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
   // on button click computes fingerprint from brush selection
   function addFingerprint() {
-    console.log('Adding fingerprint')
     if (selection.value.length === 0) return
 
     const originals = selection.value.map((p) => p.original)
@@ -78,9 +77,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       if (selectedFingerprints.value.length > 0) {
         ring.clearLocalStats()
         const colorMap = getComparisonColors()
+
         selectedFingerprints.value.forEach((fp) => {
           const color = colorMap[fp.id]
-          ring.setLocalStats(fp.localStats, color)
+          ring.setLocalStats(fp.id, fp.localStats, color)
         })
 
         // Highlight points if dimred is available

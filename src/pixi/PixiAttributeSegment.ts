@@ -10,7 +10,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private globalNorm: number
   private localNorm: number | undefined
   public stats: FeatureStats
-  private localOverlays: Array<{ color: number; norm: number }> = []
+  private localOverlays: Array<{ id: string; color: number; norm: number }> = []
 
   public startAngle: number = 0
   public endAngle: number = 0
@@ -93,8 +93,25 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.redraw()
   }
 
-  setLocalOverlay(localNorm: number, color: number): void {
-    this.localOverlays.push({ norm: localNorm, color })
+  clearPointOverlay(id: string): void {
+    const initialLength = this.localOverlays.length
+    this.localOverlays = this.localOverlays.filter((overlay) => overlay.id !== id)
+
+    if (this.localOverlays.length < initialLength) {
+      if (this.localOverlays.length === 0) {
+        this.localNorm = undefined
+        this.color = 0x000000
+      } else {
+        const lastOverlay = this.localOverlays[this.localOverlays.length - 1]
+        this.localNorm = lastOverlay.norm
+        this.color = lastOverlay.color
+      }
+      this.redraw()
+    }
+  }
+
+  setLocalOverlay(id: string, localNorm: number, color: number): void {
+    this.localOverlays.push({ id, norm: localNorm, color })
     this.localNorm = localNorm
     this.color = color
     this.redraw()
