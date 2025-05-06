@@ -50,6 +50,9 @@ async function init() {
   const projection = new PixiProjection(projectionMatch.value, globalStats.value)
   projectionStore.setProjectionInstance(projection)
 
+  // Register keyboard events
+  projection.registerKeyboardEvents()
+
   // Add to root
   app.addContainer(projection)
   currentProjection.value = projection
@@ -60,10 +63,16 @@ watch(
   (projectionMatch) => {
     if (!app) return
 
+    if (currentProjection.value) {
+      currentProjection.value.unregisterKeyboardEvents()
+    }
+
     app.clearRoot()
 
     const projection = new PixiProjection(projectionMatch, globalStats.value)
     projectionStore.setProjectionInstance(projection)
+
+    projection.registerKeyboardEvents()
 
     app.addContainer(projection)
     currentProjection.value = projection
@@ -75,7 +84,11 @@ onMounted(() => {
   update()
 })
 
-onBeforeUnmount(() => {})
+onBeforeUnmount(() => {
+  if (currentProjection.value) {
+    currentProjection.value.unregisterKeyboardEvents()
+  }
+})
 
 function debug() {
   app?.debugSceneGraphRecursive(app.root, 0)

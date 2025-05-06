@@ -1,36 +1,9 @@
 <script setup lang="ts">
-import { useFingerprintStore } from '@/stores/fingerprintStore'
-import { storeToRefs } from 'pinia'
-import { Fingerprint } from '@/models/data'
 import FingerprintList from '@/components/FingerprintList.vue'
-
-const fingerprintStore = useFingerprintStore()
-const { fingerprints, selectedFingerprint } = storeToRefs(fingerprintStore)
-const { setSelectedFingerprint, clearSelectedFingerprint, removeFingerprint, getTopFeatures } =
-  fingerprintStore
-
-function selectFingerprint(fingerprint: Fingerprint) {
-  if (selectedFingerprint.value?.id === fingerprint.id) {
-    clearSelectedFingerprint()
-    return
-  } else {
-    setSelectedFingerprint(fingerprint)
-  }
-}
-
-function deleteFingerprint(id: string) {
-  removeFingerprint(id)
-
-  if (selectedFingerprint.value?.id === id) {
-    fingerprintStore.clearSelectedFingerprint()
-  }
-}
 </script>
 
 <template>
   <div class="panel">
-    <h2>Details / Fingerprints</h2>
-    <p>(To be defined)</p>
     <div class="flex flex-col gap-2">
       <h2 class="text-xl font-bold">Fingerprints</h2>
       <FingerprintList />

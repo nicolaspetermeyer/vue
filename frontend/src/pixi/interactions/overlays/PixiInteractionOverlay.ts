@@ -21,6 +21,7 @@ import { ViewportController } from '@/pixi/interactions/controllers/ViewportCont
 import {
   SelectionController,
   SelectionEvents,
+  SelectionMode,
 } from '@/pixi/interactions/controllers/SelectionController'
 
 // Stores
@@ -59,7 +60,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.hitAreaGraphic.rect(0, 0, width, height)
     this.hitAreaGraphic.fill({ color: 0x000000, alpha: 0 }) // transparent
     this.hitAreaGraphic.eventMode = 'static'
-    this.hitAreaGraphic.cursor = 'crosshair'
+    this.hitAreaGraphic.cursor = 'default'
     this.addChild(this.hitAreaGraphic)
 
     // Setup tooltip
@@ -200,39 +201,66 @@ export class PixiInteractionOverlay extends PixiContainer {
   }
 
   // Check if the point is within the mask boundary
-  private isPointInMask(point: PointData): boolean {
-    if (!this.maskBoundary) return true
+  // Currently unused because masking to the inner cirlce excludes the attribute ring from hover
+  // private isPointInMask(point: PointData): boolean {
+  //   if (!this.maskBoundary) return true
 
-    const localPoint = this.maskBoundary.toLocal(point)
+  //   const localPoint = this.maskBoundary.toLocal(point)
 
-    const centerX = 349
-    const centerY = 349
-    const radius = 349
+  //   const centerX = 349
+  //   const centerY = 349
+  //   const radius = 349
 
-    const dx = localPoint.x - centerX
-    const dy = localPoint.y - centerY
-    const distanceSquared = dx * dx + dy * dy
+  //   const dx = localPoint.x - centerX
+  //   const dy = localPoint.y - centerY
+  //   const distanceSquared = dx * dx + dy * dy
 
-    return distanceSquared <= radius * radius
-  }
+  //   return distanceSquared <= radius * radius
+  // }
 
   private onPointerUp(e: FederatedPointerEvent) {
     if (this.viewportController && this.viewportController.isPanningActive()) {
       this.viewportController.handlePointerUp()
-      this.cursor = 'crosshair'
+      this.cursor = 'default'
     } else if (this.selectionController) {
       this.selectionController.handlePointerUp()
     }
   }
 
   // Handle brush selection events from the selection controller
-  private onBrushEnd(bounds: Rectangle) {
+  private onBrushEnd(selectionArea: Rectangle | PointData[], mode: SelectionMode) {
     if (!this.dimred) return
-    const selected = this.dimred.getPointsInBounds(bounds)
+
+    let selected: number[] = []
+
+    if (mode === SelectionMode.RECTANGLE && selectionArea instanceof Rectangle) {
+      selected = this.dimred.getPointsInBounds(selectionArea)
+    } else if (mode === SelectionMode.LASSO && Array.isArray(selectionArea)) {
+      selected = this.dimred.getPointsInPolygon(selectionArea)
+    }
 
     this.dimred.setSelection(selected)
     if (selected.length > 0) {
       this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
+    }
+  }
+
+  toggleSelectionMode() {
+    if (this.selectionController) {
+      const newMode = this.selectionController.toggleMode()
+      this.hitAreaGraphic.cursor = newMode === SelectionMode.RECTANGLE ? 'default' : 'crosshair'
+    }
+  }
+
+  /**
+   * Handle keyboard events
+   * @param e - Keyboard event
+   */
+  handleKeyDown(e: KeyboardEvent) {
+    console.log('Key pressed:', e.code, 'Alt:', e.altKey, 'Ctrl:', e.ctrlKey, 'Shift:', e.shiftKey)
+    if (e.code === 'KeyA' && e.altKey) {
+      // Toggle between rectangle and lasso selection modes
+      this.toggleSelectionMode()
     }
   }
 

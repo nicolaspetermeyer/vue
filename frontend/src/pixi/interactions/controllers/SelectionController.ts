@@ -8,6 +8,16 @@ import {
 } from 'pixi.js'
 import { EventEmitter } from 'eventemitter3'
 import { HoverManager } from '@/utils/HoverManager'
+//import { PolygonUtils } from '@/utils/geometry/PolygonUtils'
+import { Colors } from '@/config/Themes'
+
+/**
+ * Selection mode for the controller
+ */
+export enum SelectionMode {
+  RECTANGLE = 'rectangle',
+  LASSO = 'lasso',
+}
 
 /**
  * Configuration options for the SelectionController
@@ -25,6 +35,8 @@ export interface SelectionControllerOptions {
   emitEvents?: boolean
   /** Parent container for the brush graphics */
   container?: Container<ContainerChild> | null
+  /** Initial selection mode */
+  mode?: SelectionMode
 }
 
 /**
@@ -37,6 +49,8 @@ export enum SelectionEvents {
   TAP_SELECT = 'tapselect',
   /** Fired when selection is cleared */
   SELECTION_CLEAR = 'selectionclear',
+  /** Fired when selection mode changes */
+  MODE_CHANGE = 'modechange',
 }
 
 /**
@@ -46,17 +60,20 @@ export class SelectionController extends EventEmitter {
   private brushGraphics: Graphics
   private dragStart: PointData | null = null
   private dragEnd: PointData | null = null
+  private lassoPoints: PointData[] = []
   private isDragging: boolean = false
   private container: Container | null = null
   private hoverManager: HoverManager | null = null
+  private selectionMode: SelectionMode = SelectionMode.RECTANGLE
 
   private options: Required<SelectionControllerOptions> = {
-    brushFillColor: 0xff00ff,
-    brushFillAlpha: 0.2,
-    brushStrokeColor: 0xff00ff,
-    brushStrokeWidth: 1,
+    brushFillColor: Colors.BRUSH_FILL,
+    brushFillAlpha: Colors.BRUSH_FILL_ALPHA,
+    brushStrokeColor: Colors.BRUSH_STROKE,
+    brushStrokeWidth: Colors.BRUSH_STROKE_WIDTH,
     emitEvents: true,
     container: null,
+    mode: SelectionMode.RECTANGLE,
   }
 
   /**
@@ -70,6 +87,7 @@ export class SelectionController extends EventEmitter {
 
     // Override default options with provided options
     this.options = { ...this.options, ...options }
+    this.selectionMode = this.options.mode || SelectionMode.RECTANGLE
 
     this.brushGraphics = new Graphics()
     this.brushGraphics.zIndex = 20
@@ -108,6 +126,41 @@ export class SelectionController extends EventEmitter {
   }
 
   /**
+   * Set the selection mode
+   *
+   * @param mode - The selection mode to use
+   */
+  public setMode(mode: SelectionMode): void {
+    if (this.selectionMode !== mode) {
+      this.selectionMode = mode
+      if (this.options.emitEvents) {
+        this.emit(SelectionEvents.MODE_CHANGE, mode)
+      }
+    }
+  }
+
+  /**
+   * Get the current selection mode
+   *
+   * @returns The current selection mode
+   */
+  public getMode(): SelectionMode {
+    return this.selectionMode
+  }
+
+  /**
+   * Toggle between selection modes
+   *
+   * @returns The new selection mode
+   */
+  public toggleMode(): SelectionMode {
+    const newMode =
+      this.selectionMode === SelectionMode.RECTANGLE ? SelectionMode.LASSO : SelectionMode.RECTANGLE
+    this.setMode(newMode)
+    return newMode
+  }
+
+  /**
    * Handle pointer down event to start selection
    *
    * @param e - Pointer event or local coordinates
@@ -130,6 +183,12 @@ export class SelectionController extends EventEmitter {
     this.dragStart = { x: pos.x, y: pos.y }
     this.dragEnd = null
     this.isDragging = true
+
+    // Clear lasso points and add first point
+    this.lassoPoints = []
+    if (this.selectionMode === SelectionMode.LASSO) {
+      this.lassoPoints.push({ x: pos.x, y: pos.y })
+    }
 
     // Clear hover state
     if (this.hoverManager) {
@@ -160,9 +219,26 @@ export class SelectionController extends EventEmitter {
       pos = e
     }
 
-    // Update drag end position and redraw selection brush
-    this.dragEnd = { x: pos.x, y: pos.y }
-    this.drawBrush()
+    // Update based on selection mode
+    if (this.selectionMode === SelectionMode.RECTANGLE) {
+      // Update drag end position for rectangle
+      this.dragEnd = { x: pos.x, y: pos.y }
+      this.drawRectangleBrush()
+    } else {
+      // Add point to lasso path
+      // Only add points that are a minimum distance away from the last point
+      const lastPoint = this.lassoPoints[this.lassoPoints.length - 1]
+      const dx = pos.x - lastPoint.x
+      const dy = pos.y - lastPoint.y
+      const distSquared = dx * dx + dy * dy
+
+      // Minimum distance threshold to avoid too many points
+      if (distSquared > 25) {
+        // 5^2 = 25 pixels squared distance
+        this.lassoPoints.push({ x: pos.x, y: pos.y })
+        this.drawLassoBrush()
+      }
+    }
   }
 
   /**
@@ -172,17 +248,26 @@ export class SelectionController extends EventEmitter {
    * @returns The selection bounds if selection completed, null otherwise
    */
   public handlePointerUp(e?: FederatedPointerEvent): Rectangle | null {
-    if (!this.isDragging || !this.dragStart || !this.dragEnd) {
-      // Reset selection state
-      this.isDragging = false
-      this.dragStart = null
-      this.dragEnd = null
-      this.brushGraphics.clear()
+    if (!this.isDragging) {
       return null
     }
 
-    // Get the final selection bounds
-    const bounds = this.getBrushBounds()
+    let selectionResult: Rectangle | PointData[] | null = null
+
+    if (this.selectionMode === SelectionMode.RECTANGLE) {
+      if (this.dragStart && this.dragEnd) {
+        // Get the final rectangle bounds
+        selectionResult = this.getBrushBounds()
+      }
+    } else {
+      // For lasso, ensure we have enough points for a valid polygon
+      if (this.lassoPoints.length >= 3) {
+        // Close the lasso path
+        const firstPoint = this.lassoPoints[0]
+        this.lassoPoints.push({ x: firstPoint.x, y: firstPoint.y })
+        selectionResult = this.getLassoPoints()
+      }
+    }
 
     // Reset selection state
     this.isDragging = false
@@ -191,11 +276,11 @@ export class SelectionController extends EventEmitter {
     this.brushGraphics.clear()
 
     // Emit selection event if needed
-    if (this.options.emitEvents) {
-      this.emit(SelectionEvents.BRUSH_END, bounds)
+    if (this.options.emitEvents && selectionResult) {
+      this.emit(SelectionEvents.BRUSH_END, selectionResult, this.selectionMode)
     }
 
-    return bounds
+    return selectionResult as Rectangle | null
   }
 
   /**
@@ -204,7 +289,7 @@ export class SelectionController extends EventEmitter {
    * @param e - Pointer event
    * @param isGlobal - Whether the coordinates are global
    */
-  public handleTap(e: FederatedPointerEvent | PointData, isGlobal = true): void {
+  public handleTap(e: FederatedPointerEvent | PointData): void {
     if (this.options.emitEvents) {
       let pos: PointData
       if ('global' in e) {
@@ -218,9 +303,9 @@ export class SelectionController extends EventEmitter {
   }
 
   /**
-   * Draw the selection brush rectangle
+   * Draw the rectangle selection brush
    */
-  private drawBrush(): void {
+  private drawRectangleBrush(): void {
     if (!this.dragStart || !this.dragEnd) return
 
     const x = Math.min(this.dragStart.x, this.dragEnd.x)
@@ -239,6 +324,33 @@ export class SelectionController extends EventEmitter {
         width: this.options.brushStrokeWidth,
         color: this.options.brushStrokeColor,
       })
+  }
+
+  /**
+   * Draw the lasso selection path
+   */
+  private drawLassoBrush(): void {
+    if (this.lassoPoints.length < 2) return
+
+    this.brushGraphics.clear()
+
+    // Start the polygon path
+    this.brushGraphics.moveTo(this.lassoPoints[0].x, this.lassoPoints[0].y)
+
+    // Draw lines between points
+    for (let i = 1; i < this.lassoPoints.length; i++) {
+      this.brushGraphics.lineTo(this.lassoPoints[i].x, this.lassoPoints[i].y)
+    }
+
+    // Fill and stroke the path
+    // this.brushGraphics.fill({
+    //   color: this.options.brushFillColor,
+    //   alpha: this.options.brushFillAlpha,
+    // })
+    this.brushGraphics.stroke({
+      width: this.options.brushStrokeWidth,
+      color: this.options.brushStrokeColor,
+    })
   }
 
   /**
@@ -272,12 +384,30 @@ export class SelectionController extends EventEmitter {
   }
 
   /**
+   * Get lasso points in global coordinates
+   *
+   * @returns Array of points defining the lasso polygon
+   */
+  private getLassoPoints(): PointData[] {
+    if (this.lassoPoints.length === 0) return []
+
+    // If we have a container, transform to global coordinates
+    if (this.container) {
+      return this.lassoPoints.map((point) => this.container!.toGlobal(point))
+    } else {
+      // No container to transform, return local coordinates
+      return [...this.lassoPoints]
+    }
+  }
+
+  /**
    * Cancel the current selection operation
    */
   public cancelSelection(): void {
     this.isDragging = false
     this.dragStart = null
     this.dragEnd = null
+    this.lassoPoints = []
     this.brushGraphics.clear()
   }
 

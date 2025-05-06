@@ -48,6 +48,29 @@ export class PixiProjection extends PixiContainer {
     this.applyLayout()
   }
 
+  /**
+   * Toggle between rectangle and lasso selection modes
+   */
+  toggleSelectionMode() {
+    this.interactionOverlay.toggleSelectionMode()
+  }
+
+  /**
+   * Register keyboard event handlers
+   */
+  registerKeyboardEvents() {
+    window.addEventListener('keydown', (e) => {
+      this.interactionOverlay.handleKeyDown(e)
+    })
+  }
+
+  /**
+   * Remove keyboard event handlers
+   */
+  unregisterKeyboardEvents() {
+    window.removeEventListener('keydown', this.interactionOverlay.handleKeyDown)
+  }
+
   // method to reset the view (zoom and position)
   resetView() {
     this.interactionOverlay.resetView()

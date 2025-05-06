@@ -8,8 +8,11 @@ export const Colors = {
   // Interactions
   SELECTED: 0x0077ff, // Blue
   HOVERED: 0xffaa00, // Orange
-  BRUSH_FILL: 0xff00ff, // Magenta
-  BRUSH_STROKE: 0xff00ff, // Magenta
+  // Brush
+  BRUSH_FILL: 0x000000, // black
+  BRUSH_STROKE: 0x000000, // black
+  BRUSH_FILL_ALPHA: 0.2, // Transparent
+  BRUSH_STROKE_WIDTH: 1, // Stroke width
 
   // Attribute Ring
   GLOBAL_SEGMENT: 0xffffff, // White

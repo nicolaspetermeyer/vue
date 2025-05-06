@@ -46,13 +46,16 @@ function removeFingerprint(id: string, event: Event) {
         @click="toggleSelection(fp)"
       >
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <div
-              v-if="isSelected(fp)"
-              class="color-indicator"
-              :style="{ backgroundColor: getColor(fp.id) }"
-            ></div>
-            <span class="truncate">{{ fp.name }}</span>
+          <div class="fingerprint-info">
+            <div class="flex items-center gap-2">
+              <div
+                v-if="isSelected(fp)"
+                class="color-indicator"
+                :style="{ backgroundColor: getColor(fp.id) }"
+              ></div>
+              <span class="fingerprint-name">{{ fp.name }}</span>
+            </div>
+            <span class="feature-count">Points: {{ fp.projectedPoints.length }}</span>
           </div>
           <button
             class="delete-btn"
@@ -89,6 +92,21 @@ function removeFingerprint(id: string, event: Event) {
   font-weight: 500;
 }
 
+.fingerprint-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fingerprint-name {
+  font-weight: 500;
+}
+
+.feature-count {
+  font-size: 0.8rem;
+  color: #666;
+}
+
 .color-indicator {
   width: 12px;
   height: 12px;
@@ -104,10 +122,6 @@ function removeFingerprint(id: string, event: Event) {
   border-radius: 3px;
   font-size: 12px;
   background: #ffeeee;
-}
-
-.delete-btn:hover {
-  background: #ccc;
 }
 
 .delete-btn {

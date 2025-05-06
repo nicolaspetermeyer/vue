@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useDataStore } from '@/stores/dataStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
+import { SelectionMode } from '@/pixi/interactions/controllers/SelectionController'
 
 const datasetStore = useDatasetStore()
-const { datasetsArray, selectedDataset, selectedDatasetId } = storeToRefs(datasetStore)
+const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
 const { setSelectedDatasetId } = datasetStore
 
 const dataStore = useDataStore()
@@ -16,16 +17,27 @@ const { loadData } = dataStore
 
 const projectionStore = useProjectionStore()
 const { loadProjection } = projectionStore
-const { projectionMethod } = storeToRefs(projectionStore)
+const { projectionMethod, projectionInstance } = storeToRefs(projectionStore)
 
 const fingerprintStore = useFingerprintStore()
 const { addFingerprint } = fingerprintStore
+
+const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
 
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
   if (select) {
     setSelectedDatasetId(Number(select.value) || null)
     loadData()
+  }
+}
+
+const toggleSelectionMode = () => {
+  console.log('toggleSelectionMode')
+  if (projectionInstance.value) {
+    projectionInstance.value.toggleSelectionMode()
+    currentMode.value =
+      currentMode.value === SelectionMode.RECTANGLE ? SelectionMode.LASSO : SelectionMode.RECTANGLE
   }
 }
 
@@ -50,7 +62,9 @@ onMounted(async () => {})
       </select>
       <button @click="loadProjection()" class="btn btn-xs btn-content">Compute Points</button>
       <h2 class="text-xl font-bold">Fingerprint</h2>
-
+      <button @click="toggleSelectionMode" class="btn btn-xs btn-content">
+        Toggle Selection Mode
+      </button>
       <button @click="addFingerprint()" class="btn btn-xs btn-content">Create Fingerprint</button>
     </div>
   </div>

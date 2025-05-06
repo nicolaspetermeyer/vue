@@ -37,7 +37,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.stats = stats
 
     this.eventMode = 'static'
-    this.cursor = 'pointer'
+    this.cursor = 'default'
   }
 
   drawSegment(

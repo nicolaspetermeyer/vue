@@ -6,6 +6,7 @@ import type { Projection } from '@/models/data'
 import { Rectangle, PointData } from 'pixi.js'
 import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
 import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransformer'
+import { PolygonUtils } from '@/utils/geometry/PolygonUtils'
 
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
@@ -64,6 +65,21 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
 
     return Array.from(this.pixiDimredPoints.values())
       .filter((point) => localBounds.contains(point.x, point.y))
+      .map((point) => point.getId())
+  }
+
+  /**
+   * Get points that are inside a polygon
+   *
+   * @param polygon - Array of points defining the selection polygon
+   * @returns Array of point IDs that are inside the polygon
+   */
+  getPointsInPolygon(polygon: PointData[]): number[] {
+    // Convert global polygon points to local coordinates
+    const localPolygon = polygon.map((point) => this.toLocal(point))
+
+    return Array.from(this.pixiDimredPoints.values())
+      .filter((point) => PolygonUtils.isPointInPolygon(point.position, localPolygon))
       .map((point) => point.getId())
   }
 
