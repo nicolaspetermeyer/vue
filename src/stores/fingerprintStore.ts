@@ -3,7 +3,7 @@ import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
 import type { Fingerprint, Projection, FingerprintFeatureStat } from '@/models/data'
 import { ref, computed } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
-import { Colors } from '@/Themes/Colors'
+import { Colors } from '@/config/Themes'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //STATE

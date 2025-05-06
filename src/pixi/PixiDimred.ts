@@ -1,5 +1,5 @@
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
-import { Colors } from '@/Themes/Colors'
+import { Colors } from '@/config/Themes'
 import { HoverableProvider } from '@/utils/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import type { Projection } from '@/models/data'

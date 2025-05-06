@@ -1,5 +1,5 @@
 import { Graphics } from 'pixi.js'
-import { Colors } from '@/Themes/Colors'
+import { Colors, Styles } from '@/config/Themes'
 
 /**
  * Parameters for rendering a segment
@@ -15,6 +15,7 @@ export interface SegmentRenderParams {
   localNorm?: number
   isHovered?: boolean
   color: number
+  borderColor: number
 }
 
 /**
@@ -39,6 +40,7 @@ export class SegmentRenderer {
       localNorm,
       isHovered = false,
       color,
+      borderColor,
     } = params
 
     graphics.clear()
@@ -48,7 +50,13 @@ export class SegmentRenderer {
     const localOuter = localNorm !== undefined ? innerRadius + localNorm * arcWidth : null
 
     // Helper function to draw an arc segment
-    const drawArc = (outerR: number, fillColor: number, alpha: number, lineWidth: number = 1) => {
+    const drawArc = (
+      outerR: number,
+      fillColor: number,
+      alpha: number,
+      lineWidth: number = Styles.LINEWIDTH,
+      borderColor: number = Colors.STANDARD_BORDER,
+    ) => {
       graphics
         .moveTo(
           centerX + innerRadius * Math.cos(startAngle),
@@ -62,7 +70,7 @@ export class SegmentRenderer {
         )
         .arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
         .closePath()
-        .stroke({ color: fillColor, width: lineWidth })
+        .stroke({ color: borderColor, width: lineWidth })
         .fill({ color: fillColor, alpha: alpha })
     }
 
@@ -74,7 +82,7 @@ export class SegmentRenderer {
 
     // Apply hover effect
     const alphaMultiplier = isHovered ? 1.2 : 1.0
-    const lineWidth = isHovered ? 2 : 1
+    const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
     if (localOuter !== null) {
       drawArc(localOuter, overlayColor, 0.25, lineWidth)
       drawArc(globalOuter, globalColor, 0.2, lineWidth)
@@ -129,7 +137,12 @@ export class SegmentRenderer {
     const localOuter = innerRadius + localNorm * arcWidth
 
     // Helper function to draw an arc segment with transparency
-    const drawArc = (outerR: number, fillColor: number, alpha: number, lineWidth: number = 1) => {
+    const drawArc = (
+      outerR: number,
+      fillColor: number,
+      alpha: number,
+      lineWidth: number = Styles.LINEWIDTH,
+    ) => {
       graphics
         .moveTo(
           centerX + innerRadius * Math.cos(startAngle),
@@ -148,7 +161,7 @@ export class SegmentRenderer {
     }
 
     // Apply the overlay with a semi-transparent fill
-    const lineWidth = isHovered ? 2 : 1
+    const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
     drawArc(localOuter, color, 0.25, lineWidth)
   }
 }

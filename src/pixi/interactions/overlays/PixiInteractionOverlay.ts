@@ -29,6 +29,7 @@ import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 // Utils
 import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
+import { Colors } from '@/config/Themes'
 
 export class PixiInteractionOverlay extends PixiContainer {
   private hitAreaGraphic: Graphics = new Graphics()
@@ -148,7 +149,7 @@ export class PixiInteractionOverlay extends PixiContainer {
       localStats[key] = { normMean: value }
     }
 
-    this.attributeRing.setLocalStats('99', localStats, 0x3498db)
+    this.attributeRing.setLocalStats('99', localStats, Colors.POINT_SELECT)
   }
 
   // Handle tap selection events from the selection controller

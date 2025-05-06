@@ -7,7 +7,7 @@ import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useDataStore } from '@/stores/dataStore'
 import { storeToRefs } from 'pinia'
-import { Colors } from '@/Themes/Colors'
+import { Colors } from '@/config/Themes'
 
 const dataStore = useDataStore()
 const { globalStats } = storeToRefs(dataStore)

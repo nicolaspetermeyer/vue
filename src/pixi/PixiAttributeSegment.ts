@@ -1,7 +1,7 @@
 import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
 import type { FeatureStats, Position } from '@/models/data'
 import { Hoverable } from '@/utils/HoverManager'
-import { Colors } from '@/Themes/Colors'
+import { Colors } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { SegmentRenderer } from '@/pixi/renderers/SegmentRenderer'
 
@@ -69,6 +69,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       localNorm: this.localNorm,
       isHovered: this.isHovered,
       color: this.color,
+      borderColor: Colors.STANDARD_BORDER,
     })
     // Then draw each local overlay
     this.localOverlays.forEach((overlay) => {
@@ -84,6 +85,17 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         isHovered: this.isHovered,
       })
     })
+  }
+
+  private redraw(): void {
+    this.drawSegment(
+      this.innerRadius,
+      this.maxOuterRadius,
+      this.startAngle,
+      this.endAngle,
+      this.centerX,
+      this.centerY,
+    )
   }
 
   clearLocalOverlay(): void {
@@ -117,17 +129,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.redraw()
   }
 
-  private redraw(): void {
-    this.drawSegment(
-      this.innerRadius,
-      this.maxOuterRadius,
-      this.startAngle,
-      this.endAngle,
-      this.centerX,
-      this.centerY,
-    )
-  }
-
   containsGlobal(global: Position): boolean {
     const local = this.parent.toLocal(global)
 
@@ -148,11 +149,9 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   setHovered(hovered: boolean) {
     if (this.isHovered !== hovered) {
       this.isHovered = hovered
-      // Redraw with highlight effect if hovered
       this.redraw()
-      // Add visual feedback when hovered
       if (hovered) {
-        this.alpha = 0.8 // Slightly dim when hovered
+        this.alpha = 0.8
       } else {
         this.alpha = 1.0
       }

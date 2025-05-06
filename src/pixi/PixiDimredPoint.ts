@@ -3,7 +3,7 @@ import { PixiSprite } from './Base/PixiSprite'
 import type { Projection } from '@/models/data'
 import { Hoverable } from '@/utils/HoverManager'
 import { useProjectionStore } from '@/stores/projectionStore'
-import { Colors } from '@/Themes/Colors'
+import { Colors } from '@/config/Themes'
 
 // Create a static texture cache
 const textureCache = new Map<number, Texture>()

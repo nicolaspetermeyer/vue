@@ -4,7 +4,7 @@ import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Projection } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
-import { Colors } from '@/Themes/Colors'
+import { Colors } from '@/config/Themes'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
