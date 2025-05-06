@@ -21,6 +21,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public color: number = 0x000000
 
   private isHovered: boolean = false
+  private singleComparison: boolean = false
 
   constructor(
     attributeKey: string,
@@ -57,7 +58,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     this.clear()
 
-    // First draw the base global segment
+    // draw the base global segment
     SegmentRenderer.renderSegment(this, {
       innerRadius,
       maxOuterRadius,
@@ -66,11 +67,16 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       centerX,
       centerY,
       globalNorm: this.globalNorm,
-      localNorm: this.localNorm,
       isHovered: this.isHovered,
       color: this.color,
     })
-    // Then draw each local overlay
+    // draw each local overlay
+    if (this.localOverlays.length === 1) {
+      this.singleComparison = true
+    } else {
+      this.singleComparison = false
+    }
+
     this.localOverlays.forEach((overlay) => {
       SegmentRenderer.renderOverlay(this, {
         innerRadius,
@@ -79,9 +85,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         endAngle,
         centerX,
         centerY,
+        globalNorm: this.globalNorm,
         localNorm: overlay.norm,
         color: overlay.color,
         isHovered: this.isHovered,
+        singleComparison: this.singleComparison,
       })
     })
   }

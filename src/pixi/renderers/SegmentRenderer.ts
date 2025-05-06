@@ -11,10 +11,13 @@ export interface SegmentRenderParams {
   endAngle: number
   centerX: number
   centerY: number
-  globalNorm: number
+  globalNorm?: number
   localNorm?: number
   isHovered?: boolean
   color: number
+  borderColor?: number
+  alpha?: number
+  singleComparison?: boolean
 }
 
 /**
@@ -35,68 +38,32 @@ export class SegmentRenderer {
       endAngle,
       centerX,
       centerY,
-      globalNorm,
-      localNorm,
+      globalNorm = 0,
       isHovered = false,
-      color,
+      borderColor = Colors.STANDARD_BORDER,
     } = params
 
     graphics.clear()
 
     const arcWidth = maxOuterRadius - innerRadius
     const globalOuter = innerRadius + globalNorm * arcWidth
-    const localOuter = localNorm !== undefined ? innerRadius + localNorm * arcWidth : null
-
-    // Helper function to draw an arc segment
-    const drawArc = (
-      outerR: number,
-      fillColor: number,
-      alpha: number,
-      lineWidth: number = Styles.LINEWIDTH,
-    ) => {
-      graphics
-        .moveTo(
-          centerX + innerRadius * Math.cos(startAngle),
-          centerY + innerRadius * Math.sin(startAngle),
-        )
-        .lineTo(centerX + outerR * Math.cos(startAngle), centerY + outerR * Math.sin(startAngle))
-        .arc(centerX, centerY, outerR, startAngle, endAngle)
-        .lineTo(
-          centerX + innerRadius * Math.cos(endAngle),
-          centerY + innerRadius * Math.sin(endAngle),
-        )
-        .arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
-        .closePath()
-        .stroke({ color: Colors.STANDARD_BORDER, width: lineWidth })
-        .fill({ color: fillColor, alpha: alpha })
-    }
-
-    // Define colors
-    const globalColor = Colors.GLOBAL_SEGMENT
-    const overlayColorSmaller = Colors.OVERLAY_SEGMENT_SMALLER
-    const overlayColorBigger = Colors.OVERLAY_SEGMENT_BIGGER
-    const overlayColor = color ?? Colors.STANDARD_OVERLAY
 
     // Apply hover effect
-    const alphaMultiplier = isHovered ? 1.2 : 1.0
     const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
-    if (localOuter !== null) {
-      drawArc(localOuter, overlayColor, 0.25, lineWidth)
-      drawArc(globalOuter, globalColor, 0.2, lineWidth)
-    } else {
-      drawArc(globalOuter, globalColor, 0.2, lineWidth)
-    }
-
-    // // Draw segments based on local vs global comparison
-    // if (localOuter !== null && localOuter > globalOuter) {
-    //   drawArc(localOuter, overlayColorBigger, 0.25, lineWidth)
-    //   drawArc(globalOuter, globalColor, 0.2, lineWidth)
-    // } else {
-    //   drawArc(globalOuter, globalColor, 0.2, lineWidth)
-    //   if (localOuter !== null) {
-    //     drawArc(localOuter, overlayColorSmaller, 0.25, lineWidth)
-    //   }
-    // }
+    const alpha = 0.25
+    // Draw only global segment (with border color)
+    this.drawArcSegment(graphics, {
+      centerX,
+      centerY,
+      innerRadius,
+      outerRadius: globalOuter,
+      startAngle,
+      endAngle,
+      fillColor: Colors.GLOBAL_SEGMENT,
+      borderColor: borderColor,
+      alpha,
+      lineWidth,
+    })
   }
 
   // Add a new method for rendering overlays
@@ -104,20 +71,7 @@ export class SegmentRenderer {
   /**
    * Render a local overlay on top of the segment
    */
-  static renderOverlay(
-    graphics: Graphics,
-    params: {
-      innerRadius: number
-      maxOuterRadius: number
-      startAngle: number
-      endAngle: number
-      centerX: number
-      centerY: number
-      localNorm: number
-      isHovered?: boolean
-      color: number
-    },
-  ): void {
+  static renderOverlay(graphics: Graphics, params: SegmentRenderParams): void {
     const {
       innerRadius,
       maxOuterRadius,
@@ -125,40 +79,116 @@ export class SegmentRenderer {
       endAngle,
       centerX,
       centerY,
-      localNorm,
+      globalNorm = 0,
+      localNorm = 0,
       isHovered = false,
       color,
+      alpha = 0.25,
+      singleComparison,
     } = params
 
     const arcWidth = maxOuterRadius - innerRadius
+    const globalOuter = innerRadius + globalNorm * arcWidth
     const localOuter = innerRadius + localNorm * arcWidth
 
-    // Helper function to draw an arc segment with transparency
-    const drawArc = (
-      outerR: number,
-      fillColor: number,
-      alpha: number,
-      lineWidth: number = Styles.LINEWIDTH,
-    ) => {
-      graphics
-        .moveTo(
-          centerX + innerRadius * Math.cos(startAngle),
-          centerY + innerRadius * Math.sin(startAngle),
-        )
-        .lineTo(centerX + outerR * Math.cos(startAngle), centerY + outerR * Math.sin(startAngle))
-        .arc(centerX, centerY, outerR, startAngle, endAngle)
-        .lineTo(
-          centerX + innerRadius * Math.cos(endAngle),
-          centerY + innerRadius * Math.sin(endAngle),
-        )
-        .arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
-        .closePath()
-        .stroke({ color: fillColor, width: lineWidth })
-        .fill({ color: fillColor, alpha: alpha })
-    }
-
-    // Apply the overlay with a semi-transparent fill
     const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
-    drawArc(localOuter, color, 0.25, lineWidth)
+
+    const overlayColorSmaller = Colors.OVERLAY_SEGMENT_SMALLER
+    const overlayColorBigger = Colors.OVERLAY_SEGMENT_BIGGER
+    const overlayColor = color ?? Colors.STANDARD_OVERLAY
+
+    console.log('singleComparison', singleComparison)
+    if (singleComparison) {
+      // if only one local overlay, compare it with the global overlay
+      if (localOuter !== null && localOuter > globalOuter) {
+        this.drawArcSegment(graphics, {
+          centerX,
+          centerY,
+          innerRadius,
+          outerRadius: localOuter,
+          startAngle,
+          endAngle,
+          fillColor: overlayColorBigger,
+          borderColor: overlayColorBigger,
+          alpha,
+          lineWidth,
+        })
+      } else {
+        this.drawArcSegment(graphics, {
+          centerX,
+          centerY,
+          innerRadius,
+          outerRadius: localOuter,
+          startAngle,
+          endAngle,
+          fillColor: overlayColorSmaller,
+          borderColor: overlayColorSmaller,
+          alpha,
+          lineWidth,
+        })
+      }
+    } else {
+      // if more than one local overlay, draw all local overlays with their given color
+      this.drawArcSegment(graphics, {
+        centerX,
+        centerY,
+        innerRadius,
+        outerRadius: localOuter,
+        startAngle,
+        endAngle,
+        fillColor: color,
+        borderColor: color,
+        alpha,
+        lineWidth,
+      })
+    }
+  }
+
+  private static drawArcSegment(
+    graphics: Graphics,
+    params: {
+      centerX: number
+      centerY: number
+      innerRadius: number
+      outerRadius: number
+      startAngle: number
+      endAngle: number
+      fillColor: number
+      borderColor: number
+      alpha: number
+      lineWidth: number
+    },
+  ): void {
+    const {
+      centerX,
+      centerY,
+      innerRadius,
+      outerRadius,
+      startAngle,
+      endAngle,
+      fillColor,
+      borderColor,
+      alpha,
+      lineWidth,
+    } = params
+
+    graphics
+      .moveTo(
+        centerX + innerRadius * Math.cos(startAngle),
+        centerY + innerRadius * Math.sin(startAngle),
+      )
+      .lineTo(
+        centerX + outerRadius * Math.cos(startAngle),
+        centerY + outerRadius * Math.sin(startAngle),
+      )
+      .arc(centerX, centerY, outerRadius, startAngle, endAngle)
+      .lineTo(
+        centerX + innerRadius * Math.cos(endAngle),
+        centerY + innerRadius * Math.sin(endAngle),
+      )
+      .arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
+      .closePath()
+      .stroke({ color: borderColor ?? fillColor, width: lineWidth })
+      .fill({ color: fillColor, alpha: alpha })
   }
 }
