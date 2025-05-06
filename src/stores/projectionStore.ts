@@ -6,6 +6,7 @@ import { useDataStore } from '@/stores/dataStore'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection, fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 export const useProjectionStore = defineStore('projection', () => {
   const rawProjection = ref<ProjectionRow[]>([])
@@ -30,6 +31,7 @@ export const useProjectionStore = defineStore('projection', () => {
 
       mapToPoint(rawProjection.value)
       // await loadFeatureRanking()
+      useFingerprintStore().fingerprints = [] // Clear fingerprints when loading new projection
     } catch {
       return null
     }
