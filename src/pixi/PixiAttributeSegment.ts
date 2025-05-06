@@ -69,7 +69,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       localNorm: this.localNorm,
       isHovered: this.isHovered,
       color: this.color,
-      borderColor: Colors.STANDARD_BORDER,
     })
     // Then draw each local overlay
     this.localOverlays.forEach((overlay) => {

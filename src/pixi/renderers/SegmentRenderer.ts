@@ -15,7 +15,6 @@ export interface SegmentRenderParams {
   localNorm?: number
   isHovered?: boolean
   color: number
-  borderColor: number
 }
 
 /**
@@ -40,7 +39,6 @@ export class SegmentRenderer {
       localNorm,
       isHovered = false,
       color,
-      borderColor,
     } = params
 
     graphics.clear()
@@ -55,7 +53,6 @@ export class SegmentRenderer {
       fillColor: number,
       alpha: number,
       lineWidth: number = Styles.LINEWIDTH,
-      borderColor: number = Colors.STANDARD_BORDER,
     ) => {
       graphics
         .moveTo(
@@ -70,7 +67,7 @@ export class SegmentRenderer {
         )
         .arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
         .closePath()
-        .stroke({ color: borderColor, width: lineWidth })
+        .stroke({ color: Colors.STANDARD_BORDER, width: lineWidth })
         .fill({ color: fillColor, alpha: alpha })
     }
 
