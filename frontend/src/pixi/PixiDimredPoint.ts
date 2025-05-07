@@ -110,8 +110,8 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     }
   }
 
+  // Update the scale of the point to maintain constant visual size
   updatePointScale(inverseScale: number) {
-    // Update the scale of the point to maintain constant visual size
     this.scale.set(inverseScale)
   }
 

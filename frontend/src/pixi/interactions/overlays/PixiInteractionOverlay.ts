@@ -231,7 +231,7 @@ export class PixiInteractionOverlay extends PixiContainer {
   private onBrushEnd(selectionArea: Rectangle | PointData[], mode: SelectionMode) {
     if (!this.dimred) return
 
-    let selected: number[] = []
+    let selected: string[] = []
 
     if (mode === SelectionMode.RECTANGLE && selectionArea instanceof Rectangle) {
       selected = this.dimred.getPointsInBounds(selectionArea)

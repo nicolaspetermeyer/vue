@@ -4,7 +4,7 @@ import { PixiTooltip } from '@/pixi/interactions/overlays/PixiTooltip'
 export interface Hoverable {
   setHovered(hovered: boolean): void
   getTooltipContent(): string
-  getId(): string | number
+  getId(): string
 }
 
 export interface HoverableProvider<T extends Hoverable> {
