@@ -18,16 +18,20 @@ export const useProjectionStore = defineStore('projection', () => {
   const neighborhoodRadius = ref<number>(0.1)
 
   async function loadProjection() {
-    const dataset = useDatasetStore().selectedDatasetName
-    const rawData = useDataStore().rawData
+    const datasetStore = useDatasetStore()
+    const dataStore = useDataStore()
+    const dataset = datasetStore.selectedDatasetName
 
     if (!dataset) {
       return null
     }
+    if (dataStore.rawData.length === 0) {
+      await dataStore.loadData()
+    }
     try {
       rawProjection.value = await fetchProjection(dataset, projectionMethod.value)
 
-      projectionMatch.value = matchProjection(rawData, rawProjection.value)
+      projectionMatch.value = await matchProjection(dataStore.rawData, rawProjection.value)
 
       mapToPoint(rawProjection.value)
       // await loadFeatureRanking()
@@ -80,8 +84,8 @@ export const useProjectionStore = defineStore('projection', () => {
   }
 
   function mapToPoint(rows: ProjectionRow[]) {
-    matchedPoints.value = rows.map((row, i) => ({
-      item_id: i,
+    matchedPoints.value = rows.map((row) => ({
+      item_id: row.id,
       pos: { x: row.x, y: row.y },
     }))
   }

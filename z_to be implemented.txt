@@ -25,6 +25,9 @@
 
 3. Fingerprint Management
     User-driven labeling/tagging of fingerprints.
+    Fingerprint export import options:
+        Export as JSON for sharing and collaboration.
+        Import from external sources (e.g., CSV, JSON).
     Glyph-based fingerprint representation (e.g., SVG or canvas).
     Fingerprint Statistics 
 

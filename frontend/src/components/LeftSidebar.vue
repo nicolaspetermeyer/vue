@@ -27,13 +27,12 @@ const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
   if (select) {
-    setSelectedDatasetId(Number(select.value) || null)
+    setSelectedDatasetId(Number(select.value || null))
     loadData()
   }
 }
 
 const toggleSelectionMode = () => {
-  console.log('toggleSelectionMode')
   if (projectionInstance.value) {
     projectionInstance.value.toggleSelectionMode()
     currentMode.value =

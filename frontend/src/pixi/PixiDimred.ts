@@ -9,8 +9,8 @@ import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransforme
 import { PolygonUtils } from '@/utils/geometry/PolygonUtils'
 
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
-  pixiDimredPoints: Map<number, PixiDimredPoint> = new Map()
-  private highlightedFingerprintPoints: Set<number> = new Set()
+  pixiDimredPoints: Map<string, PixiDimredPoint> = new Map()
+  private highlightedFingerprintPoints: Set<string> = new Set()
   public detectRadius: number = 5
 
   constructor(projectedPoints: Projection[]) {
@@ -60,7 +60,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     })
   }
 
-  getPointsInBounds(bounds: Rectangle): number[] {
+  getPointsInBounds(bounds: Rectangle): string[] {
     const localBounds = CoordinateTransformer.globalToLocalRect(bounds, this)
 
     return Array.from(this.pixiDimredPoints.values())
@@ -74,7 +74,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
    * @param polygon - Array of points defining the selection polygon
    * @returns Array of point IDs that are inside the polygon
    */
-  getPointsInPolygon(polygon: PointData[]): number[] {
+  getPointsInPolygon(polygon: PointData[]): string[] {
     // Convert global polygon points to local coordinates
     const localPolygon = polygon.map((point) => this.toLocal(point))
 
@@ -98,7 +98,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     return null
   }
 
-  setSelection(selectedIds: number[]) {
+  setSelection(selectedIds: string[]) {
     const selectedSet = new Set(selectedIds)
     this.pixiDimredPoints.forEach((point, id) => {
       point.setSelected(selectedSet.has(id))
@@ -119,12 +119,12 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   highlightFingerprintPoints(pointColorMap: Record<string, number>): void {
     this.clearHighlightedPoints()
 
-    const pointIds = Object.keys(pointColorMap)
-    const numericIds = pointIds.map((id) => parseInt(id))
-    const numericIdSet = new Set(numericIds)
+    const pointIds = new Set(Object.keys(pointColorMap))
+    // const numericIds = pointIds.map((id) => parseInt(id))
+    // const numericIdSet = new Set(numericIds)
 
     this.pixiDimredPoints.forEach((point, id) => {
-      if (numericIdSet.has(id)) {
+      if (pointIds.has(id)) {
         const color = pointColorMap[id.toString()]
         point.setInFingerprint(true, color)
       } else {
@@ -132,7 +132,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
         point.setInFingerprint(false)
       }
     })
-    this.highlightedFingerprintPoints = numericIdSet
+    this.highlightedFingerprintPoints = pointIds
   }
 
   clearHighlightedPoints(): void {

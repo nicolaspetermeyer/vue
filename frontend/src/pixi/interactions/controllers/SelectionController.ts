@@ -343,10 +343,10 @@ export class SelectionController extends EventEmitter {
     }
 
     // Fill and stroke the path
-    // this.brushGraphics.fill({
-    //   color: this.options.brushFillColor,
-    //   alpha: this.options.brushFillAlpha,
-    // })
+    this.brushGraphics.fill({
+      color: this.options.brushFillColor,
+      alpha: this.options.brushFillAlpha,
+    })
     this.brushGraphics.stroke({
       width: this.options.brushStrokeWidth,
       color: this.options.brushStrokeColor,

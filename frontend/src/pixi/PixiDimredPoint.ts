@@ -151,7 +151,7 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     }
     return this.projectedPoint
   }
-  getId(): number {
+  getId(): string {
     return this.dimredpoint.id
   }
 }

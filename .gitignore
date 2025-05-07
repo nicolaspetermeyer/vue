@@ -1,3 +1,14 @@
+# Build outputs
+dist
+dist-ssr
+build
+*.tsbuildinfo
+
+# Dependencies
+node_modules
+/frontend/node_modules
+**/node_modules
+
 # Logs
 logs
 *.log
@@ -7,30 +18,67 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-/frontend/node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
-
-/cypress/videos/
-/cypress/screenshots/
-
 # Editor directories and files
+.vscode/*
 /frontend/.vscode/*
-
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-*.tsbuildinfo
-
+**/.DS_Store
+**/Thumbs.db
+.editorconfig
 /frontend/.editorconfig
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+.python-version
+**/htmlcov/
+**/.coverage
+**/.tox/
+**/.mypy_cache/
+**/.pytest_cache/
+**/.pytest_cache/
+
+# Testing
+coverage
+/cypress/videos/
+/cypress/screenshots/
+.nyc_output
+**/.pytest_cache/
+
+# Local env files
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary files
+*.swp
+*.swo
+*~
+.temp
+.tmp
+
+# System files
+.DS_Store
+Thumbs.db
+
+
 
 
 

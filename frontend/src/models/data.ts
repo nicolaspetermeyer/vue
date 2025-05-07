@@ -3,18 +3,18 @@ export interface Dataset {
   name: string
 }
 export interface Data {
-  id: number
+  id: string
   [feature: string]: number | string // id + feature fields
 }
 
 export interface ProjectionRow {
-  id: number
+  id: string
   x: number
   y: number
 }
 
 export interface Projection {
-  id: number
+  id: string
   pos: Position
   original: Data
 }
@@ -43,7 +43,7 @@ export interface Position {
 }
 
 export interface Point {
-  item_id: number
+  item_id: string
   pos: Position
 }
 

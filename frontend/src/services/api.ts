@@ -10,6 +10,7 @@ const api = axios.create({
 
 export async function fetchRawData(filename: string): Promise<Data[]> {
   const response = await api.get<Data[]>(`/data/${filename}`)
+  console.log('fetchRawData', filename, response.data)
   return response.data
 }
 

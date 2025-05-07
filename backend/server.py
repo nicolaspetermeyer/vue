@@ -197,7 +197,15 @@ async def get_file_data(filename: str):
     df.rename(
         columns={col: "id" for col in df.columns if col.lower() == "id"}, inplace=True
     )
+    # Ensure 'id' column is string type
+    if "id" in df.columns:
+        df["id"] = df["id"].astype(str)
+    else:
+        # Add sequential string IDs if not present
+        df["id"] = [f"point-{i}" for i in range(len(df))]
+    id_column = df["id"]
     df_numeric = df.select_dtypes(include=["number"]).reset_index(drop=True)
+    df_numeric["id"] = id_column.reset_index(drop=True)
 
     return df_numeric.to_dict(orient="records")
 
