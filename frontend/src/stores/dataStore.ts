@@ -48,9 +48,6 @@ export const useDataStore = defineStore('data', () => {
         nonNumericAttributes.value.push(key)
       }
     })
-
-    console.log('Numeric attributes:', numericAttributes.value)
-    console.log('Non-numeric attributes:', nonNumericAttributes.value)
   }
 
   return {

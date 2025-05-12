@@ -125,9 +125,6 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
       .filter(([key]) => nonNumericAttrs.includes(key))
       .map(([key, value]) => `${key}: ${String(value)}`)
 
-    console.log('nonNumericAttrs', nonNumericAttrs)
-    console.log('nonNumericFeatures', nonNumericFeatures)
-
     if (nonNumericFeatures.length > 0) {
       sections.push('', 'Metadata:', ...nonNumericFeatures)
     }

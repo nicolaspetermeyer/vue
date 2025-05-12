@@ -52,10 +52,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     updateAttributeRingVisualization(projectionInstance)
   }
 
-  function setSelectedFingerprint(fingerprint: Fingerprint) {
-    if (!selectedFingerprints.value.find((f) => f.id === fingerprint.id)) {
-      selectedFingerprints.value.push(fingerprint)
-    }
+  function clearFingerprints() {
+    fingerprints.value = []
+    selectedFingerprints.value = []
+    fingerprintCounter.value = 1
   }
 
   function toggleSelectedFingerprint(
@@ -126,6 +126,34 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       .map(([key]) => key)
   }
 
+  function calculateSelectionCentroid(points: Projection[]): { x: number; y: number } | null {
+    if (!points || points.length === 0) {
+      return null
+    }
+
+    // Calculate centroid
+    const sumX = points.reduce((sum, point) => sum + point.pos.x, 0)
+    const sumY = points.reduce((sum, point) => sum + point.pos.y, 0)
+
+    return {
+      x: sumX / points.length,
+      y: sumY / points.length,
+    }
+  }
+
+  function getFingerprintCentroid(fingerprintId: string): { x: number; y: number } | null {
+    const fingerprint = fingerprints.value.find((f) => f.id === fingerprintId)
+    if (!fingerprint) {
+      return null
+    }
+
+    return calculateSelectionCentroid(fingerprint.projectedPoints)
+  }
+
+  function getCurrentSelectionCentroid(): { x: number; y: number } | null {
+    return calculateSelectionCentroid(selection.value)
+  }
+
   return {
     fingerprints,
     selectedFingerprints,
@@ -133,10 +161,13 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     setSelection,
     addFingerprint,
     removeFingerprint,
+    clearFingerprints,
     updateAttributeRingVisualization,
-    setSelectedFingerprint,
     toggleSelectedFingerprint,
     getComparisonColors,
     getTopFeatures,
+    calculateSelectionCentroid,
+    getFingerprintCentroid,
+    getCurrentSelectionCentroid,
   }
 })

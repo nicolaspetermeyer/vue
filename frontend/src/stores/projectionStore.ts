@@ -33,7 +33,6 @@ export const useProjectionStore = defineStore('projection', () => {
       return null
     }
 
-    // Safety: Check if we need to reload raw data
     if (dataStore.rawData.length === 0 || currentDatasetId.value !== dataset || forceReload) {
       clearAllProjectionData()
       await dataStore.loadData()
@@ -73,7 +72,7 @@ export const useProjectionStore = defineStore('projection', () => {
     matchedPoints.value = []
     featureRanking.value = []
     clearProjectionInstance()
-    useFingerprintStore().fingerprints = []
+    useFingerprintStore().clearFingerprints()
   }
 
   async function loadFeatureRanking() {

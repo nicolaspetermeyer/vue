@@ -16,13 +16,18 @@ const dataStore = useDataStore()
 const { loadData } = dataStore
 
 const projectionStore = useProjectionStore()
-const { loadProjection } = projectionStore
 const { projectionMethod, projectionInstance } = storeToRefs(projectionStore)
 
 const fingerprintStore = useFingerprintStore()
 const { addFingerprint } = fingerprintStore
 
 const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
+
+const loadProj = async () => {
+  projectionStore.clearAllProjectionData()
+
+  await projectionStore.loadProjection(true)
+}
 
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
@@ -59,7 +64,7 @@ onMounted(async () => {})
         <option value="pca">PCA</option>
         <option value="tsne">t-SNE</option>
       </select>
-      <button @click="loadProjection()" class="btn btn-xs btn-content">Compute Points</button>
+      <button @click="loadProj()" class="btn btn-xs btn-content">Compute Points</button>
       <h2 class="text-xl font-bold">Fingerprint</h2>
       <button @click="toggleSelectionMode" class="btn btn-xs btn-content">
         Toggle Selection Mode
