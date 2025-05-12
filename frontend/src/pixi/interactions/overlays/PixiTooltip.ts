@@ -5,6 +5,7 @@ export class PixiTooltip extends PixiContainer {
   private bg: Graphics
   private labels: Text
   private padding = 8
+  private maxLines = 20
 
   constructor() {
     super({
@@ -35,7 +36,14 @@ export class PixiTooltip extends PixiContainer {
   }
 
   show(text: string, x: number, y: number) {
-    this.labels.text = text
+    const lines = text.split('\n')
+    let limitedText = text
+
+    if (lines.length > this.maxLines) {
+      limitedText = lines.slice(0, this.maxLines).join('\n') + '\n...'
+    }
+
+    this.labels.text = limitedText
 
     const labelWidth = this.labels.width
     const labelHeight = this.labels.height

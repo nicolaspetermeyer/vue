@@ -117,13 +117,21 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
 
   getTooltipContent(): string {
     const projection = this.dimredpoint
-    const pointId = String(projection.id)
+    const nonNumericAttrs = projection.nonNumericAttributes || []
+    const nonNumericFeatures: string[] = []
+    const numericFeatures: string[] = []
+    console.log('Tooltip content:', projection)
 
     const featureLines = Object.entries(projection.original)
       .filter(([key]) => key.toLowerCase() !== 'id')
-      .map(([key, value]) => {
+      .forEach(([key, value]) => {
         const valStr = typeof value === 'number' ? value.toFixed(2) : String(value)
-        return `${key}: ${valStr}`
+        const formattedLine = `${key}: ${valStr}`
+        if (nonNumericAttrs.includes(key)) {
+          nonNumericFeatures.push(formattedLine)
+        } else {
+          numericFeatures.push(formattedLine)
+        }
       })
     // Get feature ranking information
     // const projectionStore = useProjectionStore()
@@ -142,7 +150,13 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     //       .join('\n')
     // }
 
-    return [`ID: ${projection.id}`, '', 'Features:', ...featureLines].join('\n')
+    return [
+      `ID: ${projection.id}`,
+      '',
+      'Features:',
+      ...nonNumericFeatures,
+      ...numericFeatures,
+    ].join('\n')
   }
 
   get dimredpoint(): Projection {

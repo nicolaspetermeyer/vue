@@ -71,7 +71,9 @@ export class PixiProjection extends PixiContainer {
     window.removeEventListener('keydown', this.interactionOverlay.handleKeyDown)
   }
 
-  // method to reset the view (zoom and position)
+  /**
+   * method to reset the view (zoom and position)
+   */
   resetView() {
     this.interactionOverlay.resetView()
   }

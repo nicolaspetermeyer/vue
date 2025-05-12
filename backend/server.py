@@ -204,7 +204,16 @@ async def get_file_data(filename: str):
         # Add sequential string IDs if not present
         df["id"] = [f"point-{i}" for i in range(len(df))]
 
-    return df.to_dict(orient="records")
+    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    column_types = {
+        col: {"isNumeric": col in numeric_cols}
+        for col in df.columns
+        if col.lower() != "id"
+    }
+
+    data_records = df.to_dict(orient="records")
+
+    return {"data": data_records, "metadata": {"columns": column_types}}
 
 
 @app.get("/api/projection/")

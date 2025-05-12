@@ -31,8 +31,11 @@ export const useProjectionStore = defineStore('projection', () => {
     try {
       rawProjection.value = await fetchProjection(dataset, projectionMethod.value)
 
-      projectionMatch.value = await matchProjection(dataStore.rawData, rawProjection.value)
-
+      const matchResult = await matchProjection(dataStore.rawData, rawProjection.value)
+      projectionMatch.value = matchResult.map((point) => ({
+        ...point,
+        nonNumericAttributes: dataStore.nonNumericAttributes,
+      }))
       mapToPoint(rawProjection.value)
       // await loadFeatureRanking()
       useFingerprintStore().fingerprints = [] // Clear fingerprints when loading new projection

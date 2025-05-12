@@ -7,6 +7,18 @@ export interface Data {
   [feature: string]: number | string // id + feature fields
 }
 
+export interface ColumnMetadata {
+  isNumeric: boolean
+  [property: string]: any
+}
+
+export interface DataResponse {
+  data: Data[]
+  metadata: {
+    columns: Record<string, ColumnMetadata>
+  }
+}
+
 export interface ProjectionRow {
   id: string
   x: number
@@ -17,6 +29,7 @@ export interface Projection {
   id: string
   pos: Position
   original: Data
+  nonNumericAttributes?: string[]
 }
 
 export interface FeatureStats {
