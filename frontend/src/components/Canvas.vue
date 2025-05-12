@@ -20,11 +20,10 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 let app: PixiApp | null = null
 
 const currentProjection = ref<PixiProjection | null>(null)
+const initializationComplete = ref<boolean>(false)
 
 function resetView() {
-  if (currentProjection.value) {
-    currentProjection.value.resetView()
-  }
+  currentProjection.value?.resetView()
 }
 
 function update() {
@@ -40,47 +39,53 @@ async function init() {
   const { width, height } = wrapperRef.value.getBoundingClientRect()
 
   // Create Pixi App
-  app = new PixiApp()
+  if (!app) {
+    app = new PixiApp()
+    await app.setup(canvasRef.value, width, height, Colors.CANVAS_BACKGROUND)
+    initDevtools({ app: app as Application })
+  }
 
-  await app.setup(canvasRef.value, width, height, Colors.CANVAS_BACKGROUND)
+  createProjectionInstance()
+  initializationComplete.value = true
+}
 
-  initDevtools({ app: app as Application })
+function createProjectionInstance() {
+  if (!app) return
 
-  // Create DR projection renderer
-  const projection = new PixiProjection(projectionMatch.value, globalStats.value)
-  projectionStore.setProjectionInstance(projection)
+  // Clean up any existing projection
+  if (currentProjection.value) {
+    currentProjection.value.unregisterKeyboardEvents()
+    app.clearRoot()
+    currentProjection.value = null
+    projectionStore.clearProjectionInstance()
+  }
 
-  // Register keyboard events
+  // Create new projection instance
+  const projection = new PixiProjection(projectionStore.projectionMatch, dataStore.globalStats)
+
+  // Set up the new projection
   projection.registerKeyboardEvents()
-
-  // Add to root
   app.addContainer(projection)
   currentProjection.value = projection
+
+  // Store reference in the store
+  projectionStore.setProjectionInstance(projection)
+
+  console.log('Projection instance created with', projectionStore.projectionMatch.length, 'points')
 }
 
 watch(
   () => projectionStore.projectionMatch,
-  (projectionMatch) => {
-    if (!app) return
-
-    if (currentProjection.value) {
-      currentProjection.value.unregisterKeyboardEvents()
+  (newMatch) => {
+    if (newMatch.length > 0 && app) {
+      createProjectionInstance()
     }
-
-    app.clearRoot()
-
-    const projection = new PixiProjection(projectionMatch, globalStats.value)
-    projectionStore.setProjectionInstance(projection)
-
-    projection.registerKeyboardEvents()
-
-    app.addContainer(projection)
-    currentProjection.value = projection
   },
+  { deep: true },
 )
 
-onMounted(() => {
-  init()
+onMounted(async () => {
+  await init()
   update()
 })
 

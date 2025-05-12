@@ -9,6 +9,10 @@ import { PixiProjection } from '@/pixi/PixiProjection'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 export const useProjectionStore = defineStore('projection', () => {
+  const datasetStore = useDatasetStore()
+  const dataStore = useDataStore()
+
+  // State
   const rawProjection = ref<ProjectionRow[]>([])
   const projectionMatch = ref<Projection[]>([])
   const matchedPoints = ref<Point[]>([])
@@ -17,31 +21,59 @@ export const useProjectionStore = defineStore('projection', () => {
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)
 
-  async function loadProjection() {
-    const datasetStore = useDatasetStore()
-    const dataStore = useDataStore()
+  // Keep track of the current dataset for validation
+  const currentDatasetId = ref<string | null>(null)
+  const isLoading = ref<boolean>(false)
+
+  async function loadProjection(forceReload = false) {
     const dataset = datasetStore.selectedDatasetName
 
     if (!dataset) {
+      clearAllProjectionData()
       return null
     }
-    if (dataStore.rawData.length === 0) {
+
+    // Safety: Check if we need to reload raw data
+    if (dataStore.rawData.length === 0 || currentDatasetId.value !== dataset || forceReload) {
+      clearAllProjectionData()
       await dataStore.loadData()
+      currentDatasetId.value = dataset
     }
+
+    // Prevent concurrent loads
+    if (isLoading.value) {
+      console.warn('Projection loading already in progress')
+      return
+    }
+
+    isLoading.value = true
+
     try {
       rawProjection.value = await fetchProjection(dataset, projectionMethod.value)
 
       const matchResult = await matchProjection(dataStore.rawData, rawProjection.value)
+
       projectionMatch.value = matchResult.map((point) => ({
         ...point,
         nonNumericAttributes: dataStore.nonNumericAttributes,
       }))
+
       mapToPoint(rawProjection.value)
       // await loadFeatureRanking()
-      useFingerprintStore().fingerprints = [] // Clear fingerprints when loading new projection
     } catch {
       return null
+    } finally {
+      isLoading.value = false
     }
+  }
+
+  function clearAllProjectionData() {
+    rawProjection.value = []
+    projectionMatch.value = []
+    matchedPoints.value = []
+    featureRanking.value = []
+    clearProjectionInstance()
+    useFingerprintStore().fingerprints = []
   }
 
   async function loadFeatureRanking() {
@@ -119,5 +151,6 @@ export const useProjectionStore = defineStore('projection', () => {
     mapToPoint,
     setProjectionInstance,
     clearProjectionInstance,
+    clearAllProjectionData,
   }
 })
