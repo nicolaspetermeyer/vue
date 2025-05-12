@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import numpy as np
 from pydantic import BaseModel
-from typing import Literal, List
+from typing import Literal, List, Dict, Any, Optional, Tuple
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
@@ -12,6 +12,9 @@ import os
 app = FastAPI()
 router = APIRouter()
 projection_cache = {}
+stats_cache = {}
+feature_ranking_cache = {}
+dataset_cache = {}
 
 
 class ProjectionRequest(BaseModel):
@@ -36,7 +39,111 @@ app.add_middleware(
 DATA_DIR = "./data"  # Directory where CSV files are stored
 
 
-def compute_tsne(data: np.ndarray):
+class DatasetInfo:
+    """Container for dataset information and metadata"""
+
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        numeric_cols: List[str],
+        non_numeric_cols: List[str],
+        column_types: Dict[str, Dict[str, Any]],
+    ):
+        self.df = df
+        self.numeric_cols = numeric_cols
+        self.non_numeric_cols = non_numeric_cols
+        self.column_types = column_types
+        self.numeric_df = df[numeric_cols] if numeric_cols else pd.DataFrame()
+
+        # Extract row identifiers
+        if "id" in df.columns:
+            self.ids = df["id"].astype(str).tolist()
+        else:
+            self.ids = [f"point-{i}" for i in range(len(df))]
+
+
+# ============================================================================
+# DATA PREPROCESSING PIPELINE
+# ============================================================================
+def preprocess_dataset(filename: str) -> DatasetInfo:
+    """
+    Comprehensive dataset preprocessing pipeline that:
+    1. Loads and normalizes the dataset
+    2. Categorizes columns
+    3. Creates metadata
+    4. Returns everything needed by downstream processing
+
+    Args:
+        filename: Name of the dataset to process
+
+    Returns:
+        DatasetInfo object with processed dataset and metadata
+    """
+    # Check if we have this dataset already preprocessed in cache
+    if filename in dataset_cache:
+        return dataset_cache[filename]
+
+    # Load the raw data
+    df = read_csv_file(filename)
+
+    # Normalize column names
+    df.rename(
+        columns={col: "id" for col in df.columns if col.lower() == "id"}, inplace=True
+    )
+
+    # Ensure ID column exists and is string type
+    if "id" in df.columns:
+        df["id"] = df["id"].astype(str)
+    else:
+        df["id"] = [f"point-{i}" for i in range(len(df))]
+
+    # Identify column types
+    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    non_numeric_cols = [
+        col for col in df.columns if col not in numeric_cols and col.lower() != "id"
+    ]
+
+    # Create column metadata
+    column_types = {
+        col: {"isNumeric": col in numeric_cols}
+        for col in df.columns
+        if col.lower() != "id"
+    }
+
+    # Create dataset info object
+    info = DatasetInfo(df, numeric_cols, non_numeric_cols, column_types)
+
+    # Cache this processed dataset
+    dataset_cache[filename] = info
+
+    return info
+
+
+def read_csv_file(filename: str):
+    """
+    Read a CSV file and return its content as a DataFrame.
+    """
+    if ".." in filename or "/" in filename:
+        raise HTTPException(status_code=400, detail="Invalid file name")
+    file_path = os.path.join(DATA_DIR, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        df = pd.read_csv(file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading CSV file: {e}")
+    return df
+
+
+# ============================================================================
+# PROJECTION METHODS
+# ============================================================================
+
+
+def compute_tsne(data: np.ndarray) -> List[List[float]]:
+    """Compute t-SNE projection"""
     # Remove ID columns
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
@@ -57,8 +164,8 @@ def compute_tsne(data: np.ndarray):
     return embedding.tolist()
 
 
-def compute_pca(data: np.ndarray, n_components: int = 2):
-    # Remove ID columns
+def compute_pca(data: np.ndarray, n_components: int = 2) -> List[List[float]]:
+    """Compute PCA projection"""
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
@@ -147,10 +254,7 @@ def compute_feature_ranking(local_vars, global_vars):
 
     # Sum across features to normalize each point's scores
     sums = norm_lv.sum(axis=1, keepdims=True)
-
-    # Avoid division by zero - replace zero sums with small epsilon
     sums = np.where(sums == 0, np.finfo(float).eps, sums)
-
     xi = norm_lv / sums
 
     # Ranking: argsort in descending order of xi
@@ -159,24 +263,9 @@ def compute_feature_ranking(local_vars, global_vars):
     return xi, ranking
 
 
-def read_csv_file(filename: str):
-    """
-    Read a CSV file and return its content as a DataFrame.
-    """
-    if ".." in filename or "/" in filename:
-        raise HTTPException(status_code=400, detail="Invalid file name")
-    file_path = os.path.join(DATA_DIR, filename)
-
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    try:
-        df = pd.read_csv(file_path)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading CSV file: {e}")
-    return df
-
-
+# ============================================================================
+# API ROUTES
+# ============================================================================
 @app.get("/api/datasets/")
 async def list_datasets():
     """
@@ -191,29 +280,35 @@ async def get_file_data(filename: str):
     """
     Retrieve data from the selected CSV file.
     """
-    df = read_csv_file(filename)
+    dataset_info = preprocess_dataset(filename)
+    data_records = dataset_info.df.to_dict(orient="records")
 
-    # Normalize any column named 'ID', 'Id', etc. to lowercase 'id'
-    df.rename(
-        columns={col: "id" for col in df.columns if col.lower() == "id"}, inplace=True
-    )
-    # Ensure 'id' column is string type
-    if "id" in df.columns:
-        df["id"] = df["id"].astype(str)
-    else:
-        # Add sequential string IDs if not present
-        df["id"] = [f"point-{i}" for i in range(len(df))]
+    return {"data": data_records, "metadata": {"columns": dataset_info.column_types}}
 
-    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-    column_types = {
-        col: {"isNumeric": col in numeric_cols}
-        for col in df.columns
-        if col.lower() != "id"
-    }
 
-    data_records = df.to_dict(orient="records")
+@app.get("/api/organized-data/{filename}")
+async def get_organized_data(filename: str):
+    """
+    Return data pre-organized with non-numeric attributes separated
+    """
+    # Get processed dataset
+    dataset_info = preprocess_dataset(filename)
 
-    return {"data": data_records, "metadata": {"columns": column_types}}
+    # Create organized records
+    organized_data = []
+    for _, row in dataset_info.df.iterrows():
+        item_id = row["id"]
+
+        # Split attributes by type
+        numeric_attrs = {col: row[col] for col in dataset_info.numeric_cols}
+
+        non_numeric_attrs = {col: row[col] for col in dataset_info.non_numeric_cols}
+
+        organized_data.append(
+            {"id": item_id, "numeric": numeric_attrs, "nonNumeric": non_numeric_attrs}
+        )
+
+    return organized_data
 
 
 @app.get("/api/projection/")
@@ -235,33 +330,34 @@ async def project_data(
     if key in projection_cache:
         return projection_cache[key]
 
-    df = read_csv_file(filename)
-    df_numeric = df.select_dtypes(include=["number"])
+    dataset_info = preprocess_dataset(filename)
 
+    # Check if we have numeric data to project
+    if len(dataset_info.numeric_cols) == 0:
+        raise HTTPException(
+            status_code=400, detail="No numeric columns available for projection"
+        )
+
+    # Perform projection
     if method == "pca":
-        projected_data = compute_pca(df_numeric)
+        projected_data = compute_pca(dataset_info.numeric_df)
     elif method == "tsne":
-        projected_data = compute_tsne(df_numeric)
+        projected_data = compute_tsne(dataset_info.numeric_df)
     else:
         raise HTTPException(status_code=400, detail="Invalid projection method")
 
-    # Get row identifiers from the original dataframe
-    if "id" in df.columns:
-        ids = df["id"].astype(str).tolist()
-    else:
-        ids = [f"{i}" for i in range(len(df))]
-
+    # Create projection result
     projection = [
         {
-            "id": ids[i],
+            "id": dataset_info.ids[i],
             "x": float(projected_data[i][0]),
             "y": float(projected_data[i][1]),
         }
-        for i in range(len(ids))
+        for i in range(len(dataset_info.ids))
     ]
 
+    # Cache the result
     projection_cache[key] = projection
-
     return projection
 
 
@@ -270,41 +366,44 @@ async def get_feature_stats(filename: str):
     """
     Compute basic statistics (mean, std, min, max) for each numeric feature.
     """
-    df = read_csv_file(filename)
-    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-    non_numeric_cols = [
-        col for col in df.columns if col not in numeric_cols and col.lower() != "id"
-    ]
-    # df_numeric = df.select_dtypes(include=["number"])
+
+    if filename in stats_cache:
+        return stats_cache[filename]
+
+    dataset_info = preprocess_dataset(filename)
 
     stats = {}
-    for col in numeric_cols:
+
+    # Process numeric columns
+    for col in dataset_info.numeric_cols:
         if col.lower() == "id":
             continue
 
-        col_data = df[col]
+        col_data = dataset_info.df[col]
         mean = col_data.mean()
         std = col_data.std()
         min_val = col_data.min()
         max_val = col_data.max()
+        range_val = max_val - min_val
+        norm_mean = (mean - min_val) / range_val if range_val > 0 else 0
+        norm_std = std / range_val if range_val > 0 else 0
 
         stats[col] = {
             "mean": float(mean),
             "std": float(std),
             "min": float(min_val),
             "max": float(max_val),
-            "normMean": (
-                float((mean - min_val) / (max_val - min_val))
-                if max_val > min_val
-                else 0
-            ),
-            "normStd": float(std / (max_val - min_val)) if max_val > min_val else 0,
+            "normMean": float(norm_mean),
+            "normStd": float(norm_std),
             "isNumeric": True,
         }
-    for col in non_numeric_cols:
-        unique_values = df[col].nunique()
+
+    # Process non-numeric columns
+    for col in dataset_info.non_numeric_cols:
+        unique_values = dataset_info.df[col].nunique()
         stats[col] = {"isNumeric": False, "uniqueValues": int(unique_values)}
 
+    stats_cache[filename] = stats
     return stats
 
 
@@ -323,18 +422,18 @@ async def get_feature_ranking(
     Returns:
         JSON with feature ranking information for each point
     """
-    # Get the original data
-    df = read_csv_file(filename)
-    df_numeric = df.select_dtypes(include=["number"])
-    id_cols = [col for col in df_numeric.columns if col.lower() == "id"]
-    if id_cols:
-        df_numeric = df_numeric.drop(columns=id_cols)
+    cache_key = (filename, method, radius)
+    if cache_key in feature_ranking_cache:
+        return feature_ranking_cache[cache_key]
 
-    # Store original row IDs for returning results
-    if "id" in df.columns:
-        row_ids = df["id"].astype(str).tolist()
-    else:
-        row_ids = [f"{i}" for i in range(len(df))]
+    # Get the original data
+    dataset_info = preprocess_dataset(filename)
+
+    # Check if we have numeric data to analyze
+    if len(dataset_info.numeric_cols) == 0:
+        raise HTTPException(
+            status_code=400, detail="No numeric columns available for feature ranking"
+        )
 
     # Get the projection (or compute it if not cached)
     key = (filename, method)
@@ -347,19 +446,20 @@ async def get_feature_ranking(
     proj_coords = np.array([[item["x"], item["y"]] for item in projection_data])
 
     # Compute local variances
-    local_vars = compute_local_variance(df_numeric.values, proj_coords, radius)
-
+    local_vars = compute_local_variance(
+        dataset_info.numeric_df.values, proj_coords, radius
+    )
     # Compute global variances for each feature
-    global_vars = df_numeric.var().values
+    global_vars = dataset_info.numeric_df.var().values
 
     # Compute feature ranking
     xi_scores, rankings = compute_feature_ranking(local_vars, global_vars)
 
     # Prepare results
-    feature_names = df_numeric.columns.tolist()
+    feature_names = dataset_info.numeric_cols
 
     result = []
-    for i in range(len(df_numeric)):
+    for i in range(len(dataset_info.numeric_df)):
         # Get feature names in order of importance for this point
         ranked_features = [feature_names[feat_idx] for feat_idx in rankings[i]]
 
@@ -367,12 +467,13 @@ async def get_feature_ranking(
         importance_scores = [float(xi_scores[i, feat_idx]) for feat_idx in rankings[i]]
 
         point_result = {
-            "id": row_ids[i],
+            "id": dataset_info.ids[i],
             "features": ranked_features,
             "scores": importance_scores,
         }
         result.append(point_result)
 
+    feature_ranking_cache[cache_key] = result
     return result
 
 

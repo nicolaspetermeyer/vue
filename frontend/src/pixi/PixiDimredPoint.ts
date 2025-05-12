@@ -118,21 +118,31 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
   getTooltipContent(): string {
     const projection = this.dimredpoint
     const nonNumericAttrs = projection.nonNumericAttributes || []
-    const nonNumericFeatures: string[] = []
-    const numericFeatures: string[] = []
-    console.log('Tooltip content:', projection)
 
-    const featureLines = Object.entries(projection.original)
-      .filter(([key]) => key.toLowerCase() !== 'id')
-      .forEach(([key, value]) => {
-        const valStr = typeof value === 'number' ? value.toFixed(2) : String(value)
-        const formattedLine = `${key}: ${valStr}`
-        if (nonNumericAttrs.includes(key)) {
-          nonNumericFeatures.push(formattedLine)
-        } else {
-          numericFeatures.push(formattedLine)
-        }
+    const idSection = `ID: ${projection.id}`
+    const sections = []
+    const nonNumericFeatures = Object.entries(projection.original)
+      .filter(([key]) => nonNumericAttrs.includes(key))
+      .map(([key, value]) => `${key}: ${String(value)}`)
+
+    console.log('nonNumericAttrs', nonNumericAttrs)
+    console.log('nonNumericFeatures', nonNumericFeatures)
+
+    if (nonNumericFeatures.length > 0) {
+      sections.push('', 'Metadata:', ...nonNumericFeatures)
+    }
+
+    const numericFeatures = Object.entries(projection.original)
+      .filter(([key]) => !nonNumericAttrs.includes(key) && key.toLowerCase() !== 'id')
+      .map(([key, value]) => {
+        const val = typeof value === 'number' ? value.toFixed(2) : String(value)
+        return `${key}: ${val}`
       })
+
+    if (numericFeatures.length > 0) {
+      sections.push('', 'Measurements:', ...numericFeatures)
+    }
+
     // Get feature ranking information
     // const projectionStore = useProjectionStore()
     // const topFeatures = projectionStore.getTopFeaturesForPoint(pointId, 3)
@@ -150,13 +160,7 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     //       .join('\n')
     // }
 
-    return [
-      `ID: ${projection.id}`,
-      '',
-      'Features:',
-      ...nonNumericFeatures,
-      ...numericFeatures,
-    ].join('\n')
+    return [idSection, ...sections].join('\n')
   }
 
   get dimredpoint(): Projection {
