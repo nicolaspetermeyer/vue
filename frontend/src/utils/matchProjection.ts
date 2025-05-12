@@ -5,7 +5,6 @@ export function matchProjection(rawData: Data[], projection: ProjectionRow[]): P
 
   for (const d of rawData) {
     rawMap.set(d.id, d)
-    console.log('rawMap', d.id, d)
   }
 
   return projection
@@ -13,8 +12,6 @@ export function matchProjection(rawData: Data[], projection: ProjectionRow[]): P
       const original = rawMap.get(id)
       if (!original) {
         console.warn(`⚠️ No rawData match for projected point ID: ${id}`)
-        console.log('rawData', rawData)
-        console.log('projection', projection)
 
         return null
       }

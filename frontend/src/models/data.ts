@@ -27,6 +27,8 @@ export interface FeatureStats {
   max: number
   normMean?: number // mean normalized to [0, 1]
   normStd?: number // std normalized to [0, 1]
+  isNumeric: boolean
+  uniqueValues?: number
 }
 
 export interface FingerprintFeatureStat {

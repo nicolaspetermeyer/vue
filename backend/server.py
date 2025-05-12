@@ -203,11 +203,8 @@ async def get_file_data(filename: str):
     else:
         # Add sequential string IDs if not present
         df["id"] = [f"point-{i}" for i in range(len(df))]
-    id_column = df["id"]
-    df_numeric = df.select_dtypes(include=["number"]).reset_index(drop=True)
-    df_numeric["id"] = id_column.reset_index(drop=True)
 
-    return df_numeric.to_dict(orient="records")
+    return df.to_dict(orient="records")
 
 
 @app.get("/api/projection/")
@@ -265,14 +262,18 @@ async def get_feature_stats(filename: str):
     Compute basic statistics (mean, std, min, max) for each numeric feature.
     """
     df = read_csv_file(filename)
-    df_numeric = df.select_dtypes(include=["number"])
+    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    non_numeric_cols = [
+        col for col in df.columns if col not in numeric_cols and col.lower() != "id"
+    ]
+    # df_numeric = df.select_dtypes(include=["number"])
 
     stats = {}
-    for col in df_numeric.columns:
+    for col in numeric_cols:
         if col.lower() == "id":
             continue
 
-        col_data = df_numeric[col]
+        col_data = df[col]
         mean = col_data.mean()
         std = col_data.std()
         min_val = col_data.min()
@@ -289,7 +290,11 @@ async def get_feature_stats(filename: str):
                 else 0
             ),
             "normStd": float(std / (max_val - min_val)) if max_val > min_val else 0,
+            "isNumeric": True,
         }
+    for col in non_numeric_cols:
+        unique_values = df[col].nunique()
+        stats[col] = {"isNumeric": False, "uniqueValues": int(unique_values)}
 
     return stats
 

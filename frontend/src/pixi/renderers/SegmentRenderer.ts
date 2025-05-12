@@ -185,6 +185,8 @@ export class SegmentRenderer {
       .arc(centerX, centerY, innerRadius, endAngle, startAngle, true)
       .closePath()
       .stroke({ color: borderColor ?? fillColor, width: lineWidth })
-      .fill({ color: fillColor, alpha: alpha })
+    if (Colors.FILL_STYLE) {
+      graphics.fill({ color: fillColor, alpha: alpha })
+    }
   }
 }

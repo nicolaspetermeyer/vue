@@ -21,7 +21,6 @@ export const useDatasetStore = defineStore('dataset', () => {
   }
 
   function setSelectedDatasetId(id: number | null) {
-    console.log('setSelectedDatasetId', id)
     selectedDatasetId.value = id
   }
 

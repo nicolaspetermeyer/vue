@@ -257,7 +257,6 @@ export class PixiInteractionOverlay extends PixiContainer {
    * @param e - Keyboard event
    */
   handleKeyDown(e: KeyboardEvent) {
-    console.log('Key pressed:', e.code, 'Alt:', e.altKey, 'Ctrl:', e.ctrlKey, 'Shift:', e.shiftKey)
     if (e.code === 'KeyA' && e.altKey) {
       // Toggle between rectangle and lasso selection modes
       this.toggleSelectionMode()

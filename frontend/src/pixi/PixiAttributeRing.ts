@@ -12,6 +12,7 @@ export class PixiAttributeRing
   segments: PixiAttributeSegment[] = []
   private innerRadius: number
   private maxOuterRadius: number
+  private attributeKeys: Set<string> = new Set()
 
   constructor(globalStats: Record<string, FeatureStats>) {
     super({
@@ -29,10 +30,13 @@ export class PixiAttributeRing
     this.innerRadius = base * 0.35
     this.maxOuterRadius = base * 0.6
 
-    // Add attribute segments
-    for (const attributeName of Object.keys(globalStats)) {
-      const stat = globalStats[attributeName]
-      this.addAttributeSegment(attributeName, stat)
+    // Add only numeric attribute segments
+    for (const numericAttributes of Object.entries(globalStats)
+      .filter(([_, stats]) => stats.isNumeric)
+      .map(([key, _]) => key)) {
+      const stat = globalStats[numericAttributes]
+      this.addAttributeSegment(numericAttributes, stat)
+      this.attributeKeys.add(numericAttributes)
     }
 
     this.drawAttributeSegments()
@@ -148,5 +152,9 @@ export class PixiAttributeRing
       }
     }
     return null
+  }
+
+  hasAttribute(attributeName: string): boolean {
+    return this.attributeKeys.has(attributeName)
   }
 }

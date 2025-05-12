@@ -16,14 +16,16 @@ export const Colors = {
 
   // Attribute Ring
   GLOBAL_SEGMENT: 0xffffff, // White
-  OVERLAY_SEGMENT_SMALLER: 0xff4444, // Green
-  OVERLAY_SEGMENT_BIGGER: 0x44ff44, // Red
+  OVERLAY_SEGMENT_SMALLER: 0xff4444, // Red
+  OVERLAY_SEGMENT_BIGGER: 0x318531, // Green
   STANDARD_OVERLAY: 0xff4444, // Red
   POINT_SELECT: 0x3c4952, // Dark gray
   STANDARD_BORDER: 0x3c4952, // Black
 
   // Attribute Ring - Fingerprint Colors
   FINGERPRINT_COLORS: [0x3498db, 0xe74c3c, 0x2ecc71, 0xf39c12, 0x9b59b6, 0x1abc9c],
+
+  FILL_STYLE: true,
 }
 
 export const Styles = {

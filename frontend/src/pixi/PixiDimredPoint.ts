@@ -126,23 +126,23 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
         return `${key}: ${valStr}`
       })
     // Get feature ranking information
-    const projectionStore = useProjectionStore()
-    const topFeatures = projectionStore.getTopFeaturesForPoint(pointId, 3)
+    // const projectionStore = useProjectionStore()
+    // const topFeatures = projectionStore.getTopFeaturesForPoint(pointId, 3)
 
-    let rankingSection = ''
-    if (topFeatures.length > 0) {
-      rankingSection =
-        '\n\nTop Features by Importance:\n' +
-        topFeatures
-          .map((f, idx) => {
-            // Format score as percentage with 1 decimal place
-            const scorePercent = (f.score * 100).toFixed(1)
-            return `${idx + 1}. ${f.name} (${scorePercent}%)`
-          })
-          .join('\n')
-    }
+    // let rankingSection = ''
+    // if (topFeatures.length > 0) {
+    //   rankingSection =
+    //     '\n\nTop Features by Importance:\n' +
+    //     topFeatures
+    //       .map((f, idx) => {
+    //         // Format score as percentage with 1 decimal place
+    //         const scorePercent = (f.score * 100).toFixed(1)
+    //         return `${idx + 1}. ${f.name} (${scorePercent}%)`
+    //       })
+    //       .join('\n')
+    // }
 
-    return [`ID: ${projection.id}`, '', 'Features:', ...featureLines, rankingSection].join('\n')
+    return [`ID: ${projection.id}`, '', 'Features:', ...featureLines].join('\n')
   }
 
   get dimredpoint(): Projection {
