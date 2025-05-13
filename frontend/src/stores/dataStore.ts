@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Data, FeatureStats, DataResponse, ColumnMetadata } from '@/models/data'
+import type { Data, GlobalFeatureStats, DataResponse, ColumnMetadata } from '@/models/data'
 import { fetchRawData, fetchStats } from '@/services/api'
 import { useDatasetStore } from '@/stores/datasetStore'
 
 export const useDataStore = defineStore('data', () => {
   // 🔹 STATE
   const rawData = ref<Data[]>([])
-  const globalStats = ref<Record<string, FeatureStats>>({})
+  const globalStats = ref<Record<string, GlobalFeatureStats>>({})
   const columnMetadata = ref<Record<string, { isNumeric: boolean }>>({})
 
   const numericAttributes = ref<string[]>([])

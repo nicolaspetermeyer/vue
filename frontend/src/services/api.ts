@@ -1,5 +1,11 @@
 import axios from 'axios'
-import type { Data, ProjectionRow, FeatureStats, Dataset, FeatureRanking } from '@/models/data'
+import type {
+  Data,
+  ProjectionRow,
+  GlobalFeatureStats,
+  Dataset,
+  FeatureRanking,
+} from '@/models/data'
 
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/',
@@ -26,8 +32,8 @@ export async function fetchProjection(
   return response.data
 }
 
-export async function fetchStats(filename: string): Promise<Record<string, FeatureStats>> {
-  const response = await api.get<Record<string, FeatureStats>>(`/stats/`, {
+export async function fetchStats(filename: string): Promise<Record<string, GlobalFeatureStats>> {
+  const response = await api.get<Record<string, GlobalFeatureStats>>(`/stats/`, {
     params: {
       filename,
     },

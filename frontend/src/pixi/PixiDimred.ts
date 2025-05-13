@@ -2,16 +2,19 @@ import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { Colors } from '@/config/Themes'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
-import type { Projection } from '@/models/data'
+import type { Projection, Fingerprint, GlobalFeatureStats } from '@/models/data'
 import { Rectangle, PointData } from 'pixi.js'
 import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
 import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransformer'
 import { PolygonUtils } from '@/utils/geometry/PolygonUtils'
+import { PixiAttributeRing } from './PixiAttributeRing'
 
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<string, PixiDimredPoint> = new Map()
   private highlightedFingerprintPoints: Set<string> = new Set()
   public detectRadius: number = 5
+
+  pixiGlyph: Map<string, PixiAttributeRing> = new Map()
 
   constructor(projectedPoints: Projection[]) {
     super({
@@ -39,6 +42,19 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     return this.pixiDimredPoints.get(id)!
   }
 
+  // createMiniRing(fingerprint: Fingerprint): void {
+  //   const centroid = fingerprintStore.getFingerprintCentroid(fingerprint.id)
+
+  //   if (!centroid) return
+
+  //   let ring = this.pixiGlyph.get(fingerprint.id)
+
+  //   if (!ring) {
+  //     ring = new PixiAttributeRing()
+  //     ring.scale.set(0.2)
+  //   }
+  // }
+
   updatePoints(projectedPoints: Projection[]) {
     if (projectedPoints.length === 0) return
 
@@ -55,7 +71,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
       pixiDimredPoint.updateVisualState()
 
       if (this.highlightedFingerprintPoints.has(point.id)) {
-        pixiDimredPoint.setInFingerprint(true)
+        pixiDimredPoint.setFingerprintColor(true)
       }
     })
   }
@@ -120,16 +136,14 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.clearHighlightedPoints()
 
     const pointIds = new Set(Object.keys(pointColorMap))
-    // const numericIds = pointIds.map((id) => parseInt(id))
-    // const numericIdSet = new Set(numericIds)
 
     this.pixiDimredPoints.forEach((point, id) => {
       if (pointIds.has(id)) {
-        const color = pointColorMap[id.toString()]
-        point.setInFingerprint(true, color)
+        const color = pointColorMap[id]
+        point.setFingerprintColor(true, color)
       } else {
         // Dim other points
-        point.setInFingerprint(false)
+        point.setFingerprintColor(false)
       }
     })
     this.highlightedFingerprintPoints = pointIds
@@ -137,7 +151,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
 
   clearHighlightedPoints(): void {
     this.pixiDimredPoints.forEach((point) => {
-      point.setInFingerprint(false)
+      point.setFingerprintColor(false)
     })
   }
 

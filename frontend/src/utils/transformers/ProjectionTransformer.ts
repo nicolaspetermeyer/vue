@@ -121,7 +121,7 @@ export class ProjectionTransformer {
    * @param bounds - The rectangle to filter by
    * @returns IDs of points within the bounds
    */
-  static getPointsInBounds(points: Projection[], bounds: Rectangle): number[] {
+  static getPointsInBounds(points: Projection[], bounds: Rectangle): string[] {
     return points
       .filter((point) => bounds.contains(point.pos.x, point.pos.y))
       .map((point) => point.id)

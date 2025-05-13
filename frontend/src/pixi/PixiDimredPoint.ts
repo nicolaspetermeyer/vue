@@ -2,7 +2,6 @@ import { Texture } from 'pixi.js'
 import { PixiSprite } from './Base/PixiSprite'
 import type { Projection } from '@/models/data'
 import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
-import { useProjectionStore } from '@/stores/projectionStore'
 import { Colors } from '@/config/Themes'
 
 // Create a static texture cache
@@ -54,6 +53,9 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     this.cursor = 'default'
   }
 
+  /**
+   * Update the visual state of the point based on its selection and hover state.
+   */
   updateVisualState() {
     if (this.Selected) {
       this.tint = Colors.SELECTED
@@ -65,7 +67,6 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
       this.tint = Colors.NORMAL
     }
 
-    // Set alpha based on selection and fingerprint state
     if (this.inFingerprint && !this.Selected) {
       this.alpha = 0.9
     } else {
@@ -73,10 +74,10 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     }
   }
 
-  updatePosition(size: number) {
-    this.position.set(this.projectedPoint.pos.x * size, this.projectedPoint.pos.y * size)
-  }
-
+  /**
+   * Set the selected state of the point.
+   * @param selected - Whether the point is selected or not.
+   */
   setSelected(selected: boolean) {
     if (this.Selected !== selected) {
       this.Selected = selected
@@ -84,12 +85,20 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     }
   }
 
+  /**
+   * Get the selected state of the point.
+   * @returns Whether the point is selected or not.
+   */
   isSelected(): boolean {
     return this.Selected
   }
 
-  // mark a points of selected fingerprint by color
-  setInFingerprint(highlighted: boolean, color?: number): void {
+  /**
+   * Set the point to be highlighted as part of a fingerprint.
+   * @param highlighted - Whether the point is highlighted or not.
+   * @param color - Optional color for the highlight.
+   */
+  setFingerprintColor(highlighted: boolean, color?: number): void {
     this.inFingerprint = highlighted
     if (highlighted && color !== undefined) {
       this.highlightColor = color
@@ -99,10 +108,18 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     this.updateVisualState()
   }
 
+  /**
+   * Get the highlight color of the point.
+   * @returns The highlight color.
+   */
   isInFingerprint(): boolean {
     return this.inFingerprint
   }
 
+  /**
+   * Set the hovered state of the point.
+   * @param state - Whether the point is hovered or not.
+   */
   setHovered(state: boolean): void {
     if (this.Hovered !== state) {
       this.Hovered = state
@@ -110,7 +127,10 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     }
   }
 
-  // Update the scale of the point to maintain constant visual size
+  /**
+   * This is used to adjust the size of the point based on the current zoom level.
+   * @param inverseScale - The inverse scale factor of the zoom.
+   */
   updatePointScale(inverseScale: number) {
     this.scale.set(inverseScale)
   }

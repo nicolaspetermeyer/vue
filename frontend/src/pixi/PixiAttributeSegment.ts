@@ -1,5 +1,5 @@
 import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
-import type { FeatureStats, Position } from '@/models/data'
+import type { GlobalFeatureStats, Position } from '@/models/data'
 import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
@@ -9,7 +9,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
-  public stats: FeatureStats
+  public stats: GlobalFeatureStats
   private localOverlays: Array<{ id: string; color: number; norm: number }> = []
 
   public startAngle: number = 0
@@ -26,7 +26,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   constructor(
     attributeKey: string,
     norm: { globalNorm: number; localNorm?: number },
-    stats: FeatureStats,
+    stats: GlobalFeatureStats,
   ) {
     const { globalNorm, localNorm } = norm
     super()

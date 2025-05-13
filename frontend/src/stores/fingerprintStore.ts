@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
-import type { Fingerprint, Projection, FingerprintFeatureStat } from '@/models/data'
+import type { Fingerprint, Projection, LocalFeatureStats } from '@/models/data'
 import { ref, computed } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { Colors } from '@/config/Themes'
@@ -119,7 +119,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     return colorMap
   }
 
-  function getTopFeatures(stats: Record<string, FingerprintFeatureStat>, limit = 1): string[] {
+  function getTopFeatures(stats: Record<string, LocalFeatureStats>, limit = 1): string[] {
     return Object.entries(stats)
       .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
       .slice(0, limit)
@@ -142,19 +142,11 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   }
 
   function getFingerprintCentroid(fingerprintId: string): { x: number; y: number } | null {
-    console.log('Fingerprint ID:', fingerprintId)
     const fingerprint = fingerprints.value.find((f) => f.id === fingerprintId)
     if (!fingerprint) {
       return null
     }
-    console.log('Fingerprint ID:', fingerprint.id)
-    console.log('Fingerprint Points:', fingerprint.projectedPoints)
-    console.log('Centroid:', calculateSelectionCentroid(fingerprint.projectedPoints))
     return calculateSelectionCentroid(fingerprint.projectedPoints)
-  }
-
-  function getCurrentSelectionCentroid(): { x: number; y: number } | null {
-    return calculateSelectionCentroid(selection.value)
   }
 
   return {
@@ -171,6 +163,5 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     getTopFeatures,
     calculateSelectionCentroid,
     getFingerprintCentroid,
-    getCurrentSelectionCentroid,
   }
 })

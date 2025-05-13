@@ -32,7 +32,7 @@ export interface Projection {
   nonNumericAttributes?: string[]
 }
 
-export interface FeatureStats {
+export interface GlobalFeatureStats {
   attributeName: number
   mean: number
   std: number
@@ -44,7 +44,7 @@ export interface FeatureStats {
   uniqueValues?: number
 }
 
-export interface FingerprintFeatureStat {
+export interface LocalFeatureStats {
   mean: number
   stddev: number
   globalMean: number
@@ -66,7 +66,7 @@ export type Fingerprint = {
   id: string // simple UUID
   name: string
   projectedPoints: Projection[]
-  localStats: Record<string, FingerprintFeatureStat> // stats over the selected data points
+  localStats: Record<string, LocalFeatureStats> // stats over the selected data points
 }
 
 export type FeatureRanking = {

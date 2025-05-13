@@ -1,12 +1,12 @@
-import { Data, FeatureStats, FingerprintFeatureStat } from '@/models/data'
+import { Data, GlobalFeatureStats, LocalFeatureStats } from '@/models/data'
 import { useDataStore } from '@/stores/dataStore'
 
 export function calcFingerprintStats(
   selection: Data[], // array of selected data points
-): Record<string, FingerprintFeatureStat> {
+): Record<string, LocalFeatureStats> {
   const dataStore = useDataStore()
   const globalStats = dataStore.globalStats
-  const result: Record<string, FingerprintFeatureStat> = {}
+  const result: Record<string, LocalFeatureStats> = {}
 
   const featureKeys = Object.keys(globalStats)
 
