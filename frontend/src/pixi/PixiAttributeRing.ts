@@ -1,7 +1,7 @@
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { PixiText } from '@/pixi/Base/PixiText'
 import { PointData } from 'pixi.js'
-import { HoverableProvider } from '@/utils/HoverManager'
+import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { FeatureStats } from '@/models/data'
 

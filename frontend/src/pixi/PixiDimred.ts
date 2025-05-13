@@ -1,6 +1,6 @@
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { Colors } from '@/config/Themes'
-import { HoverableProvider } from '@/utils/HoverManager'
+import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import type { Projection } from '@/models/data'
 import { Rectangle, PointData } from 'pixi.js'

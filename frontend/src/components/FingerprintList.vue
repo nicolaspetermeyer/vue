@@ -27,6 +27,14 @@ function removeFingerprint(id: string, event: Event) {
   event.stopPropagation()
   fingerprintStore.removeFingerprint(id, projectionInstance.value)
 }
+
+function createGlyph(id: string, event: Event) {
+  event.stopPropagation()
+  // Tell the projection instance to update glyphs
+  // if (projectionInstance.value) {
+  //   projectionInstance.value.updateGlyphs()
+  // }
+}
 </script>
 
 <template>
@@ -57,13 +65,35 @@ function removeFingerprint(id: string, event: Event) {
             </div>
             <span class="feature-count">Points: {{ fp.projectedPoints.length }}</span>
           </div>
-          <button
-            class="delete-btn"
-            @click="removeFingerprint(fp.id, $event)"
-            title="Remove fingerprint"
-          >
-            ✕
-          </button>
+          <div class="flex gap-1">
+            <button class="glyph-btn" @click="createGlyph(fp.id, $event)" title="Create glyph">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93" />
+                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83" />
+              </svg>
+            </button>
+            <button
+              class="delete-btn"
+              @click="removeFingerprint(fp.id, $event)"
+              title="Remove fingerprint"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       </li>
     </ul>
@@ -113,15 +143,15 @@ function removeFingerprint(id: string, event: Event) {
   border-radius: 50%;
 }
 
-.delete-btn {
-  width: 20px;
-  height: 20px;
+.delete-btn,
+.glyph-btn {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 3px;
   font-size: 12px;
-  background: #ffeeee;
 }
 
 .delete-btn {
@@ -130,5 +160,13 @@ function removeFingerprint(id: string, event: Event) {
 
 .delete-btn:hover {
   background: #ffcccc;
+}
+.glyph-btn {
+  background: #eeeeff;
+  color: #5555aa;
+}
+
+.glyph-btn:hover {
+  background: #ddddff;
 }
 </style>

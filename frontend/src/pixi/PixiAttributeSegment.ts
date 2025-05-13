@@ -1,6 +1,6 @@
 import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
 import type { FeatureStats, Position } from '@/models/data'
-import { Hoverable } from '@/utils/HoverManager'
+import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { SegmentRenderer } from '@/pixi/renderers/SegmentRenderer'

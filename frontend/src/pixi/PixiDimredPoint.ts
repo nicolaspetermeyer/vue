@@ -1,7 +1,7 @@
 import { Texture } from 'pixi.js'
 import { PixiSprite } from './Base/PixiSprite'
 import type { Projection } from '@/models/data'
-import { Hoverable } from '@/utils/HoverManager'
+import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { Colors } from '@/config/Themes'
 

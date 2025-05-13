@@ -142,11 +142,14 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   }
 
   function getFingerprintCentroid(fingerprintId: string): { x: number; y: number } | null {
+    console.log('Fingerprint ID:', fingerprintId)
     const fingerprint = fingerprints.value.find((f) => f.id === fingerprintId)
     if (!fingerprint) {
       return null
     }
-
+    console.log('Fingerprint ID:', fingerprint.id)
+    console.log('Fingerprint Points:', fingerprint.projectedPoints)
+    console.log('Centroid:', calculateSelectionCentroid(fingerprint.projectedPoints))
     return calculateSelectionCentroid(fingerprint.projectedPoints)
   }
 

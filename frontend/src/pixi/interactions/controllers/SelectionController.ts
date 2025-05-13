@@ -7,7 +7,7 @@ import {
   ContainerChild,
 } from 'pixi.js'
 import { EventEmitter } from 'eventemitter3'
-import { HoverManager } from '@/utils/HoverManager'
+import { HoverManager } from '@/pixi/interactions/controllers/HoverManager'
 //import { PolygonUtils } from '@/utils/geometry/PolygonUtils'
 import { Colors } from '@/config/Themes'
 

@@ -16,7 +16,7 @@ import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 
 // Controllers
-import { HoverManager } from '@/utils/HoverManager'
+import { HoverManager } from '@/pixi/interactions/controllers/HoverManager'
 import { ViewportController } from '@/pixi/interactions/controllers/ViewportController'
 import {
   SelectionController,
