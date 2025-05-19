@@ -5,15 +5,9 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
-import { useDataStore } from '@/stores/dataStore'
-import { storeToRefs } from 'pinia'
 import { Colors } from '@/config/Themes'
 
-const dataStore = useDataStore()
-const { globalStats } = storeToRefs(dataStore)
-
 const projectionStore = useProjectionStore()
-const { projectionMatch } = storeToRefs(projectionStore)
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -61,7 +55,7 @@ function createProjectionInstance() {
   }
 
   // Create new projection instance
-  const projection = new PixiProjection(projectionStore.projectionMatch, dataStore.globalStats)
+  const projection = new PixiProjection(projectionStore.projection, projectionStore.globalStats)
 
   // Set up the new projection
   projection.registerKeyboardEvents()
@@ -71,11 +65,11 @@ function createProjectionInstance() {
   // Store reference in the store
   projectionStore.setProjectionInstance(projection)
 
-  console.log('Projection instance created with', projectionStore.projectionMatch.length, 'points')
+  console.log('Projection instance created with', projectionStore.projection.length, 'points')
 }
 
 watch(
-  () => projectionStore.projectionMatch,
+  () => projectionStore.projection,
   (newMatch) => {
     if (newMatch.length > 0 && app) {
       createProjectionInstance()

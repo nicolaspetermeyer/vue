@@ -25,7 +25,7 @@ import {
 } from '@/pixi/interactions/controllers/SelectionController'
 
 // Stores
-import { useDataStore } from '@/stores/dataStore'
+import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 // Utils
@@ -129,7 +129,7 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   private updateAttributeRingForPoint(point: PixiDimredPoint | null) {
     if (!this.attributeRing || !point) return
-    const globalStats = useDataStore().globalStats
+    const globalStats = useProjectionStore().globalStats
 
     const attributes: Record<string, number> = {}
     for (const [key, value] of Object.entries(point.dimredpoint.original)) {

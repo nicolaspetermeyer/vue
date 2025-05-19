@@ -1,11 +1,11 @@
-import { Data, GlobalFeatureStats, LocalFeatureStats } from '@/models/data'
-import { useDataStore } from '@/stores/dataStore'
+import { Data, LocalFeatureStats } from '@/models/data'
+import { useProjectionStore } from '@/stores/projectionStore'
 
 export function calcFingerprintStats(
   selection: Data[], // array of selected data points
 ): Record<string, LocalFeatureStats> {
-  const dataStore = useDataStore()
-  const globalStats = dataStore.globalStats
+  const projectionStore = useProjectionStore()
+  const globalStats = projectionStore.globalStats
   const result: Record<string, LocalFeatureStats> = {}
 
   const featureKeys = Object.keys(globalStats)

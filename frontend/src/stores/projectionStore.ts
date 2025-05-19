@@ -1,8 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { ProjectionRow, Point, Projection, FeatureRanking } from '@/models/data'
-import { matchProjection } from '@/utils/matchProjection'
-import { useDataStore } from '@/stores/dataStore'
+import type { Point, Projection, FeatureRanking, GlobalFeatureStats } from '@/models/data'
+// import { useDataStore } from '@/stores/dataStore'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection, fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
@@ -10,33 +9,24 @@ import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 export const useProjectionStore = defineStore('projection', () => {
   const datasetStore = useDatasetStore()
-  const dataStore = useDataStore()
+  // const dataStore = useDataStore()
 
   // State
-  const rawProjection = ref<ProjectionRow[]>([])
-  const projectionMatch = ref<Projection[]>([])
-  const matchedPoints = ref<Point[]>([])
+  const projection = ref<Projection[]>([])
+  const globalStats = ref<Record<string, GlobalFeatureStats>>({})
+
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
   const projectionMethod = ref<'pca' | 'tsne'>('pca')
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)
 
-  // Keep track of the current dataset for validation
-  const currentDatasetId = ref<string | null>(null)
   const isLoading = ref<boolean>(false)
 
-  async function loadProjection(forceReload = false) {
+  async function loadProjection() {
     const dataset = datasetStore.selectedDatasetName
 
     if (!dataset) {
-      clearAllProjectionData()
       return null
-    }
-
-    if (dataStore.rawData.length === 0 || currentDatasetId.value !== dataset || forceReload) {
-      clearAllProjectionData()
-      await dataStore.loadData()
-      currentDatasetId.value = dataset
     }
 
     // Prevent concurrent loads
@@ -48,16 +38,11 @@ export const useProjectionStore = defineStore('projection', () => {
     isLoading.value = true
 
     try {
-      rawProjection.value = await fetchProjection(dataset, projectionMethod.value)
+      const result = await fetchProjection(dataset, projectionMethod.value)
 
-      const matchResult = await matchProjection(dataStore.rawData, rawProjection.value)
+      globalStats.value = result.globalStats
+      projection.value = result.projectionData
 
-      projectionMatch.value = matchResult.map((point) => ({
-        ...point,
-        nonNumericAttributes: dataStore.nonNumericAttributes,
-      }))
-
-      mapToPoint(rawProjection.value)
       // await loadFeatureRanking()
     } catch {
       return null
@@ -67,11 +52,10 @@ export const useProjectionStore = defineStore('projection', () => {
   }
 
   function clearAllProjectionData() {
-    rawProjection.value = []
-    projectionMatch.value = []
-    matchedPoints.value = []
+    console.log('Clearing all projection data')
+    projection.value = []
     featureRanking.value = []
-    clearProjectionInstance()
+
     useFingerprintStore().clearFingerprints()
   }
 
@@ -117,13 +101,6 @@ export const useProjectionStore = defineStore('projection', () => {
     await loadFeatureRanking()
   }
 
-  function mapToPoint(rows: ProjectionRow[]) {
-    matchedPoints.value = rows.map((row) => ({
-      item_id: row.id,
-      pos: { x: row.x, y: row.y },
-    }))
-  }
-
   function setProjectionInstance(instance: PixiProjection) {
     projectionInstance.value = instance
   }
@@ -135,11 +112,10 @@ export const useProjectionStore = defineStore('projection', () => {
   }
 
   return {
-    rawProjection,
-    projectionMatch,
-    matchedPoints,
+    projection,
     projectionInstance,
     projectionMethod,
+    globalStats,
     featureRanking,
     neighborhoodRadius,
     loadProjection,
@@ -147,7 +123,6 @@ export const useProjectionStore = defineStore('projection', () => {
     getFeatureRankingForPoint,
     getTopFeaturesForPoint,
     updateNeighborhoodRadius,
-    mapToPoint,
     setProjectionInstance,
     clearProjectionInstance,
     clearAllProjectionData,

@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
-import { useDataStore } from '@/stores/dataStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
@@ -11,9 +10,6 @@ import { SelectionMode } from '@/pixi/interactions/controllers/SelectionControll
 const datasetStore = useDatasetStore()
 const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
 const { setSelectedDatasetId } = datasetStore
-
-const dataStore = useDataStore()
-const { loadData } = dataStore
 
 const projectionStore = useProjectionStore()
 const { projectionMethod, projectionInstance } = storeToRefs(projectionStore)
@@ -26,14 +22,13 @@ const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
 const loadProj = async () => {
   projectionStore.clearAllProjectionData()
 
-  await projectionStore.loadProjection(true)
+  await projectionStore.loadProjection()
 }
 
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
   if (select) {
     setSelectedDatasetId(Number(select.value || null))
-    loadData()
   }
 }
 

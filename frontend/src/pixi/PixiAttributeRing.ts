@@ -34,7 +34,6 @@ export class PixiAttributeRing
     this.maxOuterRadius = base * 0.6
 
     // Add only numeric attribute segments
-    console.log('PixiAttributeRing: globalStats', this.global)
     for (const numericAttributes of Object.entries(globalStats)
       .filter(([_, stats]) => stats.isNumeric)
       .map(([key, _]) => key)) {

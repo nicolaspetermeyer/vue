@@ -1,7 +1,8 @@
 import axios from 'axios'
 import type {
   Data,
-  ProjectionRow,
+  Projection,
+  ProjectionApiResponse,
   GlobalFeatureStats,
   Dataset,
   FeatureRanking,
@@ -22,8 +23,8 @@ export async function fetchRawData(filename: string): Promise<Data[]> {
 export async function fetchProjection(
   filename: string,
   method: 'pca' | 'umap' | 'tsne',
-): Promise<ProjectionRow[]> {
-  const response = await api.get<ProjectionRow[]>(`/projection/`, {
+): Promise<ProjectionApiResponse> {
+  const response = await api.get<ProjectionApiResponse>(`/projection/`, {
     params: {
       filename,
       method,

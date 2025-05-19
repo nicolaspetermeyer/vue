@@ -19,17 +19,16 @@ export interface DataResponse {
   }
 }
 
-export interface ProjectionRow {
-  id: string
-  x: number
-  y: number
-}
-
 export interface Projection {
   id: string
   pos: Position
   original: Data
-  nonNumericAttributes?: string[]
+  nonNumericAttributes: string[]
+}
+
+export interface ProjectionApiResponse {
+  projectionData: Projection[]
+  globalStats: Record<string, GlobalFeatureStats>
 }
 
 export interface GlobalFeatureStats {

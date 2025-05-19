@@ -59,7 +59,7 @@ class DatasetInfo:
         if "id" in df.columns:
             self.ids = df["id"].astype(str).tolist()
         else:
-            self.ids = [f"point-{i}" for i in range(len(df))]
+            self.ids = [f"{i}" for i in range(len(df))]
 
 
 # ============================================================================
@@ -131,7 +131,8 @@ def read_csv_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
 
     try:
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path, encoding="utf-8")
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading CSV file: {e}")
     return df
@@ -327,11 +328,13 @@ async def project_data(
     """
     key = (filename, method)
 
-    if key in projection_cache:
-        return projection_cache[key]
-
     dataset_info = preprocess_dataset(filename)
 
+    original_data = await get_file_data(filename)
+    global_stats = await get_global_stats(filename)
+
+    # if key in projection_cache:
+    #     return projection_cache[key]
     # Check if we have numeric data to project
     if len(dataset_info.numeric_cols) == 0:
         raise HTTPException(
@@ -357,12 +360,32 @@ async def project_data(
     ]
 
     # Cache the result
-    projection_cache[key] = projection
-    return projection
+    # projection_cache[key] = projection
+
+    id_to_original = {item["id"]: item for item in original_data["data"]}
+
+    matched_data = []
+    for point in projection:
+        point_id = point["id"]
+        if point_id in id_to_original:
+            matched_data.append(
+                {
+                    "id": point_id,
+                    "pos": {"x": point["x"], "y": point["y"]},
+                    "original": id_to_original[point_id],
+                    "nonNumericAttributes": dataset_info.non_numeric_cols,
+                }
+            )
+    result = {
+        "projectionData": matched_data,
+        "globalStats": global_stats,
+    }
+
+    return result
 
 
 @app.get("/api/stats/")
-async def get_feature_stats(filename: str):
+async def get_global_stats(filename: str):
     """
     Compute basic statistics (mean, std, min, max) for each numeric feature.
     """
