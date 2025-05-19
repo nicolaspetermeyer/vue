@@ -1,0 +1,6 @@
+Farbe gleich bleibend bei deselect
+Abstimmung nach Politikbereich
+Aggregation nach Kanton und Politikbereich
+Selection nach Metadaten
+
+point stack 

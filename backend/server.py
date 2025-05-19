@@ -142,7 +142,7 @@ def read_csv_file(filename: str):
 # ============================================================================
 
 
-def compute_tsne(data: np.ndarray) -> List[List[float]]:
+def compute_tsne(data) -> List[List[float]]:
     """Compute t-SNE projection"""
     # Remove ID columns
     if isinstance(data, pd.DataFrame):
@@ -164,7 +164,7 @@ def compute_tsne(data: np.ndarray) -> List[List[float]]:
     return embedding.tolist()
 
 
-def compute_pca(data: np.ndarray, n_components: int = 2) -> List[List[float]]:
+def compute_pca(data, n_components: int = 2) -> List[List[float]]:
     """Compute PCA projection"""
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns

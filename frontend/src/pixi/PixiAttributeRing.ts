@@ -4,7 +4,6 @@ import { PointData } from 'pixi.js'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { GlobalFeatureStats, LocalFeatureStats } from '@/models/data'
-import { useDataStore } from '@/stores/dataStore'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -14,9 +13,9 @@ export class PixiAttributeRing
   private innerRadius: number
   private maxOuterRadius: number
   private attributeKeys: Set<string> = new Set()
-  private globalStats = useDataStore().globalStats
+  private global: Record<string, GlobalFeatureStats> = {}
 
-  constructor() {
+  constructor(globalStats: Record<string, GlobalFeatureStats>) {
     super({
       width: 1000,
       height: 1000,
@@ -27,16 +26,19 @@ export class PixiAttributeRing
     this.eventMode = 'static'
     this.sortableChildren = true
 
+    this.global = globalStats
+
     // calculate inner radius of the ring
     const base = Math.min(this.layoutProps.width, this.layoutProps.height)
     this.innerRadius = base * 0.35
     this.maxOuterRadius = base * 0.6
 
     // Add only numeric attribute segments
-    for (const numericAttributes of Object.entries(this.globalStats)
+    console.log('PixiAttributeRing: globalStats', this.global)
+    for (const numericAttributes of Object.entries(globalStats)
       .filter(([_, stats]) => stats.isNumeric)
       .map(([key, _]) => key)) {
-      const stat = this.globalStats[numericAttributes]
+      const stat = globalStats[numericAttributes]
       this.addAttributeSegment(numericAttributes, stat)
       this.attributeKeys.add(numericAttributes)
     }
