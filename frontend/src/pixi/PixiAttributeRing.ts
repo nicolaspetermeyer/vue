@@ -43,20 +43,33 @@ export class PixiAttributeRing
 
     // calculate inner radius of the ring
     const base = Math.min(this.layoutProps.width, this.layoutProps.height)
-    this.innerRadius = base * (this.mini ? 0.25 : 0.35)
-    this.maxOuterRadius = base * (this.mini ? 0.47 : 0.6)
+    this.innerRadius = base * 0.35
+    this.maxOuterRadius = base * 0.6
 
     // Add only numeric attribute segments
     for (const [attrKey, stat] of Object.entries(globalStats)) {
-      if (stat.isNumeric) {
+      if (this.mini) {
+        const localNorm = this.localStats?.[attrKey]?.normMean
+        console.log('Adding mini segment for attribute:', attrKey, 'with local norm:', localNorm)
+        this.addMiniSegment(attrKey, localNorm)
+      } else {
         const localStat = this.localStats?.[attrKey]
         this.addAttributeSegment(attrKey, stat, localStat)
-        this.attributeKeys.add(attrKey)
       }
+      this.attributeKeys.add(attrKey)
     }
     this.drawAttributeSegments()
 
     this.applyLayout()
+  }
+
+  addMiniSegment(attributeName: string, localNorm?: number) {
+    const segment = new PixiAttributeSegment(attributeName, { globalNorm: -1, localNorm })
+    if (this.color !== undefined) {
+      segment.color = this.color
+    }
+    this.segments.push(segment)
+    this.addChild(segment)
   }
 
   addAttributeSegment(
@@ -68,20 +81,16 @@ export class PixiAttributeRing
     const localNorm = localStat?.normMean
     const stats = globalStat
 
-    const segment = new PixiAttributeSegment(
-      attributeName,
-      {
-        globalNorm: globalNorm,
-        localNorm: localNorm,
-      },
-      stats,
-    )
+    const segment = new PixiAttributeSegment(attributeName, { globalNorm, localNorm }, stats)
+    if (this.mini && this.color !== undefined) {
+      segment.color = this.color
+    }
     this.segments.push(segment)
     this.addChild(segment)
   }
 
   drawAttributeSegments() {
-    let gapAngle = this.mini ? 0.03 : this.segments.length < 50 ? 0.02 : 0.005
+    let gapAngle = this.mini ? 0 : this.segments.length < 50 ? 0.02 : 0.005
     const segmentCount = this.segments.length
     const anglePerSegment = (Math.PI * 2) / segmentCount
     for (let i = 0; i < segmentCount; i++) {
@@ -96,6 +105,7 @@ export class PixiAttributeRing
         endAngle,
         this.layoutProps.width / 2,
         this.layoutProps.height / 2,
+        this.mini,
       )
       // In mini mode, skip labels for clarity
       if (!this.mini && segmentCount < 20) {

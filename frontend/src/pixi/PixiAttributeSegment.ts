@@ -20,13 +20,14 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public centerY: number = 0
   public color: number = 0x000000
 
+  public mini: boolean = false
   private isHovered: boolean = false
   private singleComparison: boolean = false
 
   constructor(
     attributeKey: string,
     norm: { globalNorm: number; localNorm?: number },
-    stats: FeatureStats,
+    stats?: FeatureStats,
   ) {
     const { globalNorm, localNorm } = norm
     super()
@@ -34,7 +35,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.attributeKey = attributeKey
     this.globalNorm = globalNorm
     this.localNorm = localNorm
-    this.stats = stats
+    this.stats = stats ?? { mean: 0, std: 0, normMean: 0, isGlobal: false }
 
     this.eventMode = 'static'
     this.cursor = 'default'
@@ -47,6 +48,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     endAngle: number,
     centerX: number = 0,
     centerY: number = 0,
+    mini: boolean,
   ) {
     // Store geometry for redraws
     this.startAngle = startAngle
@@ -59,39 +61,57 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.clear()
 
     // draw the base global segment
-    SegmentRenderer.renderSegment(this, {
-      innerRadius,
-      maxOuterRadius,
-      startAngle,
-      endAngle,
-      centerX,
-      centerY,
-      globalNorm: this.globalNorm,
-      isHovered: this.isHovered,
-      color: this.color,
-    })
-    // draw each local overlay
-    if (this.localOverlays.length === 1) {
-      this.singleComparison = true
+    if (mini) {
+      if (typeof this.localNorm === 'number') {
+        SegmentRenderer.renderSegment(this, {
+          innerRadius,
+          maxOuterRadius,
+          startAngle,
+          endAngle,
+          centerX,
+          centerY,
+          globalNorm: this.localNorm,
+          isHovered: this.isHovered,
+          color: this.color ?? 0x3399ff,
+        })
+      }
     } else {
-      this.singleComparison = false
-    }
+      if (!mini && typeof this.globalNorm === 'number' && this.globalNorm > 0) {
+        SegmentRenderer.renderSegment(this, {
+          innerRadius,
+          maxOuterRadius,
+          startAngle,
+          endAngle,
+          centerX,
+          centerY,
+          globalNorm: this.globalNorm,
+          isHovered: this.isHovered,
+          color: this.color,
+        })
+      }
+      // draw each local overlay
+      if (this.localOverlays.length === 1) {
+        this.singleComparison = true
+      } else {
+        this.singleComparison = false
+      }
 
-    this.localOverlays.forEach((overlay) => {
-      SegmentRenderer.renderOverlay(this, {
-        innerRadius,
-        maxOuterRadius,
-        startAngle,
-        endAngle,
-        centerX,
-        centerY,
-        globalNorm: this.globalNorm,
-        localNorm: overlay.norm,
-        color: overlay.color,
-        isHovered: this.isHovered,
-        singleComparison: this.singleComparison,
+      this.localOverlays.forEach((overlay) => {
+        SegmentRenderer.renderOverlay(this, {
+          innerRadius,
+          maxOuterRadius,
+          startAngle,
+          endAngle,
+          centerX,
+          centerY,
+          globalNorm: this.globalNorm ?? 0,
+          localNorm: overlay.norm,
+          color: overlay.color,
+          isHovered: this.isHovered,
+          singleComparison: this.singleComparison,
+        })
       })
-    })
+    }
   }
 
   private redraw(): void {
@@ -102,6 +122,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.endAngle,
       this.centerX,
       this.centerY,
+      this.mini,
     )
   }
 

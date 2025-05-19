@@ -2,7 +2,6 @@
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import { useProjectionStore } from '@/stores/projectionStore'
-import { PixiDimred } from '@/pixi/PixiDimred'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints, selectedFingerprints } = storeToRefs(fingerprintStore)
@@ -30,7 +29,6 @@ function removeFingerprint(id: string, event: Event) {
 }
 
 function createMiniRing(id: string, event: Event) {
-  console.log('createMiniRing', id)
   event.stopPropagation()
 
   const fingerprint = fingerprints.value.find((fp) => fp.id === id)
@@ -40,9 +38,9 @@ function createMiniRing(id: string, event: Event) {
     return
   }
   const colorInt = parseInt(getColor(id).replace('#', ''), 16)
-  const globalStats = projectionStore.globalStats
+  const stats = fingerprint.localStats
 
-  projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, globalStats)
+  projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, stats)
 }
 </script>
 
