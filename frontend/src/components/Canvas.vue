@@ -55,7 +55,11 @@ function createProjectionInstance() {
   }
 
   // Create new projection instance
-  const projection = new PixiProjection(projectionStore.projection, projectionStore.globalStats)
+  const projection = new PixiProjection(
+    projectionStore.projection,
+    projectionStore.globalStats,
+    app,
+  )
 
   // Set up the new projection
   projection.registerKeyboardEvents()

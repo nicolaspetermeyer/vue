@@ -10,20 +10,14 @@ export class StatisticalNormalizer {
    * @param value - Value to normalize
    * @param min - Minimum value in the range
    * @param max - Maximum value in the range
-   * @param clamp - Whether to clamp the result to [0, 1]
    * @returns Normalized value between 0 and 1
    */
-  static minMaxNormalize(value: number, min: number, max: number, clamp: boolean = true): number {
+  static minMaxNormalize(value: number, min: number, max: number): number {
     // Check for division by zero case
     if (max === min) return 0.5
 
     // Standard min-max normalization
     let normalized = (value - min) / (max - min)
-
-    // Optionally clamp to [0, 1]
-    if (clamp) {
-      normalized = Math.max(0, Math.min(1, normalized))
-    }
 
     return normalized
   }
@@ -49,17 +43,15 @@ export class StatisticalNormalizer {
    * @param value - Value to normalize
    * @param stats - Feature statistics containing min, max, mean, std
    * @param method - Normalization method ('minmax' or 'zscore')
-   * @param clamp - Whether to clamp minmax results to [0, 1]
    * @returns Normalized value
    */
   static normalizeWithStats(
     value: number,
     stats: FeatureStats,
     method: 'minmax' | 'zscore' = 'minmax',
-    clamp: boolean = true,
   ): number {
     if (method === 'minmax' && stats.min !== undefined && stats.max !== undefined) {
-      return this.minMaxNormalize(value, stats.min, stats.max, clamp)
+      return this.minMaxNormalize(value, stats.min, stats.max)
     } else {
       return this.zScoreNormalize(value, stats.mean, stats.std)
     }

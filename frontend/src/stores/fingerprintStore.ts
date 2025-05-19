@@ -35,12 +35,14 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     const id = crypto.randomUUID()
     const name = `Fingerprint ${fingerprintCounter.value++}`
+    const centroid = calculateSelectionCentroid(selection.value)
 
     const fingerprint: Fingerprint = {
       id,
       name,
       projectedPoints: [...selection.value],
       localStats,
+      centroid,
     }
 
     fingerprints.value.push(fingerprint)
@@ -126,11 +128,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //     .map(([key]) => key)
   // }
 
-  function calculateSelectionCentroid(points: Projection[]): { x: number; y: number } | null {
-    if (!points || points.length === 0) {
-      return null
-    }
-
+  function calculateSelectionCentroid(points: Projection[]): { x: number; y: number } {
     // Calculate centroid
     const sumX = points.reduce((sum, point) => sum + point.pos.x, 0)
     const sumY = points.reduce((sum, point) => sum + point.pos.y, 0)

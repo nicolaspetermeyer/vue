@@ -5,14 +5,20 @@ import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import type { FeatureStats, Projection } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
 import { Colors } from '@/config/Themes'
+import { PixiApp } from '@/pixi/Base/PixiApp'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
   attributeRing: PixiAttributeRing
   interactionOverlay: PixiInteractionOverlay
   maskGraphic: Graphics
+  app: PixiApp
 
-  constructor(projectedPoints: Projection[], globalStats: Record<string, FeatureStats>) {
+  constructor(
+    projectedPoints: Projection[],
+    globalStats: Record<string, FeatureStats>,
+    app: PixiApp,
+  ) {
     super({
       width: 1000,
       height: 1000,
@@ -22,6 +28,8 @@ export class PixiProjection extends PixiContainer {
       alignItems: 'center',
       background: Colors.CANVAS_BACKGROUND,
     })
+
+    this.app = app
 
     // The attribute ring
     this.attributeRing = new PixiAttributeRing(globalStats)
@@ -34,7 +42,7 @@ export class PixiProjection extends PixiContainer {
     this.addChild(this.maskGraphic)
 
     // The Dimred projection space for the items
-    this.dimred = new PixiDimred(projectedPoints)
+    this.dimred = new PixiDimred(projectedPoints, this.app)
     this.dimred.mask = this.maskGraphic
     this.addChild(this.dimred)
 

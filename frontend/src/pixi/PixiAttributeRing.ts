@@ -13,41 +13,57 @@ export class PixiAttributeRing
   private innerRadius: number
   private maxOuterRadius: number
   private attributeKeys: Set<string> = new Set()
-  private global: Record<string, FeatureStats> = {}
+  private mini: boolean
+  private color?: number
+  private localStats?: Record<string, { normMean?: number }> = {}
 
-  constructor(globalStats: Record<string, FeatureStats>) {
+  constructor(
+    globalStats: Record<string, FeatureStats>,
+    opts?: {
+      width?: number
+      height?: number
+      mini?: boolean
+      localStats?: Record<string, { normMean?: number }>
+      color?: number // default color for all segments in mini mode
+    },
+  ) {
     super({
-      width: 1000,
-      height: 1000,
+      width: opts?.width ?? (opts?.mini ? 48 : 1000),
+      height: opts?.height ?? (opts?.mini ? 48 : 1000),
       background: null,
       positionAbsolute: true,
     })
 
+    this.mini = opts?.mini ?? false
+    this.color = opts?.color
+    this.localStats = opts?.localStats
+
     this.eventMode = 'static'
     this.sortableChildren = true
 
-    this.global = globalStats
-
     // calculate inner radius of the ring
     const base = Math.min(this.layoutProps.width, this.layoutProps.height)
-    this.innerRadius = base * 0.35
-    this.maxOuterRadius = base * 0.6
+    this.innerRadius = base * (this.mini ? 0.25 : 0.35)
+    this.maxOuterRadius = base * (this.mini ? 0.47 : 0.6)
 
     // Add only numeric attribute segments
-    for (const numericAttributes of Object.entries(globalStats)
-      .filter(([_, stats]) => stats.isNumeric)
-      .map(([key, _]) => key)) {
-      const stat = globalStats[numericAttributes]
-      this.addAttributeSegment(numericAttributes, stat)
-      this.attributeKeys.add(numericAttributes)
+    for (const [attrKey, stat] of Object.entries(globalStats)) {
+      if (stat.isNumeric) {
+        const localStat = this.localStats?.[attrKey]
+        this.addAttributeSegment(attrKey, stat, localStat)
+        this.attributeKeys.add(attrKey)
+      }
     }
-
     this.drawAttributeSegments()
 
     this.applyLayout()
   }
 
-  addAttributeSegment(attributeName: string, globalStat: FeatureStats, localStat?: FeatureStats) {
+  addAttributeSegment(
+    attributeName: string,
+    globalStat: FeatureStats,
+    localStat?: { normMean?: number },
+  ) {
     const globalNorm = globalStat.normMean ?? 0
     const localNorm = localStat?.normMean
     const stats = globalStat
@@ -65,21 +81,14 @@ export class PixiAttributeRing
   }
 
   drawAttributeSegments() {
-    let gapAngle = 0.02
+    let gapAngle = this.mini ? 0.03 : this.segments.length < 50 ? 0.02 : 0.005
     const segmentCount = this.segments.length
-    if (segmentCount < 50) {
-      gapAngle = 0.02
-    } else {
-      gapAngle = 0.005
-    }
     const anglePerSegment = (Math.PI * 2) / segmentCount
-
     for (let i = 0; i < segmentCount; i++) {
       const segment = this.segments[i]
       const slotStart = i * anglePerSegment
       const startAngle = slotStart + gapAngle / 2
       const endAngle = slotStart + anglePerSegment - gapAngle / 2
-
       segment.drawSegment(
         this.innerRadius,
         this.maxOuterRadius,
@@ -88,12 +97,12 @@ export class PixiAttributeRing
         this.layoutProps.width / 2,
         this.layoutProps.height / 2,
       )
-      if (segmentCount < 20) {
+      // In mini mode, skip labels for clarity
+      if (!this.mini && segmentCount < 20) {
         this.drawLabelForSegment(segment, startAngle, endAngle)
       }
     }
   }
-
   public clearLocalStats() {
     for (const segment of this.segments) {
       segment.clearLocalOverlay()

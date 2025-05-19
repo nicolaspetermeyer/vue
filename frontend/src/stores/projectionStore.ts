@@ -9,7 +9,6 @@ import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 export const useProjectionStore = defineStore('projection', () => {
   const datasetStore = useDatasetStore()
-  // const dataStore = useDataStore()
 
   // State
   const projection = ref<Projection[]>([])

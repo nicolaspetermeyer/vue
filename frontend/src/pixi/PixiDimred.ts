@@ -2,21 +2,23 @@ import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { Colors } from '@/config/Themes'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
-import type { Projection } from '@/models/data'
+import type { Projection, FeatureStats, Fingerprint } from '@/models/data'
 import { Rectangle, PointData } from 'pixi.js'
 import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
 import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransformer'
 import { PolygonUtils } from '@/utils/geometry/PolygonUtils'
 import { PixiAttributeRing } from './PixiAttributeRing'
+import { PixiApp } from '@/pixi/Base/PixiApp'
 
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<string, PixiDimredPoint> = new Map()
   private highlightedFingerprintPoints: Set<string> = new Set()
   public detectRadius: number = 5
+  app: PixiApp
 
   pixiGlyph: Map<string, PixiAttributeRing> = new Map()
 
-  constructor(projectedPoints: Projection[]) {
+  constructor(projectedPoints: Projection[], app: PixiApp) {
     super({
       width: 460,
       height: 460,
@@ -29,6 +31,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     })
 
     this.updatePoints(projectedPoints)
+    this.app = app
   }
 
   getOrCreatePoint(projectedPoints: Projection): PixiDimredPoint {
@@ -42,18 +45,50 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     return this.pixiDimredPoints.get(id)!
   }
 
-  // createMiniRing(fingerprint: Fingerprint): void {
-  //   const centroid = fingerprintStore.getFingerprintCentroid(fingerprint.id)
+  addMiniRingForFingerprint(
+    fingerprint: Fingerprint,
+    color: number,
+    globalStats: Record<string, FeatureStats>,
+  ) {
+    const { centroid, localStats, id } = fingerprint
+    if (!centroid || !localStats) return
 
-  //   if (!centroid) return
+    this.removeMiniRing(id)
 
-  //   let ring = this.pixiGlyph.get(fingerprint.id)
+    const miniRing = new PixiAttributeRing(globalStats, {
+      mini: true,
+      width: 50,
+      height: 50,
+      localStats,
+      color,
+    })
+    miniRing.position.set(centroid.x, centroid.y)
 
-  //   if (!ring) {
-  //     ring = new PixiAttributeRing()
-  //     ring.scale.set(0.2)
-  //   }
-  // }
+    this.pixiGlyph.set(id, miniRing)
+    this.addChild(miniRing)
+    this.app.render()
+  }
+
+  // Add method to explicitly remove a mini ring
+  removeMiniRing(fingerprintId: string): void {
+    const ring = this.pixiGlyph.get(fingerprintId)
+    if (ring) {
+      this.removeChild(ring)
+      this.pixiGlyph.delete(fingerprintId)
+    }
+  }
+
+  // Method to update mini rings when data changes
+  updateMiniRing(
+    fingerprintId: string,
+    stats: Record<string, { normMean?: number }>,
+    color: number,
+  ): void {
+    const ring = this.pixiGlyph.get(fingerprintId)
+    if (ring) {
+      ring.setLocalStats(fingerprintId, stats, color)
+    }
+  }
 
   updatePoints(projectedPoints: Projection[]) {
     if (projectedPoints.length === 0) return

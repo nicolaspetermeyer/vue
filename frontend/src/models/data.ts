@@ -7,18 +7,6 @@ export interface Data {
   [feature: string]: number | string // id + feature fields
 }
 
-export interface ColumnMetadata {
-  isNumeric: boolean
-  [property: string]: any
-}
-
-export interface DataResponse {
-  data: Data[]
-  metadata: {
-    columns: Record<string, ColumnMetadata>
-  }
-}
-
 export interface Projection {
   id: string
   pos: Position
@@ -51,7 +39,7 @@ export interface FeatureStats {
   isNumeric?: boolean // Used primarily with global stats
 
   // Flags
-  isGlobal: boolean // Indicates if these are global or local stats
+  isGlobal: boolean
 }
 
 export interface Position {
@@ -69,6 +57,7 @@ export type Fingerprint = {
   name: string
   projectedPoints: Projection[]
   localStats: Record<string, FeatureStats> // stats over the selected data points
+  centroid: Position // centroid of the selected data points
 }
 
 export type FeatureRanking = {

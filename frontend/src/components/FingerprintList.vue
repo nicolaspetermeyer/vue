@@ -2,6 +2,7 @@
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { PixiDimred } from '@/pixi/PixiDimred'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints, selectedFingerprints } = storeToRefs(fingerprintStore)
@@ -28,12 +29,20 @@ function removeFingerprint(id: string, event: Event) {
   fingerprintStore.removeFingerprint(id, projectionInstance.value)
 }
 
-function createGlyph(id: string, event: Event) {
+function createMiniRing(id: string, event: Event) {
+  console.log('createMiniRing', id)
   event.stopPropagation()
-  // Tell the projection instance to update glyphs
-  // if (projectionInstance.value) {
-  //   projectionInstance.value.updateGlyphs()
-  // }
+
+  const fingerprint = fingerprints.value.find((fp) => fp.id === id)
+
+  if (!fingerprint) {
+    console.error('Fingerprint not found:', id)
+    return
+  }
+  const colorInt = parseInt(getColor(id).replace('#', ''), 16)
+  const globalStats = projectionStore.globalStats
+
+  projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, globalStats)
 }
 </script>
 
@@ -66,7 +75,7 @@ function createGlyph(id: string, event: Event) {
             <span class="feature-count">Points: {{ fp.projectedPoints.length }}</span>
           </div>
           <div class="flex gap-1">
-            <button class="glyph-btn" @click="createGlyph(fp.id, $event)" title="Create glyph">
+            <button class="glyph-btn" @click="createMiniRing(fp.id, $event)" title="Create glyph">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
