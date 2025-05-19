@@ -1,4 +1,4 @@
-import type { GlobalFeatureStats } from '@/models/data'
+import type { FeatureStats } from '@/models/data'
 
 /**
  * Utility class for normalizing values using different statistical methods
@@ -54,11 +54,11 @@ export class StatisticalNormalizer {
    */
   static normalizeWithStats(
     value: number,
-    stats: GlobalFeatureStats,
+    stats: FeatureStats,
     method: 'minmax' | 'zscore' = 'minmax',
     clamp: boolean = true,
   ): number {
-    if (method === 'minmax') {
+    if (method === 'minmax' && stats.min !== undefined && stats.max !== undefined) {
       return this.minMaxNormalize(value, stats.min, stats.max, clamp)
     } else {
       return this.zScoreNormalize(value, stats.mean, stats.std)
@@ -75,13 +75,13 @@ export class StatisticalNormalizer {
    */
   static normalizeAttributes(
     attributes: Record<string, number>,
-    statsMap: Map<string, GlobalFeatureStats> | Record<string, GlobalFeatureStats>,
+    statsMap: Map<string, FeatureStats> | Record<string, FeatureStats>,
     method: 'minmax' | 'zscore' = 'minmax',
   ): Record<string, number> {
     const normalized: Record<string, number> = {}
 
     for (const [key, value] of Object.entries(attributes)) {
-      let stats: GlobalFeatureStats | undefined
+      let stats: FeatureStats | undefined
 
       // Handle both Map and Record types for statsMap
       if (statsMap instanceof Map) {

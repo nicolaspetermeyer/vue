@@ -1,5 +1,5 @@
 import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
-import type { GlobalFeatureStats, Position } from '@/models/data'
+import type { FeatureStats, Position } from '@/models/data'
 import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
@@ -9,7 +9,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
-  public stats: GlobalFeatureStats
+  public stats: FeatureStats
   private localOverlays: Array<{ id: string; color: number; norm: number }> = []
 
   public startAngle: number = 0
@@ -26,7 +26,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   constructor(
     attributeKey: string,
     norm: { globalNorm: number; localNorm?: number },
-    stats: GlobalFeatureStats,
+    stats: FeatureStats,
   ) {
     const { globalNorm, localNorm } = norm
     super()
@@ -171,9 +171,14 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       `Global Norm Mean: ${this.globalNorm.toFixed(2)}`,
       `Global Mean: ${this.stats.mean.toFixed(2)}`,
       `Global Std: ${this.stats.std.toFixed(2)}`,
-      `Global Min: ${this.stats.min.toFixed(2)}`,
-      `Global Max: ${this.stats.max.toFixed(2)}`,
     ]
+
+    if (this.stats.min !== undefined) {
+      tooltipLines.push(`Global Min: ${this.stats.min.toFixed(2)}`)
+    }
+    if (this.stats.max !== undefined) {
+      tooltipLines.push(`Global Max: ${this.stats.max.toFixed(2)}`)
+    }
 
     if (this.localNorm !== undefined) {
       tooltipLines.push(`Local Mean: ${this.localNorm.toFixed(2)}`)

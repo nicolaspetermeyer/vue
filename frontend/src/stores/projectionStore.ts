@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Point, Projection, FeatureRanking, GlobalFeatureStats } from '@/models/data'
+import type { Point, Projection, FeatureRanking, FeatureStats } from '@/models/data'
 // import { useDataStore } from '@/stores/dataStore'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection, fetchFeatureRanking } from '@/services/api'
@@ -13,7 +13,7 @@ export const useProjectionStore = defineStore('projection', () => {
 
   // State
   const projection = ref<Projection[]>([])
-  const globalStats = ref<Record<string, GlobalFeatureStats>>({})
+  const globalStats = ref<Record<string, FeatureStats>>({})
 
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
   const projectionMethod = ref<'pca' | 'tsne'>('pca')
@@ -82,18 +82,18 @@ export const useProjectionStore = defineStore('projection', () => {
   }
 
   // Helper function to get top N features for a specific point
-  function getTopFeaturesForPoint(
-    pointId: string,
-    topN: number = 3,
-  ): { name: string; score: number }[] {
-    const ranking = getFeatureRankingForPoint(pointId)
-    if (!ranking) return []
+  // function getTopFeaturesForPoint(
+  //   pointId: string,
+  //   topN: number = 3,
+  // ): { name: string; score: number }[] {
+  //   const ranking = getFeatureRankingForPoint(pointId)
+  //   if (!ranking) return []
 
-    return ranking.features.slice(0, topN).map((feature, index) => ({
-      name: feature,
-      score: ranking.scores[index],
-    }))
-  }
+  //   return ranking.features.slice(0, topN).map((feature, index) => ({
+  //     name: feature,
+  //     score: ranking.scores[index],
+  //   }))
+  // }
 
   // Update neighborhood radius and reload feature ranking
   async function updateNeighborhoodRadius(radius: number) {
@@ -121,7 +121,7 @@ export const useProjectionStore = defineStore('projection', () => {
     loadProjection,
     loadFeatureRanking,
     getFeatureRankingForPoint,
-    getTopFeaturesForPoint,
+    // getTopFeaturesForPoint,
     updateNeighborhoodRadius,
     setProjectionInstance,
     clearProjectionInstance,

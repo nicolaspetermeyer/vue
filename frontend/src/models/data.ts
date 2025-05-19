@@ -28,27 +28,30 @@ export interface Projection {
 
 export interface ProjectionApiResponse {
   projectionData: Projection[]
-  globalStats: Record<string, GlobalFeatureStats>
+  globalStats: Record<string, FeatureStats>
 }
 
-export interface GlobalFeatureStats {
-  attributeName: number
+export interface FeatureStats {
+  // Core statistics
   mean: number
   std: number
-  min: number
-  max: number
-  normMean?: number // mean normalized to [0, 1]
-  normStd?: number // std normalized to [0, 1]
-  isNumeric: boolean
-  uniqueValues?: number
-}
+  min?: number // Only required for global stats
+  max?: number // Only required for global stats
 
-export interface LocalFeatureStats {
-  mean: number
-  stddev: number
-  globalMean: number
-  normMean: number // 0–1 scaled
-  meanDelta: number // relative to global mean
+  // Normalized values
+  normMean: number // Value normalized to [0, 1] range
+  normStd?: number // Optional for local stats
+
+  // Reference data (for local stats)
+  globalMean?: number // Reference to global mean (for local stats)
+  meanDelta?: number // Difference from reference mean (for local stats)
+
+  // Metadata
+  attributeName?: number // Optional metadata
+  isNumeric?: boolean // Used primarily with global stats
+
+  // Flags
+  isGlobal: boolean // Indicates if these are global or local stats
 }
 
 export interface Position {
@@ -65,7 +68,7 @@ export type Fingerprint = {
   id: string // simple UUID
   name: string
   projectedPoints: Projection[]
-  localStats: Record<string, LocalFeatureStats> // stats over the selected data points
+  localStats: Record<string, FeatureStats> // stats over the selected data points
 }
 
 export type FeatureRanking = {

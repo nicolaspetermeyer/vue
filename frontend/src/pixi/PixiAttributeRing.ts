@@ -3,7 +3,7 @@ import { PixiText } from '@/pixi/Base/PixiText'
 import { PointData } from 'pixi.js'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
-import type { GlobalFeatureStats, LocalFeatureStats } from '@/models/data'
+import type { FeatureStats } from '@/models/data'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -13,9 +13,9 @@ export class PixiAttributeRing
   private innerRadius: number
   private maxOuterRadius: number
   private attributeKeys: Set<string> = new Set()
-  private global: Record<string, GlobalFeatureStats> = {}
+  private global: Record<string, FeatureStats> = {}
 
-  constructor(globalStats: Record<string, GlobalFeatureStats>) {
+  constructor(globalStats: Record<string, FeatureStats>) {
     super({
       width: 1000,
       height: 1000,
@@ -47,11 +47,7 @@ export class PixiAttributeRing
     this.applyLayout()
   }
 
-  addAttributeSegment(
-    attributeName: string,
-    globalStat: GlobalFeatureStats,
-    localStat?: LocalFeatureStats,
-  ) {
+  addAttributeSegment(attributeName: string, globalStat: FeatureStats, localStat?: FeatureStats) {
     const globalNorm = globalStat.normMean ?? 0
     const localNorm = localStat?.normMean
     const stats = globalStat
