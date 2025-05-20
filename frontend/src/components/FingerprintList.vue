@@ -40,7 +40,6 @@ function createMiniRing(id: string, event: Event) {
   const colorInt = parseInt(getColor(id).replace('#', ''), 16)
   const stats = fingerprint.localStats
 
-  console.log('creating Ring for', fingerprint, colorInt, stats)
   projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, stats)
 }
 </script>

@@ -23,7 +23,6 @@ export function calcFingerprintStats(
 
     const { min, max, mean: globalMean } = globalStats[key]
     if (min === undefined || max === undefined) {
-      console.warn(`Global stats for ${key} are missing min or max values`)
       continue
     }
     const range = max - min || 1 // prevent division by 0

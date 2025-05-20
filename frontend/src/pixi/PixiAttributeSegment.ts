@@ -10,7 +10,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private globalNorm: number
   private localNorm: number | undefined
   public stats: FeatureStats
-  private localOverlays: Array<{ id: string; color: number; norm: number }> = []
+  private localOverlays: Map<string, { color: number; norm: number }> = new Map()
 
   public startAngle: number = 0
   public endAngle: number = 0
@@ -57,6 +57,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.maxOuterRadius = maxOuterRadius
     this.centerX = centerX
     this.centerY = centerY
+    this.mini = mini
 
     this.clear()
 
@@ -72,7 +73,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           centerY,
           globalNorm: this.localNorm,
           isHovered: this.isHovered,
-          color: this.color ?? 0x3399ff,
+          color: this.color,
         })
       }
     } else {
@@ -90,7 +91,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         })
       }
       // draw each local overlay
-      if (this.localOverlays.length === 1) {
+      if (this.localOverlays.size === 1) {
         this.singleComparison = true
       } else {
         this.singleComparison = false
@@ -127,22 +128,28 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   clearLocalOverlay(): void {
-    this.localOverlays = []
+    this.localOverlays.clear()
     this.localNorm = undefined
     this.color = 0x000000
     this.redraw()
   }
 
-  clearPointOverlay(id: string): void {
-    const initialLength = this.localOverlays.length
-    this.localOverlays = this.localOverlays.filter((overlay) => overlay.id !== id)
+  /**
+   * Clear a specific point overlay by its ID
+   * @param id - The ID of the point to clear
+   */
 
-    if (this.localOverlays.length < initialLength) {
-      if (this.localOverlays.length === 0) {
+  clearPointOverlay(id: string): void {
+    const initialLength = this.localOverlays.size
+    this.localOverlays.delete(id)
+
+    if (this.localOverlays.size < initialLength) {
+      if (this.localOverlays.size === 0) {
         this.localNorm = undefined
         this.color = 0x000000
       } else {
-        const lastOverlay = this.localOverlays[this.localOverlays.length - 1]
+        const overlaysArray = Array.from(this.localOverlays.values())
+        const lastOverlay = overlaysArray[overlaysArray.length - 1]
         this.localNorm = lastOverlay.norm
         this.color = lastOverlay.color
       }
@@ -151,7 +158,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   setLocalOverlay(id: string, localNorm: number, color: number): void {
-    this.localOverlays.push({ id, norm: localNorm, color })
+    this.localOverlays.set(id, { norm: localNorm, color })
     this.localNorm = localNorm
     this.color = color
     this.redraw()

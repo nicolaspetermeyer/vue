@@ -83,10 +83,8 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
         selectedFingerprints.value.forEach((fp) => {
           const color = colorMap[fp.id]
-          const numericStats = Object.fromEntries(
-            Object.entries(fp.localStats).filter(([key, _]) => ring.hasAttribute(key)),
-          )
-          ring.setLocalStats(fp.id, numericStats, color)
+
+          ring.setLocalStats(fp.id, fp.localStats, color)
         })
 
         // Highlight points if dimred is available

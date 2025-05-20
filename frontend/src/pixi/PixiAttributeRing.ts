@@ -4,6 +4,7 @@ import { PointData } from 'pixi.js'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { FeatureStats } from '@/models/data'
+import { Colors } from '@/config/Themes'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -24,16 +25,15 @@ export class PixiAttributeRing
       height?: number
       mini?: boolean
       localStats?: Record<string, { normMean?: number }>
-      color?: number // default color for all segments in mini mode
+      color?: number
     },
   ) {
     super({
-      width: opts?.width ?? (opts?.mini ? 48 : 1000),
-      height: opts?.height ?? (opts?.mini ? 48 : 1000),
+      width: opts?.width ?? (opts?.mini ? 60 : 1000),
+      height: opts?.height ?? (opts?.mini ? 60 : 1000),
       background: null,
       positionAbsolute: true,
     })
-
     this.mini = opts?.mini ?? false
     this.color = opts?.color
     this.localStats = opts?.localStats
@@ -44,14 +44,12 @@ export class PixiAttributeRing
     // calculate inner radius of the ring
     const base = Math.min(this.layoutProps.width, this.layoutProps.height)
     this.innerRadius = base * 0.35
-    this.maxOuterRadius = base * 0.6
+    this.maxOuterRadius = base * (opts?.mini ? 0.9 : 0.6)
 
     // Add only numeric attribute segments
     for (const [attrKey, stat] of Object.entries(globalStats)) {
-      console.log('Adding attribute segment:', attrKey, 'with global stats:', stat)
       if (this.mini) {
         const localNorm = this.localStats?.[attrKey]?.normMean
-        console.log('Adding mini segment for attribute:', attrKey, 'with local norm:', localNorm)
         this.addMiniSegment(attrKey, localNorm)
       } else {
         const localStat = this.localStats?.[attrKey]
@@ -85,6 +83,7 @@ export class PixiAttributeRing
     if (this.mini && this.color !== undefined) {
       segment.color = this.color
     }
+
     this.segments.push(segment)
     this.addChild(segment)
   }
