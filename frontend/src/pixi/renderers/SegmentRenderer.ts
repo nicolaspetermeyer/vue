@@ -45,8 +45,6 @@ export class SegmentRenderer {
 
     graphics.clear()
 
-    console.log('Rendering segment with params:', params)
-
     const arcWidth = maxOuterRadius - innerRadius
 
     const globalOuter = innerRadius + globalNorm * arcWidth

@@ -48,6 +48,7 @@ export class PixiAttributeRing
 
     // Add only numeric attribute segments
     for (const [attrKey, stat] of Object.entries(globalStats)) {
+      console.log('Adding attribute segment:', attrKey, 'with global stats:', stat)
       if (this.mini) {
         const localNorm = this.localStats?.[attrKey]?.normMean
         console.log('Adding mini segment for attribute:', attrKey, 'with local norm:', localNorm)
@@ -80,7 +81,6 @@ export class PixiAttributeRing
     const globalNorm = globalStat.normMean ?? 0
     const localNorm = localStat?.normMean
     const stats = globalStat
-
     const segment = new PixiAttributeSegment(attributeName, { globalNorm, localNorm }, stats)
     if (this.mini && this.color !== undefined) {
       segment.color = this.color

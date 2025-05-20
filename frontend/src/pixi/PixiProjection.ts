@@ -33,6 +33,8 @@ export class PixiProjection extends PixiContainer {
 
     // The attribute ring
     this.attributeRing = new PixiAttributeRing(globalStats)
+    console.log('PixiProjection: attributeRing', this.attributeRing)
+    console.log('with stats:', globalStats)
     this.addChild(this.attributeRing)
 
     this.maskGraphic = new Graphics()

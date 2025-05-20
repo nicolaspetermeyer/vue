@@ -48,6 +48,7 @@ class DatasetInfo:
         numeric_cols: List[str],
         non_numeric_cols: List[str],
         column_types: Dict[str, Dict[str, Any]],
+        numeric_df: pd.DataFrame,
     ):
         self.df = df
         self.numeric_cols = numeric_cols
@@ -102,6 +103,7 @@ def preprocess_dataset(filename: str) -> DatasetInfo:
     non_numeric_cols = [
         col for col in df.columns if col not in numeric_cols and col.lower() != "id"
     ]
+    numeric_df = df[numeric_cols] if numeric_cols else pd.DataFrame()
 
     # Create column metadata
     column_types = {
@@ -111,7 +113,9 @@ def preprocess_dataset(filename: str) -> DatasetInfo:
     }
 
     # Create dataset info object
-    info = DatasetInfo(df, numeric_cols, non_numeric_cols, column_types)
+    info = DatasetInfo(df, numeric_cols, non_numeric_cols, column_types, numeric_df)
+
+    __all__ = ["app", "info", "DatasetInfo"]
 
     # Cache this processed dataset
     dataset_cache[filename] = info
@@ -328,13 +332,14 @@ async def project_data(
     """
     key = (filename, method)
 
+    if key in projection_cache:
+        return projection_cache[key]
+
     dataset_info = preprocess_dataset(filename)
 
     original_data = await get_file_data(filename)
     global_stats = await get_global_stats(filename)
 
-    # if key in projection_cache:
-    #     return projection_cache[key]
     # Check if we have numeric data to project
     if len(dataset_info.numeric_cols) == 0:
         raise HTTPException(
@@ -344,6 +349,7 @@ async def project_data(
     # Perform projection
     if method == "pca":
         projected_data = compute_pca(dataset_info.numeric_df)
+        print("projected")
     elif method == "tsne":
         projected_data = compute_tsne(dataset_info.numeric_df)
     else:
@@ -358,9 +364,6 @@ async def project_data(
         }
         for i in range(len(dataset_info.ids))
     ]
-
-    # Cache the result
-    # projection_cache[key] = projection
 
     id_to_original = {item["id"]: item for item in original_data["data"]}
 
@@ -381,6 +384,8 @@ async def project_data(
         "globalStats": global_stats,
     }
 
+    projection_cache[key] = result
+
     return result
 
 
@@ -399,10 +404,12 @@ async def get_global_stats(filename: str):
 
     # Process numeric columns
     for col in dataset_info.numeric_cols:
+
         if col.lower() == "id":
             continue
 
         col_data = dataset_info.df[col]
+
         mean = col_data.mean()
         std = col_data.std()
         min_val = col_data.min()
@@ -422,9 +429,9 @@ async def get_global_stats(filename: str):
         }
 
     # Process non-numeric columns
-    for col in dataset_info.non_numeric_cols:
-        unique_values = dataset_info.df[col].nunique()
-        stats[col] = {"isNumeric": False, "uniqueValues": int(unique_values)}
+    # for col in dataset_info.non_numeric_cols:
+    #     unique_values = dataset_info.df[col].nunique()
+    #     stats[col] = {"isNumeric": False, "uniqueValues": int(unique_values)}
 
     stats_cache[filename] = stats
     return stats
