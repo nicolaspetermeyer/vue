@@ -98,7 +98,7 @@ export class SegmentRenderer {
     const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
 
     let fillColor = color
-    let borderColor = fillColor
+    let borderColor = Colors.STANDARD_BORDER
 
     if (singleComparison) {
       fillColor =

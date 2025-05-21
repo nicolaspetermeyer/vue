@@ -11,12 +11,13 @@ export interface Projection {
   id: string
   pos: Position
   original: Data
-  nonNumericAttributes: string[]
 }
 
 export interface ProjectionApiResponse {
   projectionData: Projection[]
   globalStats: Record<string, FeatureStats>
+  nonNumericAttributes: string[] | null
+  categoryValues: Record<string, string[]>
 }
 
 export interface FeatureStats {

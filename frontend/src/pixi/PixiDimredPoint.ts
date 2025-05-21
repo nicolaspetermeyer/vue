@@ -3,6 +3,7 @@ import { PixiSprite } from './Base/PixiSprite'
 import type { Projection } from '@/models/data'
 import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors } from '@/config/Themes'
+import { useProjectionStore } from '@/stores/projectionStore'
 
 // Create a static texture cache
 const textureCache = new Map<number, Texture>()
@@ -137,7 +138,9 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
 
   getTooltipContent(): string {
     const projection = this.dimredpoint
-    const nonNumericAttrs = projection.nonNumericAttributes || []
+    console.log('projection', projection)
+    const projectionStore = useProjectionStore()
+    const nonNumericAttrs = projectionStore.filterCategories || []
 
     const idSection = `ID: ${projection.id}`
     const sections = []

@@ -367,6 +367,11 @@ async def project_data(
 
     id_to_original = {item["id"]: item for item in original_data["data"]}
 
+    category_values = {}
+    for col in dataset_info.non_numeric_cols:
+        unique_vals = dataset_info.df[col].unique()
+        category_values[col] = [str(val) for val in unique_vals]
+
     matched_data = []
     for point in projection:
         point_id = point["id"]
@@ -376,12 +381,13 @@ async def project_data(
                     "id": point_id,
                     "pos": {"x": point["x"], "y": point["y"]},
                     "original": id_to_original[point_id],
-                    "nonNumericAttributes": dataset_info.non_numeric_cols,
                 }
             )
     result = {
         "projectionData": matched_data,
         "globalStats": global_stats,
+        "nonNumericAttributes": dataset_info.non_numeric_cols,
+        "categoryValues": category_values,
     }
 
     projection_cache[key] = result

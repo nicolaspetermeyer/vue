@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Point, Projection, FeatureRanking, FeatureStats } from '@/models/data'
-// import { useDataStore } from '@/stores/dataStore'
+import type { Projection, FeatureRanking, FeatureStats } from '@/models/data'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection, fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
@@ -11,6 +10,7 @@ export const useProjectionStore = defineStore('projection', () => {
   const datasetStore = useDatasetStore()
 
   // State
+  const unfilteredProjection = ref<Projection[]>([])
   const projection = ref<Projection[]>([])
   const globalStats = ref<Record<string, FeatureStats>>({})
 
@@ -18,6 +18,18 @@ export const useProjectionStore = defineStore('projection', () => {
   const projectionMethod = ref<'pca' | 'tsne'>('pca')
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)
+
+  const filterCategories = ref<string[] | null>(null)
+  const categoryValues = ref<Record<string, string[]>>({})
+
+  // Filtering
+  const activeFilter = ref<{
+    category: string | null
+    values: string[]
+  }>({
+    category: null,
+    values: [],
+  })
 
   const isLoading = ref<boolean>(false)
 
@@ -40,7 +52,12 @@ export const useProjectionStore = defineStore('projection', () => {
       const result = await fetchProjection(dataset, projectionMethod.value)
 
       globalStats.value = result.globalStats
-      projection.value = result.projectionData
+      unfilteredProjection.value = result.projectionData
+      projection.value = [...unfilteredProjection.value]
+      filterCategories.value = result.nonNumericAttributes
+      categoryValues.value = result.categoryValues || {}
+
+      console.log('Projection loaded:', projection.value)
 
       // await loadFeatureRanking()
     } catch {
@@ -54,6 +71,10 @@ export const useProjectionStore = defineStore('projection', () => {
     console.log('Clearing all projection data')
     projection.value = []
     featureRanking.value = []
+    activeFilter.value = {
+      category: null,
+      values: [],
+    }
 
     useFingerprintStore().clearFingerprints()
   }
@@ -72,6 +93,39 @@ export const useProjectionStore = defineStore('projection', () => {
       )
     } catch (error) {
       console.error('Failed to load feature ranking:', error)
+    }
+  }
+
+  function getCategoryValues(category: string): string[] {
+    return categoryValues.value[category] || []
+  }
+
+  function applyFilter(category: string, values: string[]) {
+    activeFilter.value = {
+      category,
+      values: [...values],
+    }
+    if (!projectionInstance.value) return
+
+    if (values.length === 0) {
+      projection.value = [...unfilteredProjection.value]
+      return
+    }
+
+    projection.value = unfilteredProjection.value.filter((point) => {
+      const raw = point.original?.[category]
+      return raw !== undefined && values.includes(String(raw))
+    })
+  }
+
+  function clearFilters() {
+    activeFilter.value = {
+      category: null,
+      values: [],
+    }
+
+    if (projectionInstance.value) {
+      projection.value = [...unfilteredProjection.value]
     }
   }
 
@@ -115,14 +169,19 @@ export const useProjectionStore = defineStore('projection', () => {
     projectionInstance,
     projectionMethod,
     globalStats,
+    filterCategories,
+    activeFilter,
     featureRanking,
     neighborhoodRadius,
     loadProjection,
     loadFeatureRanking,
+    getCategoryValues,
+    applyFilter,
     getFeatureRankingForPoint,
     // getTopFeaturesForPoint,
     updateNeighborhoodRadius,
     setProjectionInstance,
+    clearFilters,
     clearProjectionInstance,
     clearAllProjectionData,
   }
