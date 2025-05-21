@@ -17,9 +17,12 @@ const { projectionMethod, projectionInstance, filterCategories, activeFilter } =
 const { clearFilters } = projectionStore
 
 const fingerprintStore = useFingerprintStore()
-const { addFingerprint } = fingerprintStore
+const { addFingerprint, getFilterDescription } = fingerprintStore
 
 const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
+const selectionModeText = computed(() =>
+  currentMode.value === SelectionMode.RECTANGLE ? 'Rectangle Selection' : 'Lasso Selection',
+)
 
 const selectedCategory = computed({
   get: () => activeFilter.value.category,
@@ -91,95 +94,140 @@ const toggleSelectionMode = () => {
   }
 }
 
+const selectAllValues = () => {
+  if (selectedCategory.value) {
+    selectedValues.value = [...availableCategoryValues.value]
+  }
+}
+
+const deselectAllValues = () => {
+  selectedValues.value = []
+}
+
 onMounted(async () => {})
 </script>
 
 <template>
   <div class="sidebar">
-    <h2>User Controls</h2>
-    <div class="flex flex-col gap-2">
-      <h2 class="text-xl font-bold">Dataset</h2>
-      <select class="select w-full max-w-xs" @change="handleSelect" v-model="selectedDatasetId">
+    <h2 class="text-xl font-bold mb-2">Data Explorer</h2>
+
+    <!-- Dataset Section -->
+    <section class="section">
+      <h3 class="section-title">Dataset</h3>
+      <select class="select w-full" @change="handleSelect" v-model="selectedDatasetId">
         <option disabled :value="null">Select Dataset</option>
         <option v-for="dataset in datasetsArray" :key="dataset.id" :value="dataset.id">
           {{ dataset.name }}
         </option>
       </select>
-      <h2 class="text-xl font-bold">Projection</h2>
-      <select class="select max-w-[50%]" v-model="projectionMethod">
-        <option value="pca">PCA</option>
-        <option value="tsne">t-SNE</option>
-      </select>
-      <button @click="loadProj()" class="btn btn-xs btn-content">Compute Points</button>
-      <h2 class="text-xl font-bold">Fingerprint</h2>
-      <button @click="toggleSelectionMode" class="btn btn-xs btn-content">
-        Toggle Selection Mode
-      </button>
-      <button @click="addFingerprint()" class="btn btn-xs btn-content">Create Fingerprint</button>
-      <div class="text-xs text-gray-500 mt-1">
+
+      <!-- Projection options -->
+      <div class="mt-3">
+        <div class="flex items-center justify-between">
+          <select class="select-sm" v-model="projectionMethod">
+            <option value="pca">PCA</option>
+            <option value="tsne">t-SNE</option>
+          </select>
+          <button @click="loadProj()" class="btn btn-sm btn-primary">Compute</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fingerprint Section-->
+    <section class="section">
+      <h3 class="section-title">Fingerprint</h3>
+      <div class="flex items-center space-x-2 mb-2">
+        <button @click="addFingerprint()" class="btn btn-sm btn-primary flex-1">
+          Create Fingerprint
+        </button>
+      </div>
+
+      <div class="text-xs text-gray-500">
         <span v-if="hasActiveFilters">
           <span class="font-medium">Filter applied:</span> {{ filterDescription }}
         </span>
         <span v-else> If no selection, will create fingerprint from all points. </span>
       </div>
+    </section>
 
-      <div class="mt-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold">Filters</h2>
-          <button v-if="selectedCategory" @click="clearFilters" class="btn btn-xs btn-ghost">
-            Clear
-          </button>
+    <!-- Filters Section -->
+    <section class="section">
+      <div class="flex items-center justify-between">
+        <h3 class="section-title">Filters</h3>
+        <button v-if="hasActiveFilters" @click="clearFilters" class="btn btn-xs btn-ghost">
+          Clear
+        </button>
+      </div>
+      <button @click="toggleSelectionMode" class="btn btn-sm btn-primary flex-1">
+        <a>{{ selectionModeText }}</a>
+      </button>
+
+      <div v-if="filterCategories && filterCategories.length > 0" class="filter-container">
+        <!-- Category Selector -->
+        <div class="form-control">
+          <label class="label pb-1">
+            <span class="label-text">Category</span>
+          </label>
+          <select class="select select-sm w-full" v-model="selectedCategory">
+            <option :value="null">Select category...</option>
+            <option v-for="category in filterCategories" :key="category" :value="category">
+              {{ category }}
+            </option>
+          </select>
         </div>
 
-        <div v-if="filterCategories && filterCategories.length > 0" class="filter-container mt-2">
-          <!-- Category Selector -->
+        <!-- Values MultiSelect -->
+        <div v-if="selectedCategory" class="mt-2">
           <div class="form-control">
-            <label class="label pb-1">
-              <span class="label-text">Category</span>
-            </label>
-            <select class="select select-sm w-full" v-model="selectedCategory">
-              <option :value="null">Select category...</option>
-              <option v-for="category in filterCategories" :key="category" :value="category">
-                {{ category }}
-              </option>
-            </select>
-          </div>
+            <div class="flex items-center justify-between">
+              <label class="label-text">Values</label>
+              <div class="flex gap-1">
+                <button
+                  @click="selectAllValues"
+                  class="btn btn-xs btn-ghost py-1"
+                  :disabled="selectedValues.length === availableCategoryValues.length"
+                >
+                  All
+                </button>
+                <button
+                  @click="deselectAllValues"
+                  class="btn btn-xs btn-ghost py-1"
+                  :disabled="selectedValues.length === 0"
+                >
+                  None
+                </button>
+              </div>
+            </div>
 
-          <!-- Values MultiSelect -->
-          <div v-if="selectedCategory" class="mt-2">
-            <div class="form-control">
-              <label class="label pb-1">
-                <span class="label-text">Values</span>
-                <span v-if="selectedValues.length > 0" class="label-text-alt text-primary">
-                  {{ selectedValues.length }} selected
-                </span>
-              </label>
+            <div class="mt-1 text-xs text-gray-500" v-if="selectedValues.length > 0">
+              {{ selectedValues.length }} selected
+            </div>
 
-              <div class="checkboxes-container max-h-40 overflow-y-auto border rounded p-1">
-                <div v-for="value in availableCategoryValues" :key="value" class="form-control">
-                  <label class="label cursor-pointer justify-start py-1">
-                    <input
-                      type="checkbox"
-                      :value="value"
-                      v-model="selectedValues"
-                      class="checkbox checkbox-xs mr-2"
-                    />
-                    <span class="label-text">{{ value }}</span>
-                  </label>
-                </div>
+            <div class="checkboxes-container">
+              <div v-for="value in availableCategoryValues" :key="value" class="form-control">
+                <label class="label cursor-pointer justify-start py-1">
+                  <input
+                    type="checkbox"
+                    :value="value"
+                    v-model="selectedValues"
+                    class="checkbox checkbox-xs mr-2"
+                  />
+                  <span class="label-text">{{ value }}</span>
+                </label>
               </div>
             </div>
           </div>
         </div>
-        <div
-          v-else-if="filterCategories && filterCategories.length === 0"
-          class="text-sm text-gray-500 mt-2"
-        >
-          No categorical data available for filtering
-        </div>
-        <div v-else class="text-sm text-gray-500 mt-2">Load a projection to enable filtering</div>
       </div>
-    </div>
+
+      <div
+        v-else-if="filterCategories && filterCategories.length === 0"
+        class="text-sm text-gray-500"
+      >
+        No categorical data available for filtering
+      </div>
+      <div v-else class="text-sm text-gray-500">Load a projection to enable filtering</div>
+    </section>
   </div>
 </template>
 
@@ -187,27 +235,50 @@ onMounted(async () => {})
 .sidebar {
   padding: 1rem;
   background: #f1f1f1;
+  height: 100%;
+  overflow-y: auto;
 }
 
-.dataset-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 1rem;
+.section {
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.dataset-list li {
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background 0.2s;
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
 }
 
-.dataset-list li:hover {
-  background-color: #9cada1;
+.checkboxes-container {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background-color: #f9fafb;
 }
 
-.dataset-list li.active {
-  font-weight: bold;
-  background-color: #9cada1;
+/* Custom scrollbar */
+.checkboxes-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.checkboxes-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.checkboxes-container::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.checkboxes-container::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }
 </style>

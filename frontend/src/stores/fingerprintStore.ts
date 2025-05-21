@@ -45,24 +45,57 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     let pointsToUse: Projection[] = []
     let name: string
 
+    const dimredInstance = projectionStore.projectionInstance?.dimred
+    const screenPositions = new Map<string, { x: number; y: number }>()
+
+    if (dimredInstance) {
+      dimredInstance.pixiDimredPoints.forEach((point, id) => {
+        screenPositions.set(id, { x: point.x, y: point.y })
+      })
+    }
+
     if (selection.value.length > 0) {
       pointsToUse = selection.value
       name = `Fingerprint ${fingerprintCounter.value++}`
     } else {
       const activeFilter = projectionStore.activeFilter
+      let filteredIds: string[] = []
+
       if (activeFilter.category && activeFilter.values.length > 0) {
-        pointsToUse = projectionStore.projection
+        filteredIds = projectionStore.projection
+          .filter((point) => {
+            if (point.original && activeFilter.category) {
+              const value = point.original[activeFilter.category]
+              return value !== undefined && activeFilter.values.includes(String(value))
+            }
+            return false
+          })
+          .map((point) => point.id)
+
         name = getFilterDescription(activeFilter.category, activeFilter.values)
       } else {
-        pointsToUse = projectionStore.projection
+        filteredIds = projectionStore.projection.map((point) => point.id)
         name = `All Points ${fingerprintCounter.value++}`
       }
+
+      pointsToUse = projectionStore.projection
+        .filter((point) => filteredIds.includes(point.id))
+        .map((point) => {
+          const screenPos = screenPositions.get(point.id)
+          return {
+            ...point,
+            pos: screenPos || point.pos, // Use screen position if available
+          }
+        })
     }
+
     if (pointsToUse.length === 0) return
     const originals = pointsToUse.map((p) => p.original)
     const localStats = calcFingerprintStats(originals)
     const id = crypto.randomUUID()
     const centroid = calculateSelectionCentroid(pointsToUse)
+    console.log('pointsToUse', pointsToUse)
+    console.log('centroid', centroid)
 
     const fingerprint: Fingerprint = {
       id,
@@ -74,21 +107,21 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     fingerprints.value.push(fingerprint)
 
-    const fingerprintPointIds = new Set(pointsToUse.map((p) => p.id))
-    if (projectionStore.projectionInstance) {
-      const pointIndicesToHide = projectionStore.projection
-        .map((point, index) => (fingerprintPointIds.has(point.id) ? index : -1))
-        .filter((index) => index !== -1)
-      projectionStore.projectionInstance.hidePoints(pointIndicesToHide)
-    }
-
     selection.value = []
   }
 
   function removeFingerprint(id: string, projectionInstance: any | null | undefined) {
+    const fingerprintToRemove = fingerprints.value.find((fp) => fp.id === id)
+
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
     selectedFingerprints.value = selectedFingerprints.value.filter((f) => f.id !== id)
     updateAttributeRingVisualization(projectionInstance)
+
+    // Restore hidden points from the removed fingerprint
+    if (fingerprintToRemove && projectionInstance?.dimred) {
+      const pointIds = fingerprintToRemove.projectedPoints.map((p) => p.id)
+      projectionInstance.dimred.showPointsByIds(pointIds)
+    }
   }
 
   function clearFingerprints() {
@@ -187,12 +220,14 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     selectedFingerprints,
     selectedFingerprintPoints,
     setSelection,
+    getFilterDescription,
     addFingerprint,
     removeFingerprint,
     clearFingerprints,
     updateAttributeRingVisualization,
     toggleSelectedFingerprint,
     getComparisonColors,
+
     // getTopFeatures,
     calculateSelectionCentroid,
     getFingerprintCentroid,

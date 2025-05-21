@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Projection, FeatureRanking, FeatureStats } from '@/models/data'
 import { useDatasetStore } from '@/stores/datasetStore'
@@ -29,6 +29,21 @@ export const useProjectionStore = defineStore('projection', () => {
   }>({
     category: null,
     values: [],
+  })
+
+  const filteredPointIds = computed(() => {
+    if (!activeFilter.value.category || activeFilter.value.values.length === 0) {
+      return projection.value.map((p) => p.id)
+    }
+
+    return projection.value
+      .filter((point) => {
+        const { category, values } = activeFilter.value
+        if (!category || !point.original) return false
+        const pointValue = point.original[category]
+        return pointValue !== undefined && values.includes(String(pointValue))
+      })
+      .map((p) => p.id)
   })
 
   const isLoading = ref<boolean>(false)
@@ -197,6 +212,7 @@ export const useProjectionStore = defineStore('projection', () => {
     globalStats,
     filterCategories,
     activeFilter,
+    filteredPointIds,
     featureRanking,
     neighborhoodRadius,
     loadProjection,

@@ -50,7 +50,10 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     color: number,
     stats: Record<string, FeatureStats>,
   ) {
-    const { centroid, localStats, id } = fingerprint
+    const { centroid, localStats, id, projectedPoints } = fingerprint
+    const ids = projectedPoints.map((point) => point.id)
+
+    this.hidePointsbyId(ids)
     if (!centroid || !localStats) return
 
     this.removeMiniRing(id)
@@ -206,12 +209,23 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
    * @param indices Array of point indices to hide
    */
   hidePoints(indices: number[]): void {
-    // Create a Set for faster lookups
     const hideSet = new Set(indices)
 
-    // Hide each point at the specified indices
     Array.from(this.pixiDimredPoints.entries()).forEach(([id, point], index) => {
       if (hideSet.has(index)) {
+        point.visible = false
+      }
+    })
+
+    this.app.render()
+  }
+
+  hidePointsbyId(ids: string[]): void {
+    const hideSet = new Set<string>(ids)
+
+    // Iterate the Map directly by key (id) and value (point)
+    this.pixiDimredPoints.forEach((point, id) => {
+      if (hideSet.has(id)) {
         point.visible = false
       }
     })
@@ -249,5 +263,19 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     })
 
     this.app.render()
+  }
+
+  showPointsByIds(pointIds: string[]): void {
+    pointIds.forEach((id) => {
+      const point = this.pixiDimredPoints.get(id)
+      if (point) {
+        point.visible = true
+      }
+    })
+    this.app.render()
+  }
+
+  getVisiblePoints(): PixiDimredPoint[] {
+    return Array.from(this.pixiDimredPoints.values()).filter((point) => point.visible)
   }
 }

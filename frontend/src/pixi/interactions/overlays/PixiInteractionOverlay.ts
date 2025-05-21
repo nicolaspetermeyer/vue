@@ -231,16 +231,21 @@ export class PixiInteractionOverlay extends PixiContainer {
   private onBrushEnd(selectionArea: Rectangle | PointData[], mode: SelectionMode) {
     if (!this.dimred) return
 
-    let selected: string[] = []
+    let selectedIds: string[] = []
 
-    if (mode === SelectionMode.RECTANGLE && selectionArea instanceof Rectangle) {
-      selected = this.dimred.getPointsInBounds(selectionArea)
-    } else if (mode === SelectionMode.LASSO && Array.isArray(selectionArea)) {
-      selected = this.dimred.getPointsInPolygon(selectionArea)
+    if (mode === SelectionMode.RECTANGLE) {
+      selectedIds = this.dimred.getPointsInBounds(selectionArea as Rectangle)
+    } else {
+      selectedIds = this.dimred.getPointsInPolygon(selectionArea as PointData[])
     }
 
-    this.dimred.setSelection(selected)
-    if (selected.length > 0) {
+    const visibleSelectedIds = selectedIds.filter((id) => {
+      const point = this.dimred?.pixiDimredPoints.get(id)
+      return point && point.visible
+    })
+
+    this.dimred.setSelection(visibleSelectedIds)
+    if (visibleSelectedIds.length > 0) {
       this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
     }
   }

@@ -277,7 +277,7 @@ export class SelectionController extends EventEmitter {
 
     // Emit selection event if needed
     if (this.options.emitEvents && selectionResult) {
-      this.emit(SelectionEvents.BRUSH_END, selectionResult, this.selectionMode)
+      this.emit(SelectionEvents.BRUSH_END, selectionResult, this.selectionMode, true)
     }
 
     return selectionResult as Rectangle | null
