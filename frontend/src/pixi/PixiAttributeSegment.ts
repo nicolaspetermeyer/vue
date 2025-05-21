@@ -61,54 +61,43 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     this.clear()
 
-    // draw the base global segment
+    const commonParams = {
+      innerRadius,
+      maxOuterRadius,
+      startAngle,
+      endAngle,
+      centerX,
+      centerY,
+      isHovered: this.isHovered,
+    }
+
     if (mini) {
       if (typeof this.localNorm === 'number') {
         SegmentRenderer.renderSegment(this, {
-          innerRadius,
-          maxOuterRadius,
-          startAngle,
-          endAngle,
-          centerX,
-          centerY,
+          ...commonParams,
           globalNorm: this.localNorm,
-          isHovered: this.isHovered,
           color: this.color,
+          mini: true,
         })
       }
     } else {
-      if (!mini && typeof this.globalNorm === 'number' && this.globalNorm > 0) {
+      if (typeof this.globalNorm === 'number' && this.globalNorm > 0) {
         SegmentRenderer.renderSegment(this, {
-          innerRadius,
-          maxOuterRadius,
-          startAngle,
-          endAngle,
-          centerX,
-          centerY,
+          ...commonParams,
           globalNorm: this.globalNorm,
-          isHovered: this.isHovered,
-          color: this.color,
+          color: Colors.GLOBAL_SEGMENT,
         })
       }
+
       // draw each local overlay
-      if (this.localOverlays.size === 1) {
-        this.singleComparison = true
-      } else {
-        this.singleComparison = false
-      }
+      this.singleComparison = this.localOverlays.size === 1
 
       this.localOverlays.forEach((overlay) => {
         SegmentRenderer.renderOverlay(this, {
-          innerRadius,
-          maxOuterRadius,
-          startAngle,
-          endAngle,
-          centerX,
-          centerY,
+          ...commonParams,
           globalNorm: this.globalNorm ?? 0,
           localNorm: overlay.norm,
           color: overlay.color,
-          isHovered: this.isHovered,
           singleComparison: this.singleComparison,
         })
       })
@@ -140,19 +129,18 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
    */
 
   clearPointOverlay(id: string): void {
-    const initialLength = this.localOverlays.size
+    if (!this.localOverlays.has(id)) return
+
     this.localOverlays.delete(id)
 
-    if (this.localOverlays.size < initialLength) {
-      if (this.localOverlays.size === 0) {
-        this.localNorm = undefined
-        this.color = 0x000000
-      } else {
-        const overlaysArray = Array.from(this.localOverlays.values())
-        const lastOverlay = overlaysArray[overlaysArray.length - 1]
-        this.localNorm = lastOverlay.norm
-        this.color = lastOverlay.color
-      }
+    if (this.localOverlays.size === 0) {
+      this.localNorm = undefined
+      this.color = 0x000000
+      this.redraw()
+    } else {
+      const lastOverlay = Array.from(this.localOverlays.values()).pop()
+      this.localNorm = lastOverlay?.norm
+      this.color = lastOverlay?.color ?? 0x000000
       this.redraw()
     }
   }
@@ -210,11 +198,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     if (this.localNorm !== undefined) {
       tooltipLines.push(`Local Mean: ${this.localNorm.toFixed(2)}`)
-    }
 
-    const delta = this.localNorm !== undefined ? this.localNorm - this.globalNorm : null
-    if (delta !== null && Math.abs(delta) > 0.01) {
-      tooltipLines.push(`Δ: ${delta.toFixed(2)}`)
+      const delta = this.localNorm - this.globalNorm
+      if (Math.abs(delta) > 0.01) {
+        tooltipLines.push(`Δ: ${delta.toFixed(2)}`)
+      }
     }
 
     return tooltipLines.join('\n')

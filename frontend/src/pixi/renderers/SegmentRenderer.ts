@@ -45,7 +45,7 @@ export class SegmentRenderer {
       isHovered = false,
       borderColor = Colors.STANDARD_BORDER,
       alpha = 0.25,
-      mini = false,
+      mini,
     } = params
 
     const arcWidth = maxOuterRadius - innerRadius
@@ -55,6 +55,7 @@ export class SegmentRenderer {
     // Apply hover effect
     const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
     const fillColor = mini ? color : Colors.GLOBAL_SEGMENT
+    let bc = mini ? color : borderColor
 
     // Draw global segment
     this.drawArcSegment(graphics, {
@@ -65,7 +66,7 @@ export class SegmentRenderer {
       startAngle,
       endAngle,
       fillColor,
-      borderColor: borderColor,
+      borderColor: bc,
       alpha,
       lineWidth,
     })

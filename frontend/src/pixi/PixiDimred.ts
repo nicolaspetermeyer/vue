@@ -62,7 +62,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
       localStats,
       color,
     })
-    miniRing.position.set(centroid.x, centroid.y)
+    miniRing.position.set(centroid.x - miniRing.width / 2, centroid.y - miniRing.height / 2)
 
     this.pixiGlyph.set(id, miniRing)
     this.addChild(miniRing)
