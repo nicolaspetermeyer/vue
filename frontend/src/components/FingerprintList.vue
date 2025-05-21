@@ -2,12 +2,15 @@
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { ref } from 'vue'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints, selectedFingerprints } = storeToRefs(fingerprintStore)
 
 const projectionStore = useProjectionStore()
 const { projectionInstance } = storeToRefs(projectionStore)
+
+const visibleMiniRings = ref<Set<string>>(new Set())
 
 function toggleSelection(fingerprint: (typeof fingerprints.value)[number]) {
   fingerprintStore.toggleSelectedFingerprint(fingerprint, projectionInstance.value)
@@ -28,19 +31,29 @@ function removeFingerprint(id: string, event: Event) {
   fingerprintStore.removeFingerprint(id, projectionInstance.value)
 }
 
-function createMiniRing(id: string, event: Event) {
+function toggleMiniRing(id: string, event: Event) {
   event.stopPropagation()
 
   const fingerprint = fingerprints.value.find((fp) => fp.id === id)
 
-  if (!fingerprint) {
-    console.error('Fingerprint not found:', id)
+  if (!fingerprint || !projectionInstance.value?.dimred) {
     return
   }
-  const colorInt = parseInt(getColor(id).replace('#', ''), 16)
-  const stats = fingerprint.localStats
 
-  projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, stats)
+  if (visibleMiniRings.value.has(id)) {
+    projectionInstance.value.dimred.removeMiniRing(fingerprint)
+    visibleMiniRings.value.delete(id)
+  } else {
+    const colorInt = parseInt(getColor(id).replace('#', ''), 16)
+    const stats = fingerprint.localStats
+
+    projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, stats)
+    visibleMiniRings.value.add(id)
+  }
+}
+
+function isMiniRingVisible(id: string): boolean {
+  return visibleMiniRings.value.has(id)
 }
 </script>
 
@@ -73,7 +86,12 @@ function createMiniRing(id: string, event: Event) {
             <span class="feature-count">Points: {{ fp.projectedPoints.length }}</span>
           </div>
           <div class="flex gap-1">
-            <button class="glyph-btn" @click="createMiniRing(fp.id, $event)" title="Create glyph">
+            <button
+              class="glyph-btn"
+              :class="{ 'glyph-active': isMiniRingVisible(fp.id) }"
+              @click="toggleMiniRing(fp.id, $event)"
+              :title="isMiniRingVisible(fp.id) ? 'Hide glyph' : 'Show glyph'"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"

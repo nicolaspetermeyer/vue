@@ -56,7 +56,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.hidePointsbyId(ids)
     if (!centroid || !localStats) return
 
-    this.removeMiniRing(id)
+    this.removeMiniRing(fingerprint)
 
     const miniRing = new PixiAttributeRing(stats, {
       mini: true,
@@ -73,11 +73,14 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   }
 
   // Add method to explicitly remove a mini ring
-  removeMiniRing(fingerprintId: string): void {
-    const ring = this.pixiGlyph.get(fingerprintId)
+  removeMiniRing(fingerprint: Fingerprint): void {
+    const ring = this.pixiGlyph.get(fingerprint.id)
+    const ids = fingerprint.projectedPoints.map((point) => point.id)
+
     if (ring) {
       this.removeChild(ring)
-      this.pixiGlyph.delete(fingerprintId)
+      this.pixiGlyph.delete(fingerprint.id)
+      this.showPointsbyId(ids)
     }
   }
 
@@ -227,6 +230,19 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.pixiDimredPoints.forEach((point, id) => {
       if (hideSet.has(id)) {
         point.visible = false
+      }
+    })
+
+    this.app.render()
+  }
+
+  showPointsbyId(ids: string[]): void {
+    const showSet = new Set<string>(ids)
+
+    // Iterate the Map directly by key (id) and value (point)
+    this.pixiDimredPoints.forEach((point, id) => {
+      if (showSet.has(id)) {
+        point.visible = true
       }
     })
 
