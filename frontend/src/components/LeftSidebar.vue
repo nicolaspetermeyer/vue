@@ -14,6 +14,7 @@ const { setSelectedDatasetId } = datasetStore
 const projectionStore = useProjectionStore()
 const { projectionMethod, projectionInstance, filterCategories, activeFilter } =
   storeToRefs(projectionStore)
+const { clearFilters } = projectionStore
 
 const fingerprintStore = useFingerprintStore()
 const { addFingerprint } = fingerprintStore
@@ -23,12 +24,10 @@ const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
 const selectedCategory = computed({
   get: () => activeFilter.value.category,
   set: (value) => {
-    // When category changes, reset values and update the filter
     if (value !== activeFilter.value.category) {
       activeFilter.value.category = value
       activeFilter.value.values = []
 
-      // If null, clear all filters
       if (value === null) {
         projectionStore.clearFilters()
       }
@@ -45,10 +44,30 @@ const selectedValues = computed({
   get: () => activeFilter.value.values,
   set: (values) => {
     if (selectedCategory.value) {
-      // Apply the filter with new values
       projectionStore.applyFilter(selectedCategory.value, values)
     }
   },
+})
+
+const hasActiveFilters = computed(() => {
+  return activeFilter.value.category && activeFilter.value.values.length > 0
+})
+
+const filterDescription = computed(() => {
+  if (!activeFilter.value.category || activeFilter.value.values.length === 0) {
+    return ''
+  }
+
+  const category = activeFilter.value.category
+  const values = activeFilter.value.values
+
+  if (values.length === 1) {
+    return `${category} = ${values[0]}`
+  } else if (values.length <= 3) {
+    return `${category} = ${values.join(', ')}`
+  } else {
+    return `${category} (${values.length} values)`
+  }
 })
 
 const loadProj = async () => {
@@ -97,11 +116,19 @@ onMounted(async () => {})
         Toggle Selection Mode
       </button>
       <button @click="addFingerprint()" class="btn btn-xs btn-content">Create Fingerprint</button>
-      <h2 class="text-xl font-bold">Filters</h2>
+      <div class="text-xs text-gray-500 mt-1">
+        <span v-if="hasActiveFilters">
+          <span class="font-medium">Filter applied:</span> {{ filterDescription }}
+        </span>
+        <span v-else> If no selection, will create fingerprint from all points. </span>
+      </div>
+
       <div class="mt-4">
         <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold">Filter Points</h2>
-          <button v-if="selectedCategory" @click="" class="btn btn-xs btn-ghost">Clear</button>
+          <h2 class="text-xl font-bold">Filters</h2>
+          <button v-if="selectedCategory" @click="clearFilters" class="btn btn-xs btn-ghost">
+            Clear
+          </button>
         </div>
 
         <div v-if="filterCategories && filterCategories.length > 0" class="filter-container mt-2">

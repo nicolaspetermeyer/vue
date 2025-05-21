@@ -57,8 +57,6 @@ export const useProjectionStore = defineStore('projection', () => {
       filterCategories.value = result.nonNumericAttributes
       categoryValues.value = result.categoryValues || {}
 
-      console.log('Projection loaded:', projection.value)
-
       // await loadFeatureRanking()
     } catch {
       return null
@@ -108,14 +106,24 @@ export const useProjectionStore = defineStore('projection', () => {
     if (!projectionInstance.value) return
 
     if (values.length === 0) {
-      projection.value = [...unfilteredProjection.value]
+      projectionInstance.value.showAllPoints()
       return
     }
 
-    projection.value = unfilteredProjection.value.filter((point) => {
-      const raw = point.original?.[category]
-      return raw !== undefined && values.includes(String(raw))
-    })
+    const filteredPointIndices = projection.value
+      .map((point, index) => {
+        // Check if point has the category value in its original data
+        if (point.original && point.original[category] !== undefined) {
+          const pointValue = String(point.original[category])
+
+          return values.includes(pointValue) ? index : -1
+        }
+        return -1
+      })
+      .filter((index) => index !== -1)
+
+    // Apply the filter to the projection instance
+    projectionInstance.value.filterPoints(filteredPointIndices)
   }
 
   function clearFilters() {
@@ -128,6 +136,24 @@ export const useProjectionStore = defineStore('projection', () => {
       projection.value = [...unfilteredProjection.value]
     }
   }
+
+  // function drillDown() {
+  //   const fingerprintStore = useFingerprintStore()
+  //   const selectedFingerprints = fingerprintStore.selectedFingerprints
+
+  //   if (selectedFingerprints.length === 0) {
+  //     console.warn('No fingerprints selected for drill down')
+  //     return
+  //   }
+
+  //   // Get the IDs of the selected fingerprints
+  //   const selectedIds = selectedFingerprints.map((fingerprint) => fingerprint.id)
+
+  //   // Filter the projection data based on the selected fingerprints
+  //   projection.value = unfilteredProjection.value.filter((point) =>
+  //     selectedIds.includes(point.id),
+  //   )
+  // }
 
   // Helper function to get feature ranking for a specific point
   function getFeatureRankingForPoint(pointId: string): FeatureRanking | undefined {

@@ -200,4 +200,54 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   setDetectRadius(radius: number) {
     this.detectRadius = radius
   }
+
+  /**
+   * Hide specific points from the visualization
+   * @param indices Array of point indices to hide
+   */
+  hidePoints(indices: number[]): void {
+    // Create a Set for faster lookups
+    const hideSet = new Set(indices)
+
+    // Hide each point at the specified indices
+    Array.from(this.pixiDimredPoints.entries()).forEach(([id, point], index) => {
+      if (hideSet.has(index)) {
+        point.visible = false
+      }
+    })
+
+    this.app.render()
+  }
+
+  /**
+   * Show all points in the visualization
+   */
+  showAllPoints(): void {
+    this.pixiDimredPoints.forEach((point) => {
+      point.visible = true
+    })
+
+    this.app.render()
+  }
+
+  /**
+   * Show specific points in the visualization
+   * @param indices Array of point indices to show
+   */
+  filterPoints(indices: number[]): void {
+    const showSet = new Set(indices)
+
+    this.pixiDimredPoints.forEach((point) => {
+      point.visible = false
+    })
+
+    // Show only points in filter
+    Array.from(this.pixiDimredPoints.entries()).forEach(([id, point], index) => {
+      if (showSet.has(index)) {
+        point.visible = true
+      }
+    })
+
+    this.app.render()
+  }
 }

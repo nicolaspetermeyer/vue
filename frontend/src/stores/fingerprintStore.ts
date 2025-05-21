@@ -4,6 +4,7 @@ import type { Fingerprint, Projection, FeatureStats } from '@/models/data'
 import { ref, computed } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { Colors } from '@/config/Themes'
+import { useProjectionStore } from '@/stores/projectionStore'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //STATE
@@ -25,27 +26,63 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     selection.value = points
   }
 
+  // Helper function to get filter description
+  function getFilterDescription(category: string, values: string[]): string {
+    if (!category || values.length === 0) return 'All Points'
+
+    if (values.length === 1) {
+      return `${category}=${values[0]}`
+    } else if (values.length <= 3) {
+      return `${category}=${values.join(',')}`
+    } else {
+      return `${category} (${values.length} values)`
+    }
+  }
+
   // on button click computes fingerprint from brush selection
   function addFingerprint() {
-    if (selection.value.length === 0) return
+    const projectionStore = useProjectionStore()
+    let pointsToUse: Projection[] = []
+    let name: string
 
-    const originals = selection.value.map((p) => p.original)
-
+    if (selection.value.length > 0) {
+      pointsToUse = selection.value
+      name = `Fingerprint ${fingerprintCounter.value++}`
+    } else {
+      const activeFilter = projectionStore.activeFilter
+      if (activeFilter.category && activeFilter.values.length > 0) {
+        pointsToUse = projectionStore.projection
+        name = getFilterDescription(activeFilter.category, activeFilter.values)
+      } else {
+        pointsToUse = projectionStore.projection
+        name = `All Points ${fingerprintCounter.value++}`
+      }
+    }
+    if (pointsToUse.length === 0) return
+    const originals = pointsToUse.map((p) => p.original)
     const localStats = calcFingerprintStats(originals)
-
     const id = crypto.randomUUID()
-    const name = `Fingerprint ${fingerprintCounter.value++}`
-    const centroid = calculateSelectionCentroid(selection.value)
+    const centroid = calculateSelectionCentroid(pointsToUse)
 
     const fingerprint: Fingerprint = {
       id,
       name,
-      projectedPoints: [...selection.value],
+      projectedPoints: [...pointsToUse],
       localStats,
       centroid,
     }
 
     fingerprints.value.push(fingerprint)
+
+    const fingerprintPointIds = new Set(pointsToUse.map((p) => p.id))
+    if (projectionStore.projectionInstance) {
+      const pointIndicesToHide = projectionStore.projection
+        .map((point, index) => (fingerprintPointIds.has(point.id) ? index : -1))
+        .filter((index) => index !== -1)
+      projectionStore.projectionInstance.hidePoints(pointIndicesToHide)
+    }
+
+    selection.value = []
   }
 
   function removeFingerprint(id: string, projectionInstance: any | null | undefined) {

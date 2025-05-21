@@ -138,7 +138,6 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
 
   getTooltipContent(): string {
     const projection = this.dimredpoint
-    console.log('projection', projection)
     const projectionStore = useProjectionStore()
     const nonNumericAttrs = projectionStore.filterCategories || []
 
