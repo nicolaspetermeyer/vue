@@ -67,9 +67,44 @@ export class PolarGeometry {
     outerRadius: number,
     startAngle: number,
     endAngle: number,
+    actualOuterRadius?: number,
   ): boolean {
-    return (
-      radius >= innerRadius && radius <= outerRadius && angle >= startAngle && angle <= endAngle
-    )
+    // Normalize angles to [0, 2π)
+    let start = startAngle % (Math.PI * 2)
+    if (start < 0) start += Math.PI * 2
+
+    let end = endAngle % (Math.PI * 2)
+    if (end < 0) end += Math.PI * 2
+
+    let angleNorm = angle % (Math.PI * 2)
+    if (angleNorm < 0) angleNorm += Math.PI * 2
+
+    let inAngleRange
+
+    // Handle wrap-around case (when start > end, the segment crosses the 0/2π boundary)
+    if (start <= end) {
+      inAngleRange = angleNorm >= start && angleNorm <= end
+    } else {
+      inAngleRange = angleNorm >= start || angleNorm <= end
+    }
+
+    const effectiveOuterRadius = actualOuterRadius !== undefined ? actualOuterRadius : outerRadius
+
+    const margin = 2
+    const inRadiusRange = radius >= innerRadius - margin && radius <= effectiveOuterRadius + margin
+
+    // Both angle and radius must be in range
+    return inAngleRange && inRadiusRange
+  }
+
+  /**
+   * Check if a point is inside a circle
+   *
+   * @param radius - Distance from center
+   * @param maxRadius - Radius of the circle
+   * @returns True if point is inside the circle
+   */
+  static isInCircle(radius: number, maxRadius: number): boolean {
+    return radius <= maxRadius
   }
 }

@@ -4,6 +4,7 @@ import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { SegmentRenderer } from '@/pixi/renderers/SegmentRenderer'
+import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
@@ -155,10 +156,29 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   containsGlobal(global: Position): boolean {
     const local = this.parent.toLocal(global)
 
-    // Use PolarGeometry to convert to polar coordinates
+    // Convert to polar coordinates
     const { radius, angle } = PolarGeometry.cartesianToPolar(local, this.centerX, this.centerY)
 
-    // Use PolarGeometry to check if point is in segment
+    if (this.mini) {
+      const inSegment = PolarGeometry.isInSegment(
+        radius,
+        angle,
+        this.innerRadius,
+        this.maxOuterRadius,
+        this.startAngle,
+        this.endAngle,
+        this.maxOuterRadius,
+      )
+
+      const inInnerCircle = radius <= this.innerRadius
+
+      return inSegment || inInnerCircle
+    }
+
+    //limit hit detection to drawn area
+    const arcWidth = this.maxOuterRadius - this.innerRadius
+    const actualOuterRadius = this.innerRadius + this.globalNorm * arcWidth
+
     return PolarGeometry.isInSegment(
       radius,
       angle,
@@ -166,6 +186,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.maxOuterRadius,
       this.startAngle,
       this.endAngle,
+      actualOuterRadius,
     )
   }
 
@@ -182,30 +203,58 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   getTooltipContent(): string {
-    const tooltipLines = [
-      `Feature: ${this.attributeKey}`,
-      `Global Norm Mean: ${this.globalNorm.toFixed(2)}`,
-      `Global Mean: ${this.stats.mean.toFixed(2)}`,
-      `Global Std: ${this.stats.std.toFixed(2)}`,
-    ]
+    let content = `Attribute: ${this.attributeKey}\n`
 
-    if (this.stats.min !== undefined) {
-      tooltipLines.push(`Global Min: ${this.stats.min.toFixed(2)}`)
-    }
-    if (this.stats.max !== undefined) {
-      tooltipLines.push(`Global Max: ${this.stats.max.toFixed(2)}`)
-    }
+    if (this.mini) {
+      const fingerprintId =
+        this.parent instanceof PixiAttributeRing
+          ? (this.parent as PixiAttributeRing).getFingerprint() || 'Unknown'
+          : 'Unknown'
 
-    if (this.localNorm !== undefined) {
-      tooltipLines.push(`Local Mean: ${this.localNorm.toFixed(2)}`)
+      content += `Fingerprint: ${fingerprintId}\n`
 
-      const delta = this.localNorm - this.globalNorm
-      if (Math.abs(delta) > 0.01) {
-        tooltipLines.push(`Δ: ${delta.toFixed(2)}`)
+      // Add normalized value if available
+      if (this.localNorm !== undefined) {
+        const percentage = Math.round(this.localNorm * 100)
+        content += `Value: ${percentage}%`
       }
-    }
 
-    return tooltipLines.join('\n')
+      // Add stats if available
+      if (this.stats) {
+        if (this.stats.mean !== undefined) {
+          content += `\nMean: ${this.stats.mean.toFixed(2)}`
+        }
+        if (this.stats.min !== undefined && this.stats.max !== undefined) {
+          content += `\nRange: ${this.stats.min.toFixed(2)} - ${this.stats.max.toFixed(2)}`
+        }
+      }
+      return content
+    } else {
+      const tooltipLines = [
+        `Feature: ${this.attributeKey}`,
+        `Global Norm Mean: ${this.globalNorm.toFixed(2)}`,
+        `Global Mean: ${this.stats.mean.toFixed(2)}`,
+        `Global Std: ${this.stats.std.toFixed(2)}`,
+      ]
+
+      if (this.stats.min !== undefined) {
+        tooltipLines.push(`Global Min: ${this.stats.min.toFixed(2)}`)
+      }
+      if (this.stats.max !== undefined) {
+        tooltipLines.push(`Global Max: ${this.stats.max.toFixed(2)}`)
+      }
+
+      if (this.localNorm !== undefined) {
+        tooltipLines.push(`Local Mean: ${this.localNorm.toFixed(2)}`)
+
+        const delta = this.localNorm - this.globalNorm
+        if (Math.abs(delta) > 0.01) {
+          tooltipLines.push(`Δ: ${delta.toFixed(2)}`)
+        }
+      }
+
+      return tooltipLines.join('\n')
+    }
   }
 
   getId(): string {

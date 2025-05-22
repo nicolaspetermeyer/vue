@@ -1,5 +1,6 @@
 import { FederatedPointerEvent, PointData } from 'pixi.js'
 import { PixiTooltip } from '@/pixi/interactions/overlays/PixiTooltip'
+import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 
 export interface Hoverable {
   setHovered(hovered: boolean): void
@@ -41,12 +42,29 @@ export class HoverManager {
     // Try to find a hoverable element from any provider
     let newHovered: Hoverable | null = null
 
-    for (const provider of this.providers) {
+    const miniRingProviders = this.providers.filter(
+      (p) => p instanceof PixiAttributeRing && (p as any).mini === true,
+    )
+
+    const otherProviders = this.providers.filter(
+      (p) => !(p instanceof PixiAttributeRing && (p as any).mini === true),
+    )
+
+    for (const provider of miniRingProviders) {
       const element = provider.findElementAtGlobal(e.global)
       if (element) {
         newHovered = element
-
         break
+      }
+    }
+
+    if (!newHovered) {
+      for (const provider of otherProviders) {
+        const element = provider.findElementAtGlobal(e.global)
+        if (element) {
+          newHovered = element
+          break
+        }
       }
     }
 

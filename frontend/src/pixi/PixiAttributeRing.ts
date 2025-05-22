@@ -17,6 +17,8 @@ export class PixiAttributeRing
   private mini: boolean
   private color?: number
   private localStats?: Record<string, { normMean?: number }> = {}
+  private fingerprintId?: string
+  private clickCallback?: (id: string) => void
 
   constructor(
     globalStats: Record<string, FeatureStats>,
@@ -26,6 +28,7 @@ export class PixiAttributeRing
       mini?: boolean
       localStats?: Record<string, { normMean?: number }>
       color?: number
+      fingerprintId?: string
     },
   ) {
     super({
@@ -37,8 +40,14 @@ export class PixiAttributeRing
     this.mini = opts?.mini ?? false
     this.color = opts?.color
     this.localStats = opts?.localStats
+    this.fingerprintId = opts?.fingerprintId
 
     this.eventMode = 'static'
+
+    if (this.mini) {
+      this.cursor = 'pointer'
+    }
+
     this.sortableChildren = true
 
     // calculate inner radius of the ring
@@ -106,7 +115,7 @@ export class PixiAttributeRing
         this.layoutProps.height / 2,
         this.mini,
       )
-      // In mini mode, skip labels for clarity
+
       if (!this.mini && segmentCount < 20) {
         this.drawLabelForSegment(segment, startAngle, endAngle)
       }
@@ -167,15 +176,65 @@ export class PixiAttributeRing
   }
 
   findElementAtGlobal(global: PointData): PixiAttributeSegment | null {
+    if (this.mini) {
+      const local = this.toLocal(global)
+      const centerX = this.width / 2
+      const centerY = this.height / 2
+
+      // Check if point is within the ring's overall bounds
+      const dx = local.x - centerX
+      const dy = local.y - centerY
+      const radius = Math.sqrt(dx * dx + dy * dy)
+      // If within the outer radius of the mini ring
+      if (radius <= this.maxOuterRadius) {
+        // First check if any segment specifically contains this point
+        for (const segment of this.segments) {
+          if (segment.containsGlobal(global)) {
+            return segment
+          }
+        }
+
+        // If no segment was found but we're within the radius,
+        // return the first segment as representative for the entire ring
+        if (this.segments.length > 0) {
+          return this.segments[0]
+        }
+      }
+
+      return null
+    }
+
     for (const seg of this.segments) {
       if (seg.containsGlobal(global)) {
         return seg
       }
     }
+
     return null
   }
 
   hasAttribute(attributeName: string): boolean {
     return this.attributeKeys.has(attributeName)
+  }
+
+  containsPoint(global: PointData): boolean {
+    const local = this.toLocal(global)
+
+    // For mini rings, just check if the point is within the circle
+    if (this.mini) {
+      const dx = local.x - this.layoutProps.width / 2
+      const dy = local.y - this.layoutProps.height / 2
+      const distanceSquared = dx * dx + dy * dy
+
+      // Check if the point is within the outer radius
+      return distanceSquared <= this.maxOuterRadius * this.maxOuterRadius
+    }
+
+    // For regular rings, delegate to the segments
+    return this.findElementAtGlobal(global) !== null
+  }
+
+  getFingerprint(): string | undefined {
+    return this.fingerprintId
   }
 }

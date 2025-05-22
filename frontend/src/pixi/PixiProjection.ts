@@ -64,14 +64,6 @@ export class PixiProjection extends PixiContainer {
   }
 
   /**
-   * Hide specific points from the visualization
-   * @param indices Array of point indices to hide
-   */
-  hidePoints(indices: number[]): void {
-    this.dimred.hidePoints(indices)
-  }
-
-  /**
    * Show all points in the visualization
    */
   showAllPoints(): void {

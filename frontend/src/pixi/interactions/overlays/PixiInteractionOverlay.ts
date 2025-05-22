@@ -81,10 +81,21 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.hitAreaGraphic.on('pointerup', this.onPointerUp.bind(this))
     this.hitAreaGraphic.on('pointerupoutside', this.onPointerUp.bind(this))
     this.hitAreaGraphic.on('pointertap', this.onPointerTap.bind(this))
-
-    // Add wheel event listener for zoom
     this.hitAreaGraphic.on('wheel', this.onWheel.bind(this))
   }
+
+  registerMiniRing(ring: PixiAttributeRing): void {
+    this.hoverManager.addProvider(ring)
+  }
+
+  unregisterMiniRing(ring: PixiAttributeRing): void {
+    this.hoverManager.removeProvider(ring)
+  }
+
+  getHoverManager(): HoverManager {
+    return this.hoverManager
+  }
+
   setDimred(dimred: PixiDimred) {
     if (this.dimred) {
       this.hoverManager.removeProvider(this.dimred)
@@ -122,6 +133,7 @@ export class PixiInteractionOverlay extends PixiContainer {
       }
       return
     }
+
     if (this.selectionController) {
       this.selectionController.handleTap(e)
     }

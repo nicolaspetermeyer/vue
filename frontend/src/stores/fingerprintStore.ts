@@ -122,7 +122,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     // Restore hidden points from the removed fingerprint
     if (projectionInstance?.dimred) {
       const pointIds = fingerprintToRemove.projectedPoints.map((p) => p.id)
-      projectionInstance.dimred.showPointsByIds(pointIds)
+      projectionInstance.dimred.showPointsById(pointIds)
       projectionInstance.dimred.removeMiniRing(fingerprintToRemove)
     }
   }
