@@ -171,9 +171,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     const fingerprint = this.fingerprintStore.fingerprints.find((fp) => fp.id === fingerprintId)
     if (!fingerprint) return
 
-    console.log('Drilling down into fingerprint:', fingerprint)
-
-    useProjectionStore().setProjection(fingerprint.projectedPoints)
+    useProjectionStore().drillDownToProjection(fingerprint.projectedPoints)
     useProjectionStore().setGlobalStats(fingerprint.localStats)
   }
 

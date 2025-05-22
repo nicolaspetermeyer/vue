@@ -16,6 +16,9 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
   const projectionMethod = ref<'pca' | 'tsne'>('pca')
+  const projectionHistory = ref<Projection[][]>([])
+  const canGoBack = computed(() => projectionHistory.value.length > 0)
+
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)
 
@@ -96,6 +99,7 @@ export const useProjectionStore = defineStore('projection', () => {
     console.log('Clearing all projection data')
     projection.value = []
     featureRanking.value = []
+    projectionHistory.value = []
     activeFilter.value = {
       category: null,
       values: [],
@@ -195,6 +199,34 @@ export const useProjectionStore = defineStore('projection', () => {
     }
   }
 
+  function drillDownToProjection(newProjection: Projection[]) {
+    console.log('starting drill')
+    if (projection.value.length > 0) {
+      projectionHistory.value.push([...projection.value])
+    }
+
+    projection.value = newProjection
+  }
+
+  /**
+   * Go back to previous projection
+   */
+  function goBackToPreviousProjection(): boolean {
+    if (projectionHistory.value.length === 0) {
+      return false
+    }
+
+    // Get the previous projection
+    const previousProjection = projectionHistory.value.pop()
+    if (previousProjection) {
+      projection.value = previousProjection
+      console.log('Going back to previous projection:', previousProjection)
+      return true
+    }
+
+    return false
+  }
+
   return {
     projection,
     projectionInstance,
@@ -205,6 +237,8 @@ export const useProjectionStore = defineStore('projection', () => {
     filteredPointIds,
     featureRanking,
     neighborhoodRadius,
+    projectionHistory,
+    canGoBack,
     loadProjection,
     loadFeatureRanking,
     getCategoryValues,
@@ -218,5 +252,7 @@ export const useProjectionStore = defineStore('projection', () => {
     clearFilters,
     clearProjectionInstance,
     clearAllProjectionData,
+    drillDownToProjection,
+    goBackToPreviousProjection,
   }
 })

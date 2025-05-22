@@ -6,6 +6,7 @@ import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { Colors } from '@/config/Themes'
+import BackButton from '@/components/BackButton.vue'
 
 const projectionStore = useProjectionStore()
 
@@ -101,6 +102,7 @@ function debug() {
 
 <template>
   <div ref="wrapperRef" class="relative w-full h-full">
+    <BackButton />
     <canvas
       class="w-full h-full"
       ref="canvasRef"
