@@ -57,6 +57,11 @@ export class SegmentRenderer {
     const fillColor = mini ? color : Colors.GLOBAL_SEGMENT
     let bc = mini ? color : borderColor
 
+    if (mini) {
+      graphics.fill({ color: Colors.MINI_INNER_RING, alpha: 0.2, width: 0.5 })
+      graphics.circle(centerX, centerY, innerRadius)
+    }
+
     // Draw global segment
     this.drawArcSegment(graphics, {
       centerX,

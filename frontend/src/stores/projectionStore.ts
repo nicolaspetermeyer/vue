@@ -80,6 +80,18 @@ export const useProjectionStore = defineStore('projection', () => {
     }
   }
 
+  function setProjectionInstance(instance: PixiProjection) {
+    projectionInstance.value = instance
+  }
+
+  function setProjection(newProjection: Projection[]) {
+    projection.value = newProjection
+  }
+
+  function setGlobalStats(newGlobalStats: Record<string, FeatureStats>) {
+    globalStats.value = newGlobalStats
+  }
+
   function clearAllProjectionData() {
     console.log('Clearing all projection data')
     projection.value = []
@@ -152,24 +164,6 @@ export const useProjectionStore = defineStore('projection', () => {
     }
   }
 
-  // function drillDown() {
-  //   const fingerprintStore = useFingerprintStore()
-  //   const selectedFingerprints = fingerprintStore.selectedFingerprints
-
-  //   if (selectedFingerprints.length === 0) {
-  //     console.warn('No fingerprints selected for drill down')
-  //     return
-  //   }
-
-  //   // Get the IDs of the selected fingerprints
-  //   const selectedIds = selectedFingerprints.map((fingerprint) => fingerprint.id)
-
-  //   // Filter the projection data based on the selected fingerprints
-  //   projection.value = unfilteredProjection.value.filter((point) =>
-  //     selectedIds.includes(point.id),
-  //   )
-  // }
-
   // Helper function to get feature ranking for a specific point
   function getFeatureRankingForPoint(pointId: string): FeatureRanking | undefined {
     return featureRanking.value.find((ranking) => ranking.id === pointId)
@@ -193,10 +187,6 @@ export const useProjectionStore = defineStore('projection', () => {
   async function updateNeighborhoodRadius(radius: number) {
     neighborhoodRadius.value = radius
     await loadFeatureRanking()
-  }
-
-  function setProjectionInstance(instance: PixiProjection) {
-    projectionInstance.value = instance
   }
 
   function clearProjectionInstance() {
@@ -223,6 +213,8 @@ export const useProjectionStore = defineStore('projection', () => {
     // getTopFeaturesForPoint,
     updateNeighborhoodRadius,
     setProjectionInstance,
+    setProjection,
+    setGlobalStats,
     clearFilters,
     clearProjectionInstance,
     clearAllProjectionData,

@@ -26,9 +26,12 @@ export const Colors = {
   FINGERPRINT_COLORS: [0x3498db, 0xe74c3c, 0x2ecc71, 0xf39c12, 0x9b59b6, 0x1abc9c],
 
   FILL_STYLE: true,
+
+  // Mini Ring
+  MINI_INNER_RING: 0xffffff,
 }
 
 export const Styles = {
-  LINEWIDTH: 2,
-  LINEWIDTH_HOVER: 3,
+  LINEWIDTH: 1,
+  LINEWIDTH_HOVER: 2,
 }

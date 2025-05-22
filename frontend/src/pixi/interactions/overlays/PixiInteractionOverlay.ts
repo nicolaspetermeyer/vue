@@ -14,6 +14,8 @@ import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
+import { PixiProjection } from '@/pixi/PixiProjection'
+import { PixiApp } from '@/pixi/Base/PixiApp'
 
 // Controllers
 import { HoverManager } from '@/pixi/interactions/controllers/HoverManager'
@@ -125,6 +127,28 @@ export class PixiInteractionOverlay extends PixiContainer {
   }
 
   private onPointerTap(e: FederatedPointerEvent) {
+    if (this.dimred) {
+      let miniRingResult
+      for (const [id, ring] of this.dimred.pixiGlyph.entries()) {
+        if (ring.containsPoint(e.global)) {
+          miniRingResult = { ring, id }
+        }
+      }
+      // Handle right-click on mini ring (drill down)
+      if (miniRingResult && e.button === 2) {
+        this.handleDrillDown(miniRingResult.id)
+        return
+      }
+      // Handle left-click on mini ring (selection)
+      else if (miniRingResult) {
+        const { id } = miniRingResult
+        if (id) {
+          this.handleMiniRingSelection(id)
+        }
+        return
+      }
+    }
+    // Handle right-click on empty area (reset selection)
     if (e.button === 2) {
       if (this.dimred) {
         this.dimred.setSelection([])
@@ -133,10 +157,31 @@ export class PixiInteractionOverlay extends PixiContainer {
       }
       return
     }
-
+    // Handle regular left-click (normal selection)
     if (this.selectionController) {
       this.selectionController.handleTap(e)
     }
+  }
+
+  /**
+   * Handle drill-down into a fingerprint when right-clicking on a mini ring
+   * Creates a new projection that only includes points from this fingerprint
+   */
+  private handleDrillDown(fingerprintId: string): void {
+    const fingerprint = this.fingerprintStore.fingerprints.find((fp) => fp.id === fingerprintId)
+    if (!fingerprint) return
+
+    console.log('Drilling down into fingerprint:', fingerprint)
+
+    useProjectionStore().setProjection(fingerprint.projectedPoints)
+    useProjectionStore().setGlobalStats(fingerprint.localStats)
+  }
+
+  private handleMiniRingSelection(fingerprintId: string): void {
+    const fingerprint = this.fingerprintStore.fingerprints.find((fp) => fp.id === fingerprintId)
+    if (!fingerprint) return
+
+    this.fingerprintStore.toggleSelectedFingerprint(fingerprint, this.parent)
   }
 
   private updateAttributeRingForPoint(point: PixiDimredPoint | null) {
@@ -181,7 +226,6 @@ export class PixiInteractionOverlay extends PixiContainer {
   }
 
   private onPointerDown(e: FederatedPointerEvent) {
-    const pos = this.toLocal(e.global)
     // Detect if we should pan or drag-select
     if (e.buttons === 1 && e.ctrlKey && this.viewportController) {
       // Left button + ctrl for panning

@@ -51,7 +51,7 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     this.highlightColor = Colors.NORMAL
 
     this.eventMode = 'static'
-    this.cursor = 'default'
+    this.cursor = 'pointer'
   }
 
   /**

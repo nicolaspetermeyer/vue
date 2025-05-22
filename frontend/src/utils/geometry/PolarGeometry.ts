@@ -96,15 +96,4 @@ export class PolarGeometry {
     // Both angle and radius must be in range
     return inAngleRange && inRadiusRange
   }
-
-  /**
-   * Check if a point is inside a circle
-   *
-   * @param radius - Distance from center
-   * @param maxRadius - Radius of the circle
-   * @returns True if point is inside the circle
-   */
-  static isInCircle(radius: number, maxRadius: number): boolean {
-    return radius <= maxRadius
-  }
 }

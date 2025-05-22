@@ -45,6 +45,7 @@ async function init() {
 
 function createProjectionInstance() {
   if (!app) return
+  console.log('createProjectionInstance')
 
   // Clean up any existing projection
   if (currentProjection.value) {
