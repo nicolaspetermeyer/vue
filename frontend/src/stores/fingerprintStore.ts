@@ -145,6 +145,14 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     visualizationService.resetColors()
   }
 
+  function renameFingerprint(id: string, newName: string) {
+    const fingerprintToRename = fingerprints.value.find((fp) => fp.id === id)
+    if (!fingerprintToRename) return false
+
+    fingerprintToRename.name = newName
+    return true
+  }
+
   function toggleSelectedFingerprint(
     fingerprint: Fingerprint,
     projectionInstance: any | null | undefined,
@@ -190,6 +198,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     clearFingerprints,
     toggleSelectedFingerprint,
     calculateSelectionCentroid,
+    renameFingerprint,
     // getTopFeatures,
 
     // Expose visualization service

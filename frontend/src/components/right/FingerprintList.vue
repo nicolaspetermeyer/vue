@@ -6,19 +6,21 @@ import { ref } from 'vue'
 import type { Fingerprint } from '@/models/data'
 
 const fingerprintStore = useFingerprintStore()
-const { fingerprints, selectedFingerprints } = storeToRefs(fingerprintStore)
+const { fingerprints } = storeToRefs(fingerprintStore)
 
 const projectionStore = useProjectionStore()
 const { projectionInstance } = storeToRefs(projectionStore)
 
 const visibleMiniRings = ref<Set<string>>(new Set())
-
-function toggleSelection(fingerprint: Fingerprint): void {
-  fingerprintStore.toggleSelectedFingerprint(fingerprint, projectionInstance.value)
-}
+const editingFingerprintId = ref<string | null>(null)
+const editingName = ref('')
 
 function isSelected(id: string): boolean {
   return fingerprintStore.selectedFingerprints.some((fp) => fp.id === id)
+}
+
+function toggleSelection(fingerprint: Fingerprint): void {
+  fingerprintStore.toggleSelectedFingerprint(fingerprint, projectionInstance.value)
 }
 
 function getColor(fingerprint: (typeof fingerprints.value)[number]): string {
@@ -55,6 +57,32 @@ function toggleMiniRing(id: string, event: Event) {
 function isMiniRingVisible(id: string): boolean {
   return visibleMiniRings.value.has(id)
 }
+
+function startEditing(fingerprint: Fingerprint, event: Event) {
+  event.stopPropagation()
+  editingFingerprintId.value = fingerprint.id
+  editingName.value = fingerprint.name
+}
+
+function saveEdit() {
+  if (editingFingerprintId.value && editingName.value.trim()) {
+    fingerprintStore.renameFingerprint(editingFingerprintId.value, editingName.value.trim())
+    cancelEdit()
+  }
+}
+
+function cancelEdit() {
+  editingFingerprintId.value = null
+  editingName.value = ''
+}
+
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Enter') {
+    saveEdit()
+  } else if (event.key === 'Escape') {
+    cancelEdit()
+  }
+}
 </script>
 
 <template>
@@ -77,11 +105,45 @@ function isMiniRingVisible(id: string): boolean {
           <div class="fingerprint-info">
             <div class="flex items-center gap-2">
               <div class="color-indicator" :style="{ backgroundColor: getColor(fp) }"></div>
-              <span class="fingerprint-name">{{ fp.name }}</span>
+              <div v-if="editingFingerprintId === fp.id" class="edit-name-container" @click.stop>
+                <input
+                  v-model="editingName"
+                  class="edit-name-input"
+                  @keydown="handleKeyDown"
+                  v-focus
+                />
+                <div class="edit-actions">
+                  <button class="edit-btn save-btn" @click="saveEdit" title="Save">✓</button>
+                  <button class="edit-btn cancel-btn" @click="cancelEdit" title="Cancel">✕</button>
+                </div>
+              </div>
+              <span v-else class="fingerprint-name">{{ fp.name }}</span>
             </div>
             <span class="feature-count">Points: {{ fp.projectedPoints.length }}</span>
           </div>
           <div class="flex gap-1">
+            <!-- Replace the inline edit button with the new component -->
+            <button
+              v-if="editingFingerprintId !== fp.id"
+              class="edit-name-btn"
+              @click="startEditing(fp, $event)"
+              title="Edit name"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
             <button
               class="glyph-btn"
               :class="{ 'glyph-active': isMiniRingVisible(fp.id) }"
@@ -162,6 +224,68 @@ function isMiniRingVisible(id: string): boolean {
   width: 12px;
   height: 12px;
   border-radius: 50%;
+}
+
+.edit-name-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  background: #eeeeee;
+  color: #555555;
+}
+
+.edit-name-btn:hover {
+  background: #dddddd;
+}
+
+.edit-name-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-name-input {
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.9rem;
+  width: 120px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.edit-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.save-btn {
+  background: #e6ffee;
+  color: #22aa55;
+}
+
+.save-btn:hover {
+  background: #ccffdd;
+}
+
+.cancel-btn {
+  background: #ffeeee;
+  color: #aa5555;
+}
+
+.cancel-btn:hover {
+  background: #ffdddd;
 }
 
 .delete-btn,
