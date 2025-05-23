@@ -14,6 +14,8 @@ import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
+import { PixiProjection } from '@/pixi/PixiProjection'
+import { PixiApp } from '@/pixi/Base/PixiApp'
 
 // Controllers
 import { HoverManager } from '@/pixi/interactions/controllers/HoverManager'
@@ -27,7 +29,6 @@ import {
 // Stores
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
-import { usePixiUIStore } from '@/stores/pixiUIStore'
 
 // Utils
 import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
@@ -40,7 +41,6 @@ export class PixiInteractionOverlay extends PixiContainer {
   private attributeRing: PixiAttributeRing | null = null
   private maskBoundary: Graphics | null = null
   private fingerprintStore = useFingerprintStore()
-  private pixiUIStore = usePixiUIStore()
   private viewportController: ViewportController | null = null
   private selectionController: SelectionController | null = null
   private hoverManager: HoverManager
@@ -129,24 +129,11 @@ export class PixiInteractionOverlay extends PixiContainer {
   private onPointerTap(e: FederatedPointerEvent) {
     if (this.dimred) {
       let miniRingResult
-      const miniRings = this.pixiUIStore.miniRings
-
-      for (const [id, ring] of miniRings.entries()) {
-        const ringComponents = this.dimred.children.filter(
-          (child) =>
-            child instanceof PixiAttributeRing &&
-            (child as PixiAttributeRing).getFingerprint() === id,
-        )
-
-        if (ringComponents.length > 0) {
-          const ring = ringComponents[0] as PixiAttributeRing
-          if (ring.containsPoint(e.global)) {
-            miniRingResult = { ring, id }
-            break
-          }
+      for (const [id, ring] of this.dimred.pixiGlyph.entries()) {
+        if (ring.containsPoint(e.global)) {
+          miniRingResult = { ring, id }
         }
       }
-
       // Handle right-click on mini ring (drill down)
       if (miniRingResult && e.button === 2) {
         this.handleDrillDown(miniRingResult.id)

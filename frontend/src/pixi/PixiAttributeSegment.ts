@@ -4,15 +4,14 @@ import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors, Styles } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
-import { usePixiUIStore } from '@/stores/pixiUIStore'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
   public stats: FeatureStats
+  private localOverlays: Map<string, { color: number; norm: number }> = new Map()
 
-  // Geometry properties
   public startAngle: number = 0
   public endAngle: number = 0
   public innerRadius: number = 0
@@ -22,7 +21,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public color: number = 0x000000
 
   public mini: boolean = false
-  private pixiUIStore = usePixiUIStore()
+  private isHovered: boolean = false
 
   constructor(
     attributeKey: string,
@@ -41,9 +40,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.cursor = 'default'
   }
 
-  /**
-   * Draw the segment with current geometry and state
-   */
   drawSegment(
     innerRadius: number,
     maxOuterRadius: number,
@@ -62,18 +58,15 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.centerY = centerY
     this.mini = mini
 
-    // Clear previous drawing
     this.clear()
 
-    const isHovered = this.pixiUIStore.hoveredSegmentKey === this.attributeKey
-    const lineWidth = isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
+    const lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
 
     if (mini) {
-      // Draw mini segment (used in fingerprints)
-      this.drawMiniSegment(isHovered, lineWidth)
+      this.drawMiniSegment(this.isHovered, lineWidth)
     } else {
       // Draw main segment with global data
-      this.drawMainSegment(isHovered, lineWidth)
+      this.drawMainSegment(this.isHovered, lineWidth)
     }
   }
 
@@ -127,20 +120,17 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     )
 
     // Draw overlays if present
-    const overlays = this.pixiUIStore.segmentOverlays.get(this.attributeKey)
+    const overlays = this.localOverlays
     const singleComparison = overlays?.size === 1
 
     if (overlays && overlays.size > 0) {
       overlays.forEach((overlay) => {
-        // Calculate local outer radius
         const localOuterRadius = this.innerRadius + overlay.norm * arcWidth
 
-        // Determine colors based on comparison mode
         let fillColor = overlay.color
         let borderColor = Colors.STANDARD_BORDER
 
         if (singleComparison) {
-          // For single comparison, color based on whether local is bigger than global
           fillColor =
             localOuterRadius > globalOuterRadius
               ? Colors.OVERLAY_SEGMENT_BIGGER
@@ -215,7 +205,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   clearLocalOverlay(): void {
-    this.pixiUIStore.clearSegmentOverlays(this.attributeKey)
+    this.localOverlays.clear()
     this.localNorm = undefined
     this.color = 0x000000
     this.redraw()
@@ -225,17 +215,17 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
    * Clear a specific point overlay by its ID
    * @param id - The ID of the point to clear
    */
+
   clearPointOverlay(id: string): void {
-    const overlays = this.pixiUIStore.segmentOverlays.get(this.attributeKey)
-    if (!overlays || !overlays.has(id)) return
+    if (!this.localOverlays.has(id)) return
 
-    overlays.delete(id)
+    this.localOverlays.delete(id)
 
-    if (overlays.size === 0) {
+    if (this.localOverlays.size === 0) {
       this.localNorm = undefined
       this.color = 0x000000
     } else {
-      const lastOverlay = Array.from(overlays.values()).pop()
+      const lastOverlay = Array.from(this.localOverlays.values()).pop()
       this.localNorm = lastOverlay?.norm
       this.color = lastOverlay?.color ?? 0x000000
     }
@@ -243,7 +233,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   setLocalOverlay(id: string, localNorm: number, color: number): void {
-    this.pixiUIStore.setSegmentOverlay(this.attributeKey, id, localNorm, color)
+    this.localOverlays.set(id, { norm: localNorm, color })
     this.localNorm = localNorm
     this.color = color
     this.redraw()
@@ -287,14 +277,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   setHovered(hovered: boolean) {
-    if (hovered) {
-      this.pixiUIStore.setHoveredSegment(this.attributeKey)
-    } else if (this.pixiUIStore.hoveredSegmentKey === this.attributeKey) {
-      this.pixiUIStore.setHoveredSegment(null)
+    if (this.isHovered !== hovered) {
+      this.isHovered = hovered
+      this.redraw()
+      this.alpha = hovered ? 0.8 : 1.0
     }
-
-    this.redraw()
-    this.alpha = hovered ? 0.8 : 1.0
   }
 
   getTooltipContent(): string {
@@ -339,16 +326,15 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         tooltipLines.push(`Global Max: ${this.stats.max.toFixed(2)}`)
       }
 
-      const overlays = this.pixiUIStore.segmentOverlays.get(this.attributeKey)
-      if (overlays && overlays.size > 0) {
+      if (this.localOverlays && this.localOverlays.size > 0) {
         tooltipLines.push('', 'Comparisons:')
-
-        overlays.forEach((overlay, id) => {
+        this.localOverlays.forEach((overlay, id) => {
+          const norm = overlay.norm
           const delta = overlay.norm - this.globalNorm
           const direction = delta > 0 ? 'higher' : 'lower'
           const pctDiff = Math.abs(delta * 100).toFixed(1)
 
-          tooltipLines.push(`Fingerprint ${id}: ${pctDiff}% ${direction}`)
+          tooltipLines.push(`Fingerprint ${id}: ${norm} ${pctDiff}% ${direction}`)
         })
       }
 
@@ -359,15 +345,12 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   getId(): string {
     return this.attributeKey
   }
-
   get attrkey(): string {
     return this.attributeKey
   }
-
   get globValue(): number {
     return this.globalNorm
   }
-
   get locValue(): number | undefined {
     return this.localNorm
   }

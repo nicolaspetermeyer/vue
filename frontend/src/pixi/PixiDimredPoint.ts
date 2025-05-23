@@ -4,7 +4,6 @@ import type { Projection } from '@/models/data'
 import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors } from '@/config/Themes'
 import { useProjectionStore } from '@/stores/projectionStore'
-import { usePixiUIStore } from '@/stores/pixiUIStore'
 
 // Create a static texture cache
 const textureCache = new Map<number, Texture>()
@@ -36,7 +35,11 @@ function getOrCreateCircleTexture(radius: number): Texture {
 
 export class PixiDimredPoint extends PixiSprite implements Hoverable {
   private projectedPoint: Projection
-  private pixiUIStore = usePixiUIStore()
+  private Selected: boolean = false
+  private Hovered: boolean = false
+  private inFingerprint: boolean = false
+  setHighlighted: any
+  private highlightColor: number
 
   constructor(projectedPoint: Projection) {
     super(getOrCreateCircleTexture(5))
@@ -45,33 +48,50 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     this.anchor.set(0.5) // Set origin to center of sprite
     this.updateVisualState()
 
+    this.highlightColor = Colors.NORMAL
+
     this.eventMode = 'static'
-    this.cursor = 'default'
+    this.cursor = 'pointer'
   }
 
   /**
    * Update the visual state of the point based on its selection and hover state.
    */
   updateVisualState() {
-    const isSelected = this.pixiUIStore.isPointSelected(this.dimredpoint.id)
-    const isHighlighted = this.pixiUIStore.isPointHighlighted(this.dimredpoint.id)
-    const isHovered = this.pixiUIStore.hoveredPointId === this.dimredpoint.id
-
-    if (isSelected) {
+    if (this.Selected) {
       this.tint = Colors.SELECTED
-    } else if (isHighlighted) {
-      this.tint = this.pixiUIStore.getPointHighlightColor(this.dimredpoint.id)
-    } else if (isHovered) {
+    } else if (this.inFingerprint) {
+      this.tint = this.highlightColor
+    } else if (this.Hovered) {
       this.tint = Colors.HOVERED
     } else {
       this.tint = Colors.NORMAL
     }
 
-    if (isHighlighted && !isSelected) {
+    if (this.inFingerprint && !this.Selected) {
       this.alpha = 0.9
     } else {
       this.alpha = 1
     }
+  }
+
+  /**
+   * Set the selected state of the point.
+   * @param selected - Whether the point is selected or not.
+   */
+  setSelected(selected: boolean) {
+    if (this.Selected !== selected) {
+      this.Selected = selected
+      this.updateVisualState()
+    }
+  }
+
+  /**
+   * Get the selected state of the point.
+   * @returns Whether the point is selected or not.
+   */
+  isSelected(): boolean {
+    return this.Selected
   }
 
   /**
@@ -80,13 +100,21 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
    * @param color - Optional color for the highlight.
    */
   setFingerprintColor(highlighted: boolean, color?: number): void {
-    const id = this.getId()
+    this.inFingerprint = highlighted
     if (highlighted && color !== undefined) {
-      this.pixiUIStore.highlightedPointIds.set(id, color)
-    } else if (!highlighted) {
-      this.pixiUIStore.highlightedPointIds.delete(id)
+      this.highlightColor = color
+    } else {
+      this.highlightColor = Colors.NORMAL
     }
     this.updateVisualState()
+  }
+
+  /**
+   * Get the highlight color of the point.
+   * @returns The highlight color.
+   */
+  isInFingerprint(): boolean {
+    return this.inFingerprint
   }
 
   /**
@@ -94,12 +122,10 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
    * @param state - Whether the point is hovered or not.
    */
   setHovered(state: boolean): void {
-    if (state) {
-      this.pixiUIStore.setHoveredPoint(this.getId())
-    } else if (this.pixiUIStore.hoveredPointId === this.getId()) {
-      this.pixiUIStore.setHoveredPoint(null)
+    if (this.Hovered !== state) {
+      this.Hovered = state
+      this.updateVisualState()
     }
-    this.updateVisualState()
   }
 
   /**
@@ -162,7 +188,6 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     }
     return this.projectedPoint
   }
-
   getId(): string {
     return this.dimredpoint.id
   }

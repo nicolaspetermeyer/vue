@@ -5,7 +5,6 @@ import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { FeatureStats } from '@/models/data'
 import { Colors } from '@/config/Themes'
-import { usePixiUIStore } from '@/stores/pixiUIStore'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -19,7 +18,6 @@ export class PixiAttributeRing
   private color?: number
   private localStats?: Record<string, { normMean?: number }> = {}
   private fingerprintId?: string
-  private pixiUIStore = usePixiUIStore()
 
   constructor(
     globalStats: Record<string, FeatureStats>,
@@ -46,7 +44,6 @@ export class PixiAttributeRing
     this.eventMode = 'static'
 
     if (this.mini) {
-      this.eventMode = 'static'
       this.cursor = 'pointer'
     }
 
@@ -123,17 +120,9 @@ export class PixiAttributeRing
       }
     }
   }
-
   public clearLocalRing() {
     for (const segment of this.segments) {
       segment.clearLocalOverlay()
-    }
-
-    // clear in store if we have attribute keys
-    if (this.attributeKeys.size > 0) {
-      for (const key of this.attributeKeys) {
-        this.pixiUIStore.clearSegmentOverlays(key)
-      }
     }
   }
 
@@ -153,8 +142,6 @@ export class PixiAttributeRing
       const newNorm = local?.normMean ?? undefined
       if (newNorm !== undefined) {
         segment.setLocalOverlay(id, newNorm, color)
-
-        this.pixiUIStore.setSegmentOverlay(segment.attrkey, id, newNorm, color)
       }
     }
   }
