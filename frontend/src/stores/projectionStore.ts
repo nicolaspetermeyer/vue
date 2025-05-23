@@ -220,7 +220,6 @@ export const useProjectionStore = defineStore('projection', () => {
     const previousProjection = projectionHistory.value.pop()
     if (previousProjection) {
       projection.value = previousProjection
-      console.log('Going back to previous projection:', previousProjection)
       return true
     }
 

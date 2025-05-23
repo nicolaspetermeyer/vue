@@ -5,6 +5,7 @@ import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { FeatureStats } from '@/models/data'
 import { Colors } from '@/config/Themes'
+import { usePixiUIStore } from '@/stores/pixiUIStore'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -18,7 +19,7 @@ export class PixiAttributeRing
   private color?: number
   private localStats?: Record<string, { normMean?: number }> = {}
   private fingerprintId?: string
-  private clickCallback?: (id: string) => void
+  private pixiUIStore = usePixiUIStore()
 
   constructor(
     globalStats: Record<string, FeatureStats>,
@@ -45,6 +46,7 @@ export class PixiAttributeRing
     this.eventMode = 'static'
 
     if (this.mini) {
+      this.eventMode = 'static'
       this.cursor = 'pointer'
     }
 
@@ -98,7 +100,7 @@ export class PixiAttributeRing
   }
 
   drawAttributeSegments() {
-    let gapAngle = this.mini ? 0 : this.segments.length < 50 ? 0.02 : 0.005
+    const gapAngle = this.mini ? 0 : this.segments.length < 50 ? 0.02 : 0.005
     const segmentCount = this.segments.length
     const anglePerSegment = (Math.PI * 2) / segmentCount
     for (let i = 0; i < segmentCount; i++) {
@@ -121,19 +123,27 @@ export class PixiAttributeRing
       }
     }
   }
-  public clearLocalStats() {
+
+  public clearLocalRing() {
     for (const segment of this.segments) {
       segment.clearLocalOverlay()
     }
+
+    // clear in store if we have attribute keys
+    if (this.attributeKeys.size > 0) {
+      for (const key of this.attributeKeys) {
+        this.pixiUIStore.clearSegmentOverlays(key)
+      }
+    }
   }
 
-  public clearPointStats(id: string) {
+  public clearPointRing(id: string) {
     for (const segment of this.segments) {
       segment.clearPointOverlay(id)
     }
   }
 
-  public setLocalStats(
+  public setLocalRing(
     id: string,
     localStats: Record<string, { normMean?: number }>,
     color: number,
@@ -143,6 +153,8 @@ export class PixiAttributeRing
       const newNorm = local?.normMean ?? undefined
       if (newNorm !== undefined) {
         segment.setLocalOverlay(id, newNorm, color)
+
+        this.pixiUIStore.setSegmentOverlay(segment.attrkey, id, newNorm, color)
       }
     }
   }

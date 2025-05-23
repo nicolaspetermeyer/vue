@@ -5,10 +5,12 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { usePixiUIStore } from '@/stores/pixiUIStore'
 import { Colors } from '@/config/Themes'
 import BackButton from '@/components/BackButton.vue'
 
 const projectionStore = useProjectionStore()
+const pixiUIStore = usePixiUIStore()
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -54,6 +56,12 @@ function createProjectionInstance() {
     app.clearRoot()
     currentProjection.value = null
     projectionStore.clearProjectionInstance()
+
+    // Clear visual state in store
+    pixiUIStore.clearHighlightedPoints()
+    pixiUIStore.clearSelection()
+    pixiUIStore.clearSegmentOverlays()
+    pixiUIStore.clearMiniRings()
   }
 
   // Create new projection instance
@@ -93,6 +101,12 @@ onBeforeUnmount(() => {
   if (currentProjection.value) {
     currentProjection.value.unregisterKeyboardEvents()
   }
+
+  // Clear all state in the pixiUIStore
+  pixiUIStore.clearHighlightedPoints()
+  pixiUIStore.clearSelection()
+  pixiUIStore.clearSegmentOverlays()
+  pixiUIStore.clearMiniRings()
 })
 
 function debug() {

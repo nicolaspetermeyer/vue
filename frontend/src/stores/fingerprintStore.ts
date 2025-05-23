@@ -5,6 +5,7 @@ import { ref, computed } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { Colors } from '@/config/Themes'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { usePixiUIStore } from '@/stores/pixiUIStore'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //STATE
@@ -12,6 +13,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   const fingerprintCounter = ref(1)
   const selection = ref<Projection[]>([])
   const selectedFingerprints = ref<Fingerprint[]>([])
+  const pixiUIStore = usePixiUIStore()
 
   // Computed property for the selected fingerprint's points
   const selectedFingerprintPoints = computed(() => {
@@ -24,6 +26,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   // triggers on brush select
   function setSelection(points: Projection[]) {
     selection.value = points
+
+    // Update visual state in UI store
+    const selectedIds = points.map((p) => p.id)
+    pixiUIStore.selectPoints(selectedIds)
   }
 
   // Helper function to get filter description
@@ -94,8 +100,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const localStats = calcFingerprintStats(originals)
     const id = crypto.randomUUID()
     const centroid = calculateSelectionCentroid(pointsToUse)
-    console.log('pointsToUse', pointsToUse)
-    console.log('centroid', centroid)
 
     const fingerprint: Fingerprint = {
       id,
@@ -107,7 +111,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     fingerprints.value.push(fingerprint)
 
+    // Clear selection after creating fingerprint
     selection.value = []
+    pixiUIStore.clearSelection()
+    pixiUIStore.clearHighlightedPoints()
   }
 
   function removeFingerprint(id: string, projectionInstance: any | null | undefined) {
@@ -117,6 +124,17 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
     selectedFingerprints.value = selectedFingerprints.value.filter((f) => f.id !== id)
+
+    // Remove visual state from pixiUIStore
+    pixiUIStore.removeMiniRing(id)
+
+    // clean up segment overlays for this fingerprint
+    pixiUIStore.segmentOverlays.forEach((overlays) => {
+      if (overlays.has(id)) {
+        overlays.delete(id)
+      }
+    })
+
     updateAttributeRingVisualization(projectionInstance)
 
     // Restore hidden points from the removed fingerprint
@@ -131,6 +149,11 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     fingerprints.value = []
     selectedFingerprints.value = []
     fingerprintCounter.value = 1
+
+    // Clear UI state for fingerprints
+    pixiUIStore.clearHighlightedPoints()
+    pixiUIStore.clearSegmentOverlays()
+    pixiUIStore.clearMiniRings()
   }
 
   function toggleSelectedFingerprint(
@@ -151,13 +174,12 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const ring = projectionInstance?.attributeRing
     if (ring) {
       if (selectedFingerprints.value.length > 0) {
-        ring.clearLocalStats()
+        ring.clearLocalRing()
         const colorMap = getComparisonColors()
 
         selectedFingerprints.value.forEach((fp) => {
           const color = colorMap[fp.id]
-
-          ring.setLocalStats(fp.id, fp.localStats, color)
+          ring.setLocalRing(fp.id, fp.localStats, color)
         })
 
         // Highlight points if dimred is available
@@ -173,8 +195,8 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
         }
       } else {
         // Clear visualization when no fingerprints are selected
-        ring.clearLocalStats()
-        projectionInstance?.dimred?.highlightFingerprintPoints({})
+        ring.clearLocalRing()
+        projectionInstance?.dimred?.clearHighlightedPoints()
       }
     }
   }
@@ -218,6 +240,14 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     return calculateSelectionCentroid(fingerprint.projectedPoints)
   }
 
+  function getFingerprintName(fingerprintId: string): string | null {
+    const fingerprint = fingerprints.value.find((f) => f.id === fingerprintId)
+    if (!fingerprint) {
+      return null
+    }
+    return fingerprint.name
+  }
+
   return {
     fingerprints,
     selectedFingerprints,
@@ -230,7 +260,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     updateAttributeRingVisualization,
     toggleSelectedFingerprint,
     getComparisonColors,
-
+    getFingerprintName,
     // getTopFeatures,
     calculateSelectionCentroid,
     getFingerprintCentroid,

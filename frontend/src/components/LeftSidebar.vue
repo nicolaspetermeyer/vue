@@ -17,7 +17,7 @@ const { projectionMethod, projectionInstance, filterCategories, activeFilter } =
 const { clearFilters } = projectionStore
 
 const fingerprintStore = useFingerprintStore()
-const { addFingerprint, getFilterDescription } = fingerprintStore
+const { addFingerprint } = fingerprintStore
 
 const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
 const selectionModeText = computed(() =>
