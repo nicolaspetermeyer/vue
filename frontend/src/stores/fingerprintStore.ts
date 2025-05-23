@@ -13,6 +13,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   const selection = ref<Projection[]>([])
   const selectedFingerprints = ref<Fingerprint[]>([])
 
+  // Color management - track available colors
+  const availableColorIndices = ref<number[]>([...Array(Colors.FINGERPRINT_COLORS.length).keys()])
+  const fingerprintColorMap = ref<Record<string, number>>({})
+
   // Computed property for the selected fingerprint's points
   const selectedFingerprintPoints = computed(() => {
     if (selectedFingerprints.value.length === 0) return []
@@ -90,10 +94,20 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     }
 
     if (pointsToUse.length === 0) return
+
     const originals = pointsToUse.map((p) => p.original)
     const localStats = calcFingerprintStats(originals)
     const id = crypto.randomUUID()
     const centroid = calculateSelectionCentroid(pointsToUse)
+
+    let colorIndex: number
+    if (availableColorIndices.value.length > 0) {
+      colorIndex = availableColorIndices.value.shift()!
+      fingerprintColorMap.value[id] = Colors.FINGERPRINT_COLORS[colorIndex]
+    } else {
+      colorIndex = 0
+      fingerprintColorMap.value[id] = Colors.FINGERPRINT_COLORS[0]
+    }
 
     const fingerprint: Fingerprint = {
       id,
@@ -101,6 +115,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       projectedPoints: [...pointsToUse],
       localStats,
       centroid,
+      color: fingerprintColorMap.value[id],
     }
 
     fingerprints.value.push(fingerprint)
@@ -112,6 +127,16 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const fingerprintToRemove = fingerprints.value.find((fp) => fp.id === id)
 
     if (!fingerprintToRemove) return
+
+    const colorToRelease = fingerprintColorMap.value[id]
+    if (colorToRelease) {
+      const colorIndex = Colors.FINGERPRINT_COLORS.indexOf(colorToRelease)
+      if (colorIndex !== -1 && !availableColorIndices.value.includes(colorIndex)) {
+        availableColorIndices.value.push(colorIndex)
+        availableColorIndices.value.sort((a, b) => a - b)
+      }
+      delete fingerprintColorMap.value[id]
+    }
 
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
     selectedFingerprints.value = selectedFingerprints.value.filter((f) => f.id !== id)
@@ -129,6 +154,9 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     fingerprints.value = []
     selectedFingerprints.value = []
     fingerprintCounter.value = 1
+
+    availableColorIndices.value = [...Array(Colors.FINGERPRINT_COLORS.length).keys()]
+    fingerprintColorMap.value = {}
   }
 
   function toggleSelectedFingerprint(
@@ -176,17 +204,11 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       }
     }
   }
-
   function getComparisonColors(): Record<string, number> {
-    // Define a set of distinct colors for comparisons
-    const colors = Colors.FINGERPRINT_COLORS
-
     const colorMap: Record<string, number> = {}
-
-    selectedFingerprints.value.forEach((fp, index) => {
-      colorMap[fp.id] = colors[index % colors.length]
+    selectedFingerprints.value.forEach((fp) => {
+      colorMap[fp.id] = fp.color || fingerprintColorMap.value[fp.id] || Colors.FINGERPRINT_COLORS[0]
     })
-
     return colorMap
   }
 

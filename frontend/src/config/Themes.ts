@@ -23,7 +23,22 @@ export const Colors = {
   STANDARD_BORDER: 0x3c4952, // Black
 
   // Attribute Ring - Fingerprint Colors
-  FINGERPRINT_COLORS: [0x3498db, 0xe74c3c, 0x2ecc71, 0xf39c12, 0x9b59b6, 0x1abc9c],
+  FINGERPRINT_COLORS: [
+    0x3498db, // Blue
+    0xe74c3c, // Red
+    0x2ecc71, // Green
+    0xf39c12, // Orange
+    0x9b59b6, // Purple
+    0x1abc9c, // Teal
+    0xf1c40f, // Sunflower Yellow
+    0xe91e63, // Hot Pink
+    0x16a085, // Dark Turquoise
+    0x2c3e50, // Navy
+    0xd35400, // Pumpkin
+    0x7f8c8d, // Slate Grey
+    0x8e44ad, // Wisteria
+    0xbdc3c7, // Silver
+  ],
 
   FILL_STYLE: true,
 

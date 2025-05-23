@@ -57,8 +57,9 @@ export type Fingerprint = {
   id: string // simple UUID
   name: string
   projectedPoints: Projection[]
-  localStats: Record<string, FeatureStats> // stats over the selected data points
-  centroid: Position // centroid of the selected data points
+  localStats: Record<string, FeatureStats>
+  centroid: Position
+  color: number
 }
 
 export type FeatureRanking = {
