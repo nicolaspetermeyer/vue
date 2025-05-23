@@ -3,7 +3,6 @@ import { onMounted, ref, computed } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
-import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import { SelectionMode } from '@/pixi/interactions/controllers/SelectionController'
 
@@ -15,9 +14,6 @@ const projectionStore = useProjectionStore()
 const { projectionMethod, projectionInstance, filterCategories, activeFilter } =
   storeToRefs(projectionStore)
 const { clearFilters } = projectionStore
-
-const fingerprintStore = useFingerprintStore()
-const { addFingerprint } = fingerprintStore
 
 const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
 const selectionModeText = computed(() =>
@@ -54,23 +50,6 @@ const selectedValues = computed({
 
 const hasActiveFilters = computed(() => {
   return activeFilter.value.category && activeFilter.value.values.length > 0
-})
-
-const filterDescription = computed(() => {
-  if (!activeFilter.value.category || activeFilter.value.values.length === 0) {
-    return ''
-  }
-
-  const category = activeFilter.value.category
-  const values = activeFilter.value.values
-
-  if (values.length === 1) {
-    return `${category} = ${values[0]}`
-  } else if (values.length <= 3) {
-    return `${category} = ${values.join(', ')}`
-  } else {
-    return `${category} (${values.length} values)`
-  }
 })
 
 const loadProj = async () => {
@@ -130,23 +109,6 @@ onMounted(async () => {})
           </select>
           <button @click="loadProj()" class="btn btn-sm btn-primary">Compute</button>
         </div>
-      </div>
-    </section>
-
-    <!-- Fingerprint Section-->
-    <section class="section">
-      <h3 class="section-title">Fingerprint</h3>
-      <div class="flex items-center space-x-2 mb-2">
-        <button @click="addFingerprint()" class="btn btn-sm btn-primary flex-1">
-          Create Fingerprint
-        </button>
-      </div>
-
-      <div class="text-xs text-gray-500">
-        <span v-if="hasActiveFilters">
-          <span class="font-medium">Filter applied:</span> {{ filterDescription }}
-        </span>
-        <span v-else> If no selection, will create fingerprint from all points. </span>
       </div>
     </section>
 

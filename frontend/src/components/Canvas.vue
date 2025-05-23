@@ -6,7 +6,7 @@ import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { Colors } from '@/config/Themes'
-import BackButton from '@/components/BackButton.vue'
+import BackButton from '@/components/canvas/BackButton.vue'
 
 const projectionStore = useProjectionStore()
 

@@ -3,6 +3,7 @@ import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { ref } from 'vue'
+import type { Fingerprint } from '@/models/data'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints, selectedFingerprints } = storeToRefs(fingerprintStore)
@@ -12,12 +13,12 @@ const { projectionInstance } = storeToRefs(projectionStore)
 
 const visibleMiniRings = ref<Set<string>>(new Set())
 
-function toggleSelection(fingerprint: (typeof fingerprints.value)[number]) {
+function toggleSelection(fingerprint: Fingerprint): void {
   fingerprintStore.toggleSelectedFingerprint(fingerprint, projectionInstance.value)
 }
 
-function isSelected(fingerprint: (typeof fingerprints.value)[number]): boolean {
-  return selectedFingerprints.value.some((fp) => fp.id === fingerprint.id)
+function isSelected(id: string): boolean {
+  return fingerprintStore.selectedFingerprints.some((fp) => fp.id === id)
 }
 
 function getColor(fingerprint: (typeof fingerprints.value)[number]): string {
@@ -68,7 +69,7 @@ function isMiniRingVisible(id: string): boolean {
         :key="fp.id"
         :class="{
           'fingerprint-item': true,
-          active: isSelected(fp),
+          active: isSelected(fp.id),
         }"
         @click="toggleSelection(fp)"
       >

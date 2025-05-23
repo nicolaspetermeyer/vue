@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import FingerprintList from '@/components/FingerprintList.vue'
+import FingerprintList from '@/components/right/FingerprintList.vue'
+import FingerprintSection from '@/components/right/FingerprintSection.vue'
 </script>
 
 <template>
   <div class="panel">
     <div class="flex flex-col gap-2">
       <h2 class="text-xl font-bold">Fingerprints</h2>
+      <FingerprintSection />
       <FingerprintList />
       <!-- <ul class="fingerprint-list space-y-2">
         <li

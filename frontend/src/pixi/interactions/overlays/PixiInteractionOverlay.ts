@@ -14,8 +14,6 @@ import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
-import { PixiProjection } from '@/pixi/PixiProjection'
-import { PixiApp } from '@/pixi/Base/PixiApp'
 
 // Controllers
 import { HoverManager } from '@/pixi/interactions/controllers/HoverManager'
@@ -171,7 +169,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     const fingerprint = this.fingerprintStore.fingerprints.find((fp) => fp.id === fingerprintId)
     if (!fingerprint) return
 
-    useProjectionStore().drillDownToProjection(fingerprint.projectedPoints)
+    useProjectionStore().drillDownToProjection(fingerprint.projectedPoints, fingerprintId)
     useProjectionStore().setGlobalStats(fingerprint.localStats)
   }
 

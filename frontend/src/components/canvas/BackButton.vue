@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { useProjectionStore } from '@/stores/projectionStore'
+import { computed } from 'vue'
+
+const projectionStore = useProjectionStore()
+const canGoBack = computed(() => projectionStore.canGoBack)
+
+function goBack() {
+  if (projectionStore.goBackToPreviousProjection()) {
+  } else {
+    console.error('No previous projection to go back to.')
+  }
+}
+</script>
+
 <template>
   <div class="back-button-container" v-if="canGoBack">
     <button class="back-button" @click="goBack" :disabled="!canGoBack">
@@ -17,22 +32,6 @@
     </button>
   </div>
 </template>
-
-<script setup lang="ts">
-import { useProjectionStore } from '@/stores/projectionStore'
-import { computed } from 'vue'
-
-const projectionStore = useProjectionStore()
-const canGoBack = computed(() => projectionStore.canGoBack)
-
-function goBack() {
-  if (projectionStore.goBackToPreviousProjection()) {
-    // Success - we've gone back to a previous projection
-  } else {
-    console.warn('Could not go back - no previous projection available')
-  }
-}
-</script>
 
 <style scoped>
 .back-button-container {

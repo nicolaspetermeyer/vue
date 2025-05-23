@@ -1,26 +1,23 @@
 import { defineStore } from 'pinia'
 import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
-import type { Fingerprint, Projection, FeatureStats } from '@/models/data'
-import { ref, computed } from 'vue'
-import { PixiProjection } from '@/pixi/PixiProjection'
-import { Colors } from '@/config/Themes'
+import type { Fingerprint, Projection } from '@/models/data'
+import { ref, computed, inject, onMounted } from 'vue'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { FingerprintVisualizationService } from '@/services/FingerprintVisualizationService'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
-  //STATE
+  // STATE
   const fingerprints = ref<Fingerprint[]>([])
   const fingerprintCounter = ref(1)
   const selection = ref<Projection[]>([])
   const selectedFingerprints = ref<Fingerprint[]>([])
 
-  // Color management - track available colors
-  const availableColorIndices = ref<number[]>([...Array(Colors.FINGERPRINT_COLORS.length).keys()])
-  const fingerprintColorMap = ref<Record<string, number>>({})
+  // Create visualization service
+  const visualizationService = new FingerprintVisualizationService()
 
   // Computed property for the selected fingerprint's points
   const selectedFingerprintPoints = computed(() => {
     if (selectedFingerprints.value.length === 0) return []
-
     return selectedFingerprints.value.flatMap((fingerprint) => fingerprint.projectedPoints)
   })
 
@@ -100,14 +97,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const id = crypto.randomUUID()
     const centroid = calculateSelectionCentroid(pointsToUse)
 
-    let colorIndex: number
-    if (availableColorIndices.value.length > 0) {
-      colorIndex = availableColorIndices.value.shift()!
-      fingerprintColorMap.value[id] = Colors.FINGERPRINT_COLORS[colorIndex]
-    } else {
-      colorIndex = 0
-      fingerprintColorMap.value[id] = Colors.FINGERPRINT_COLORS[0]
-    }
+    const color = visualizationService.assignColor(id)
 
     const fingerprint: Fingerprint = {
       id,
@@ -115,7 +105,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       projectedPoints: [...pointsToUse],
       localStats,
       centroid,
-      color: fingerprintColorMap.value[id],
+      color,
     }
 
     fingerprints.value.push(fingerprint)
@@ -126,22 +116,18 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
   function removeFingerprint(id: string, projectionInstance: any | null | undefined) {
     const fingerprintToRemove = fingerprints.value.find((fp) => fp.id === id)
-
     if (!fingerprintToRemove) return
 
-    const colorToRelease = fingerprintColorMap.value[id]
-    if (colorToRelease) {
-      const colorIndex = Colors.FINGERPRINT_COLORS.indexOf(colorToRelease)
-      if (colorIndex !== -1 && !availableColorIndices.value.includes(colorIndex)) {
-        availableColorIndices.value.push(colorIndex)
-        availableColorIndices.value.sort((a, b) => a - b)
-      }
-      delete fingerprintColorMap.value[id]
-    }
+    visualizationService.releaseColor(id)
 
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
     selectedFingerprints.value = selectedFingerprints.value.filter((f) => f.id !== id)
-    updateAttributeRingVisualization(projectionInstance)
+
+    // Update visualization
+    visualizationService.updateAttributeRingVisualization(
+      projectionInstance,
+      selectedFingerprints.value,
+    )
 
     // Restore hidden points from the removed fingerprint
     if (projectionInstance?.dimred) {
@@ -156,8 +142,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     selectedFingerprints.value = []
     fingerprintCounter.value = 1
 
-    availableColorIndices.value = [...Array(Colors.FINGERPRINT_COLORS.length).keys()]
-    fingerprintColorMap.value = {}
+    visualizationService.resetColors()
   }
 
   function toggleSelectedFingerprint(
@@ -171,55 +156,18 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       selectedFingerprints.value.splice(index, 1)
     }
 
-    updateAttributeRingVisualization(projectionInstance)
+    // Use service to update visualization
+    visualizationService.updateAttributeRingVisualization(
+      projectionInstance,
+      selectedFingerprints.value,
+    )
   }
-
-  function updateAttributeRingVisualization(projectionInstance: PixiProjection | null | undefined) {
-    const ring = projectionInstance?.attributeRing
-    if (ring) {
-      if (selectedFingerprints.value.length > 0) {
-        ring.clearLocalRing()
-        const colorMap = getComparisonColors()
-
-        selectedFingerprints.value.forEach((fp) => {
-          const color = colorMap[fp.id]
-
-          ring.setLocalRing(fp.id, fp.localStats, color)
-        })
-
-        // Highlight points if dimred is available
-        if (projectionInstance?.dimred) {
-          const pointColorMap: Record<string, number> = {}
-          selectedFingerprints.value.forEach((fp) => {
-            const color = colorMap[fp.id]
-            fp.projectedPoints.forEach((point) => {
-              pointColorMap[point.id] = color
-            })
-          })
-          projectionInstance.dimred.highlightFingerprintPoints(pointColorMap)
-        }
-      } else {
-        // Clear visualization when no fingerprints are selected
-        ring.clearLocalRing()
-        projectionInstance?.dimred?.highlightFingerprintPoints({})
-      }
-    }
-  }
-  function getComparisonColors(): Record<string, number> {
-    const colorMap: Record<string, number> = {}
-    selectedFingerprints.value.forEach((fp) => {
-      colorMap[fp.id] = fp.color || fingerprintColorMap.value[fp.id] || Colors.FINGERPRINT_COLORS[0]
-    })
-    return colorMap
-  }
-
   // function getTopFeatures(stats: Record<string, FeatureStats>, limit = 1): string[] {
   //   return Object.entries(stats)
   //     .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
   //     .slice(0, limit)
   //     .map(([key]) => key)
   // }
-
   function calculateSelectionCentroid(points: Projection[]): { x: number; y: number } {
     // Calculate centroid
     const sumX = points.reduce((sum, point) => sum + point.pos.x, 0)
@@ -231,14 +179,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     }
   }
 
-  function getFingerprintCentroid(fingerprintId: string): { x: number; y: number } | null {
-    const fingerprint = fingerprints.value.find((f) => f.id === fingerprintId)
-    if (!fingerprint) {
-      return null
-    }
-    return calculateSelectionCentroid(fingerprint.projectedPoints)
-  }
-
   return {
     fingerprints,
     selectedFingerprints,
@@ -248,12 +188,11 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     addFingerprint,
     removeFingerprint,
     clearFingerprints,
-    updateAttributeRingVisualization,
     toggleSelectedFingerprint,
-    getComparisonColors,
-
-    // getTopFeatures,
     calculateSelectionCentroid,
-    getFingerprintCentroid,
+    // getTopFeatures,
+
+    // Expose visualization service
+    visualizationService,
   }
 })

@@ -16,7 +16,10 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
   const projectionMethod = ref<'pca' | 'tsne'>('pca')
-  const projectionHistory = ref<Projection[][]>([])
+  const projectionHistory = ref<
+    { projection: Projection[]; stats: Record<string, FeatureStats>; parentId?: string }[]
+  >([])
+  const currentParentId = ref<string | undefined>(undefined)
   const canGoBack = computed(() => projectionHistory.value.length > 0)
 
   const featureRanking = ref<FeatureRanking[]>([])
@@ -199,12 +202,16 @@ export const useProjectionStore = defineStore('projection', () => {
     }
   }
 
-  function drillDownToProjection(newProjection: Projection[]) {
-    console.log('starting drill')
+  function drillDownToProjection(newProjection: Projection[], parentId?: string) {
     if (projection.value.length > 0) {
-      projectionHistory.value.push([...projection.value])
+      projectionHistory.value.push({
+        projection: [...projection.value],
+        stats: { ...globalStats.value },
+        parentId: currentParentId.value,
+      })
     }
 
+    currentParentId.value = parentId
     projection.value = newProjection
   }
 
@@ -216,11 +223,11 @@ export const useProjectionStore = defineStore('projection', () => {
       return false
     }
 
-    // Get the previous projection
     const previousProjection = projectionHistory.value.pop()
     if (previousProjection) {
-      projection.value = previousProjection
-      console.log('Going back to previous projection:', previousProjection)
+      projection.value = previousProjection.projection
+      globalStats.value = previousProjection.stats
+
       return true
     }
 

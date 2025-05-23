@@ -11,6 +11,7 @@ export interface Projection {
   id: string
   pos: Position
   original: Data
+  parentId?: string
 }
 
 export interface ProjectionApiResponse {
@@ -60,6 +61,7 @@ export type Fingerprint = {
   localStats: Record<string, FeatureStats>
   centroid: Position
   color: number
+  parentId?: string
 }
 
 export type FeatureRanking = {
