@@ -20,9 +20,8 @@ function isSelected(fingerprint: (typeof fingerprints.value)[number]): boolean {
   return selectedFingerprints.value.some((fp) => fp.id === fingerprint.id)
 }
 
-function getColor(id: string): string {
-  const colors = fingerprintStore.getComparisonColors()
-  const colorHex = colors[id]?.toString(16).padStart(6, '0') || '888888'
+function getColor(fingerprint: (typeof fingerprints.value)[number]): string {
+  const colorHex = fingerprint.color?.toString(16).padStart(6, '0') || '888888'
   return `#${colorHex}`
 }
 
@@ -44,7 +43,7 @@ function toggleMiniRing(id: string, event: Event) {
     projectionInstance.value.dimred.removeMiniRing(fingerprint)
     visibleMiniRings.value.delete(id)
   } else {
-    const colorInt = parseInt(getColor(id).replace('#', ''), 16)
+    const colorInt = fingerprint.color || parseInt('888888', 16)
     const stats = fingerprint.localStats
 
     projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, stats)
@@ -76,11 +75,7 @@ function isMiniRingVisible(id: string): boolean {
         <div class="flex items-center justify-between">
           <div class="fingerprint-info">
             <div class="flex items-center gap-2">
-              <div
-                v-if="isSelected(fp)"
-                class="color-indicator"
-                :style="{ backgroundColor: getColor(fp.id) }"
-              ></div>
+              <div class="color-indicator" :style="{ backgroundColor: getColor(fp) }"></div>
               <span class="fingerprint-name">{{ fp.name }}</span>
             </div>
             <span class="feature-count">Points: {{ fp.projectedPoints.length }}</span>

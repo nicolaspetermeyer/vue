@@ -119,6 +119,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     }
 
     fingerprints.value.push(fingerprint)
+    console.log('Fingerprints:', fingerprints.value)
 
     selection.value = []
   }
