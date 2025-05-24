@@ -106,12 +106,7 @@ function handleKeyDown(event: KeyboardEvent) {
             <div class="flex items-center gap-2">
               <div class="color-indicator" :style="{ backgroundColor: getColor(fp) }"></div>
               <div v-if="editingFingerprintId === fp.id" class="edit-name-container" @click.stop>
-                <input
-                  v-model="editingName"
-                  class="edit-name-input"
-                  @keydown="handleKeyDown"
-                  v-focus
-                />
+                <input v-model="editingName" class="edit-name-input" @keydown="handleKeyDown" />
                 <div class="edit-actions">
                   <button class="edit-btn save-btn" @click="saveEdit" title="Save">✓</button>
                   <button class="edit-btn cancel-btn" @click="cancelEdit" title="Cancel">✕</button>

@@ -121,7 +121,7 @@ export class PixiAttributeRing
     }
   }
 
-  public highlightSegment(attributeKey: string): void {
+  public clickSegment(attributeKey: string): void {
     for (const segment of this.segments) {
       segment.setHovered(false)
     }

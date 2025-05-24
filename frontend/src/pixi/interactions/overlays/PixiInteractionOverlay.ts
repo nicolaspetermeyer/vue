@@ -127,7 +127,6 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   private onPointerTap(e: FederatedPointerEvent) {
     if (this.dimred) {
-      console.log('Pointer tap on PixiInteractionOverlay', e)
       let miniRingResult
       for (const [id, ring] of this.dimred.pixiGlyph.entries()) {
         if (ring.containsPoint(e.global)) {
@@ -147,26 +146,52 @@ export class PixiInteractionOverlay extends PixiContainer {
         }
         return
       }
-      if (this.attributeRing) {
-        const segment = this.attributeRing.findElementAtGlobal(e.global)
-        if (segment) {
-          this.handleAttributeSegmentSelection(segment)
-          return
-        }
+    }
+    if (this.attributeRing && e.button === 0) {
+      const segment = this.attributeRing.findElementAtGlobal(e.global)
+      if (segment) {
+        this.handleAttributeSegmentSelection(segment)
+        return
+      }
+    } else if (this.attributeRing && e.button === 2) {
+      const segment = this.attributeRing.findElementAtGlobal(e.global)
+      if (segment) {
+        this.dimred?.pixiDimredPoints.forEach((point) => {
+          const attributeKey = segment.attributeKey
+          const value = point.dimredpoint.original[attributeKey]
+          const stats = segment.stats
+
+          if (typeof value === 'number' && stats) {
+            const normalizedValue =
+              (value - (stats.min || 0)) / ((stats.max || 1) - (stats.min || 0))
+            const alpha = 0.15 + normalizedValue * 0.85 // Scale alpha from 0.15 to 1.0
+            point.alpha = alpha
+          }
+        })
       }
     }
-    // Handle right-click on empty area (reset selection)
-    if (e.button === 2) {
+
+    // Handle regular left-click (normal selection)
+    if (this.selectionController) {
+      this.selectionController.handleTap(e)
+    }
+  }
+
+  /**
+   * Handle keyboard events
+   * @param e - Keyboard event
+   */
+  handleKeyDown(e: KeyboardEvent) {
+    if (e.altKey) {
       if (this.dimred) {
         this.dimred.setSelection([])
         this.fingerprintStore.setSelection([])
         this.attributeRing?.clearPointRing('99')
+        this.dimred?.pixiDimredPoints.forEach((point) => {
+          point.alpha = 0.5
+        })
       }
       return
-    }
-    // Handle regular left-click (normal selection)
-    if (this.selectionController) {
-      this.selectionController.handleTap(e)
     }
   }
 
@@ -216,7 +241,6 @@ export class PixiInteractionOverlay extends PixiContainer {
   }
 
   private handleAttributeSegmentSelection(segment: PixiAttributeSegment): void {
-    // Get the attribute key that was clicked
     const attributeKey = segment.attributeKey
 
     if (!this.dimred) return
@@ -225,11 +249,9 @@ export class PixiInteractionOverlay extends PixiContainer {
     const thresholdPercentile = 0.75 // Select top 25% of points for this attribute
     const selectedPoints: PixiDimredPoint[] = []
 
-    // Filter points by the selected attribute
     this.dimred.pixiDimredPoints.forEach((point) => {
       const value = point.dimredpoint.original[attributeKey]
       if (typeof value === 'number' && segment.stats?.normMean) {
-        // Use normalized value if available
         const normalizedValue =
           (value - (segment.stats.min || 0)) / ((segment.stats.max || 1) - (segment.stats.min || 0))
 
@@ -239,19 +261,15 @@ export class PixiInteractionOverlay extends PixiContainer {
       }
     })
 
-    // Get the IDs of points with high values for this attribute
     const selectedIds = selectedPoints.map((point) => point.dimredpoint.id)
 
-    // Update selection in the dimred visualization
     this.dimred.setSelection(selectedIds)
 
-    // Update the fingerprint store with the new selection
     if (selectedIds.length > 0) {
       this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
     }
 
-    // Highlight the selected attribute in the attribute ring
-    this.attributeRing?.highlightSegment(attributeKey)
+    this.attributeRing?.clickSegment(attributeKey)
   }
 
   // Handle tap selection events from the selection controller
@@ -357,17 +375,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     }
   }
 
-  /**
-   * Handle keyboard events
-   * @param e - Keyboard event
-   */
-  handleKeyDown(e: KeyboardEvent) {
-    if (e.code === 'KeyA' && e.altKey) {
-      // Toggle between rectangle and lasso selection modes
-      this.toggleSelectionMode()
-    }
-  }
-
   getTooltip(): PixiTooltip {
     return this.tooltip
   }
@@ -386,14 +393,13 @@ export class PixiInteractionOverlay extends PixiContainer {
     // Update point detection radius inversely to scale
     this.dimred.setDetectRadius((5 * 1) / scale)
 
-    // Update point sizes for constant visual size
     this.updatePointSizes(scale)
   }
 
   private updatePointSizes(scale: number) {
     if (!this.dimred) return
 
-    // Calculate inverse scale to maintain constant visual size
+    // Calculate inverse scale
     const inverseScale = 1 / scale
 
     this.dimred.updateAllPointScales(inverseScale)
@@ -405,7 +411,7 @@ export class PixiInteractionOverlay extends PixiContainer {
       this.viewportController.resetView(270, 270, 1)
     }
   }
-  // Clean up resources when component is destroyed
+  // Clean up resources
   destroy() {
     super.destroy()
 
