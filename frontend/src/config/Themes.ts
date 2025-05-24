@@ -5,9 +5,11 @@ export const Colors = {
   PROJECTION_BACKGROUND_DARK: 0x8a9493, // Dark gray
   CANVAS_BACKGROUND: 0xd9d7d7, // Light gray
 
-  // Interactions
+  // Projection
   SELECTED: 0x0077ff, // Blue
   HOVERED: 0xffaa00, // Orange
+  POINT_SELECT: 0x3c4952, // Dark gray
+
   // Brush
   BRUSH_FILL: 0x000000, // black
   BRUSH_STROKE: 0x000000, // black
@@ -19,8 +21,9 @@ export const Colors = {
   OVERLAY_SEGMENT_SMALLER: 0xff4444, // Red
   OVERLAY_SEGMENT_BIGGER: 0x318531, // Green
   STANDARD_OVERLAY: 0xff4444, // Red
-  POINT_SELECT: 0x3c4952, // Dark gray
+
   STANDARD_BORDER: 0x3c4952, // Black
+  SELECTED_SEGMENT: 0xe2e1e1, // Green
 
   // Attribute Ring - Fingerprint Colors
   FINGERPRINT_COLORS: [

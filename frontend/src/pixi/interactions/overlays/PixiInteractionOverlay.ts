@@ -168,6 +168,7 @@ export class PixiInteractionOverlay extends PixiContainer {
             point.alpha = alpha
           }
         })
+        this.attributeRing?.clickSegment(segment.attributeKey)
       }
     }
 

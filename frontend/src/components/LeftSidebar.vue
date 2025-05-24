@@ -5,6 +5,7 @@ import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { storeToRefs } from 'pinia'
 import { SelectionMode } from '@/pixi/interactions/controllers/SelectionController'
+import Instructions from './left/Instructions.vue'
 
 const datasetStore = useDatasetStore()
 const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
@@ -190,6 +191,8 @@ onMounted(async () => {})
       </div>
       <div v-else class="text-sm text-gray-500">Load a projection to enable filtering</div>
     </section>
+    <!-- Instructions Section -->
+    <Instructions />
   </div>
 </template>
 

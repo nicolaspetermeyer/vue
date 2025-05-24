@@ -23,6 +23,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
   public mini: boolean = false
   private isHovered: boolean = false
+  private isSelected: boolean = false
 
   constructor(
     attributeKey: string,
@@ -64,7 +65,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     if (mini) {
       this.drawMiniSegment()
     } else {
-      // Draw main segment with global data
       this.drawMainSegment()
     }
   }
@@ -204,6 +204,19 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     )
   }
 
+  /**
+   * Update the visual state of the point based on its selection and hover state.
+   */
+  updateVisualState() {
+    if (this.isSelected) {
+      this.tint = Colors.SELECTED_SEGMENT
+    } else if (this.isHovered) {
+      this.tint = Colors.HOVERED
+    } else {
+      this.tint = Colors.GLOBAL_SEGMENT
+    }
+  }
+
   clearLocalOverlay(): void {
     this.localOverlays.clear()
     this.localNorm = undefined
@@ -284,6 +297,17 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     }
   }
 
+  clickSegment(selected: boolean) {
+    if (this.isSelected !== selected) {
+      this.isSelected = selected
+
+      this.updateVisualState()
+    } else {
+      this.isSelected = false
+      this.updateVisualState()
+    }
+  }
+
   getTooltipContent(): string {
     let content = `Attribute: ${this.attributeKey}\n`
 
@@ -295,13 +319,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
       content += `Fingerprint: ${fingerprintId}\n`
 
-      // Add normalized value if available
       if (this.localNorm !== undefined) {
         const percentage = Math.round(this.localNorm * 100)
         content += `Value: ${percentage}%`
       }
 
-      // Add stats if available
       if (this.stats) {
         if (this.stats.mean !== undefined) {
           content += `\nMean: ${this.stats.mean.toFixed(2)}`
