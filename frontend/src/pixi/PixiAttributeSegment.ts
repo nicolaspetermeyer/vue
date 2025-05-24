@@ -4,6 +4,7 @@ import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors, Styles } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
+import { line } from 'd3'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
@@ -22,7 +23,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
   public mini: boolean = false
   private isHovered: boolean = false
-  private isHighlighted: boolean = false
 
   constructor(
     attributeKey: string,
@@ -61,25 +61,26 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     this.clear()
 
-    const lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
-
     if (mini) {
-      this.drawMiniSegment(this.isHovered, lineWidth)
+      this.drawMiniSegment()
     } else {
       // Draw main segment with global data
-      this.drawMainSegment(this.isHovered, lineWidth)
+      this.drawMainSegment()
     }
   }
 
   /**
    * Draw a mini segment for fingerprints
    */
-  private drawMiniSegment(isHovered: boolean, lineWidth: number) {
+  private drawMiniSegment() {
     if (typeof this.localNorm !== 'number') return
 
+    const lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER_MINI : Styles.LINEWIDTH_MINI
+
     // Draw inner circle in the mini ring
-    this.fill({ color: Colors.MINI_INNER_RING, alpha: 0.2 })
+
     this.circle(this.centerX, this.centerY, this.innerRadius)
+    this.fill({ color: this.color, alpha: 0.05 })
 
     // Calculate the outer radius based on the value
     const arcWidth = this.maxOuterRadius - this.innerRadius
@@ -91,9 +92,9 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       outerRadius,
       this.startAngle,
       this.endAngle,
-      this.color, // Use segment color
-      this.color, // Border color same as fill
-      0.25, // Alpha
+      this.color,
+      this.color, // Border color
+      0.25,
       lineWidth,
     )
   }
@@ -101,9 +102,10 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   /**
    * Draw main segment with global and overlay data
    */
-  private drawMainSegment(isHovered: boolean, lineWidth: number) {
-    // Only draw if we have a valid global norm
+  private drawMainSegment() {
     if (typeof this.globalNorm !== 'number' || this.globalNorm <= 0) return
+
+    const lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
 
     const arcWidth = this.maxOuterRadius - this.innerRadius
     const globalOuterRadius = this.innerRadius + this.globalNorm * arcWidth
@@ -116,7 +118,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.endAngle,
       Colors.GLOBAL_SEGMENT,
       Colors.STANDARD_BORDER,
-      0.25, // Alpha
+      0.25,
       lineWidth,
     )
 
@@ -147,7 +149,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           this.endAngle,
           fillColor,
           borderColor,
-          0.25, // Alpha
+          0.25,
           lineWidth,
         )
       })
@@ -167,7 +169,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     alpha: number,
     lineWidth: number,
   ) {
-    // Define the arc path
     this.moveTo(
       this.centerX + innerRadius * Math.cos(startAngle),
       this.centerY + innerRadius * Math.sin(startAngle),
@@ -184,10 +185,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       .arc(this.centerX, this.centerY, innerRadius, endAngle, startAngle, true)
       .closePath()
 
-    // Apply stroke
     this.stroke({ color: borderColor ?? fillColor, width: lineWidth })
 
-    // Apply fill if enabled in theme
     if (Colors.FILL_STYLE) {
       this.fill({ color: fillColor, alpha: alpha })
     }
@@ -281,30 +280,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     if (this.isHovered !== hovered) {
       this.isHovered = hovered
       this.redraw()
-      this.alpha = hovered ? 0.8 : 1.0
-    }
-  }
-
-  setHighlighted(highlighted: boolean): void {
-    if (this.isHighlighted !== highlighted) {
-      this.isHighlighted = highlighted
-      this.redraw()
-
-      // Apply a visual effect for highlighting
-      if (highlighted) {
-        this.alpha = 1.0
-        // Make the segment visually stand out with increased stroke width
-        const lineWidth = Styles.LINEWIDTH_HOVER * 1.5
-        if (this.mini) {
-          this.drawMiniSegment(this.isHovered, lineWidth)
-        } else {
-          this.drawMainSegment(this.isHovered, lineWidth)
-        }
-      } else {
-        // Reset to normal appearance
-        this.alpha = this.isHovered ? 0.8 : 1.0
-        this.redraw()
-      }
+      this.alpha = hovered ? 0.5 : 1
     }
   }
 

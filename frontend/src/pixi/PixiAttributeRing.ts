@@ -123,12 +123,12 @@ export class PixiAttributeRing
 
   public highlightSegment(attributeKey: string): void {
     for (const segment of this.segments) {
-      segment.setHighlighted(false)
+      segment.setHovered(false)
     }
 
     const selectedSegment = this.segments.find((segment) => segment.attributeKey === attributeKey)
     if (selectedSegment) {
-      selectedSegment.setHighlighted(true)
+      selectedSegment.setHovered(true)
     }
   }
   public clearLocalRing() {

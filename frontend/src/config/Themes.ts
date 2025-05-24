@@ -42,11 +42,12 @@ export const Colors = {
 
   FILL_STYLE: true,
 
-  // Mini Ring
   MINI_INNER_RING: 0xffffff,
 }
 
 export const Styles = {
   LINEWIDTH: 1,
+  LINEWIDTH_MINI: 0.75,
   LINEWIDTH_HOVER: 2,
+  LINEWIDTH_HOVER_MINI: 1,
 }
