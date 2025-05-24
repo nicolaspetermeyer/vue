@@ -14,6 +14,7 @@ import { PixiTooltip } from './PixiTooltip'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
+import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 
 // Controllers
 import { HoverManager } from '@/pixi/interactions/controllers/HoverManager'
@@ -126,6 +127,7 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   private onPointerTap(e: FederatedPointerEvent) {
     if (this.dimred) {
+      console.log('Pointer tap on PixiInteractionOverlay', e)
       let miniRingResult
       for (const [id, ring] of this.dimred.pixiGlyph.entries()) {
         if (ring.containsPoint(e.global)) {
@@ -144,6 +146,13 @@ export class PixiInteractionOverlay extends PixiContainer {
           this.handleMiniRingSelection(id)
         }
         return
+      }
+      if (this.attributeRing) {
+        const segment = this.attributeRing.findElementAtGlobal(e.global)
+        if (segment) {
+          this.handleAttributeSegmentSelection(segment)
+          return
+        }
       }
     }
     // Handle right-click on empty area (reset selection)
@@ -204,6 +213,45 @@ export class PixiInteractionOverlay extends PixiContainer {
     }
 
     this.attributeRing.setLocalRing('99', localStats, Colors.POINT_SELECT)
+  }
+
+  private handleAttributeSegmentSelection(segment: PixiAttributeSegment): void {
+    // Get the attribute key that was clicked
+    const attributeKey = segment.attributeKey
+
+    if (!this.dimred) return
+
+    // Find points that have high values for this attribute
+    const thresholdPercentile = 0.75 // Select top 25% of points for this attribute
+    const selectedPoints: PixiDimredPoint[] = []
+
+    // Filter points by the selected attribute
+    this.dimred.pixiDimredPoints.forEach((point) => {
+      const value = point.dimredpoint.original[attributeKey]
+      if (typeof value === 'number' && segment.stats?.normMean) {
+        // Use normalized value if available
+        const normalizedValue =
+          (value - (segment.stats.min || 0)) / ((segment.stats.max || 1) - (segment.stats.min || 0))
+
+        if (normalizedValue >= thresholdPercentile) {
+          selectedPoints.push(point)
+        }
+      }
+    })
+
+    // Get the IDs of points with high values for this attribute
+    const selectedIds = selectedPoints.map((point) => point.dimredpoint.id)
+
+    // Update selection in the dimred visualization
+    this.dimred.setSelection(selectedIds)
+
+    // Update the fingerprint store with the new selection
+    if (selectedIds.length > 0) {
+      this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
+    }
+
+    // Highlight the selected attribute in the attribute ring
+    this.attributeRing?.highlightSegment(attributeKey)
   }
 
   // Handle tap selection events from the selection controller

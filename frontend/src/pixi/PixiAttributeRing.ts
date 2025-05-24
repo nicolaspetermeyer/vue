@@ -120,6 +120,17 @@ export class PixiAttributeRing
       }
     }
   }
+
+  public highlightSegment(attributeKey: string): void {
+    for (const segment of this.segments) {
+      segment.setHighlighted(false)
+    }
+
+    const selectedSegment = this.segments.find((segment) => segment.attributeKey === attributeKey)
+    if (selectedSegment) {
+      selectedSegment.setHighlighted(true)
+    }
+  }
   public clearLocalRing() {
     for (const segment of this.segments) {
       segment.clearLocalOverlay()

@@ -22,6 +22,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
   public mini: boolean = false
   private isHovered: boolean = false
+  private isHighlighted: boolean = false
 
   constructor(
     attributeKey: string,
@@ -281,6 +282,29 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.isHovered = hovered
       this.redraw()
       this.alpha = hovered ? 0.8 : 1.0
+    }
+  }
+
+  setHighlighted(highlighted: boolean): void {
+    if (this.isHighlighted !== highlighted) {
+      this.isHighlighted = highlighted
+      this.redraw()
+
+      // Apply a visual effect for highlighting
+      if (highlighted) {
+        this.alpha = 1.0
+        // Make the segment visually stand out with increased stroke width
+        const lineWidth = Styles.LINEWIDTH_HOVER * 1.5
+        if (this.mini) {
+          this.drawMiniSegment(this.isHovered, lineWidth)
+        } else {
+          this.drawMainSegment(this.isHovered, lineWidth)
+        }
+      } else {
+        // Reset to normal appearance
+        this.alpha = this.isHovered ? 0.8 : 1.0
+        this.redraw()
+      }
     }
   }
 
