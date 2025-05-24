@@ -69,9 +69,9 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
     }
 
     if (this.inFingerprint && !this.Selected) {
-      this.alpha = 0.9
+      this.alpha = 0.7
     } else {
-      this.alpha = 1
+      this.alpha = 0.5
     }
   }
 

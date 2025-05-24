@@ -51,7 +51,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     color: number,
     stats: Record<string, FeatureStats>,
   ) {
-    console.log('Adding mini ring for fingerprint:', fingerprint.id)
     const { centroid, localStats, id, projectedPoints } = fingerprint
     const ids = projectedPoints.map((point) => point.id)
 

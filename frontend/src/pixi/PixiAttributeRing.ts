@@ -175,34 +175,18 @@ export class PixiAttributeRing
   }
 
   findElementAtGlobal(global: PointData): PixiAttributeSegment | null {
+    const local = this.toLocal(global)
     if (this.mini) {
-      const local = this.toLocal(global)
-      const centerX = this.width / 2
-      const centerY = this.height / 2
-
-      // Check if point is within the ring's overall bounds
-      const dx = local.x - centerX
-      const dy = local.y - centerY
-      const radius = Math.sqrt(dx * dx + dy * dy)
-      // If within the outer radius of the mini ring
-      if (radius <= this.maxOuterRadius) {
-        // First check if any segment specifically contains this point
-        for (const segment of this.segments) {
-          if (segment.containsGlobal(global)) {
-            return segment
-          }
-        }
-
-        // If no segment was found but we're within the radius,
-        // return the first segment as representative for the entire ring
-        if (this.segments.length > 0) {
-          return this.segments[0]
-        }
+      if (!this.isInsideMiniRing(local)) return null
+      // any segment containing the point?
+      for (const segment of this.segments) {
+        if (segment.containsGlobal(global)) return segment
       }
 
-      return null
+      // fallback
+      return this.segments[0] || null
     }
-
+    // For regular rings, check each segment
     for (const seg of this.segments) {
       if (seg.containsGlobal(global)) {
         return seg
@@ -235,5 +219,13 @@ export class PixiAttributeRing
 
   getFingerprint(): string | undefined {
     return this.fingerprintId
+  }
+
+  private isInsideMiniRing(local: PointData): boolean {
+    const cx = this.layoutProps?.width ? this.layoutProps.width / 2 : this.width / 2
+    const cy = this.layoutProps?.height ? this.layoutProps.height / 2 : this.height / 2
+    const dx = local.x - cx
+    const dy = local.y - cy
+    return dx * dx + dy * dy <= this.maxOuterRadius * this.maxOuterRadius
   }
 }
