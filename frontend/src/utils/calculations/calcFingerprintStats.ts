@@ -1,12 +1,12 @@
-import { Data, FeatureStats } from '@/models/data'
+import { Data, AttributeStats } from '@/models/data'
 import { useProjectionStore } from '@/stores/projectionStore'
 
 export function calcFingerprintStats(
   selection: Data[], // array of selected data points
-): Record<string, FeatureStats> {
+): Record<string, AttributeStats> {
   const projectionStore = useProjectionStore()
   const globalStats = projectionStore.globalStats
-  const result: Record<string, FeatureStats> = {}
+  const result: Record<string, AttributeStats> = {}
 
   const featureKeys = Object.keys(globalStats)
 

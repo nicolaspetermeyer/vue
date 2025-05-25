@@ -2,7 +2,7 @@ import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { Colors } from '@/config/Themes'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
-import type { Projection, FeatureStats, Fingerprint } from '@/models/data'
+import type { Projection, AttributeStats, Fingerprint } from '@/models/data'
 import { Rectangle, PointData } from 'pixi.js'
 import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
 import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransformer'
@@ -49,7 +49,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   addMiniRingForFingerprint(
     fingerprint: Fingerprint,
     color: number,
-    stats: Record<string, FeatureStats>,
+    stats: Record<string, AttributeStats>,
   ) {
     const { centroid, localStats, id, projectedPoints } = fingerprint
     const ids = projectedPoints.map((point) => point.id)
@@ -61,8 +61,8 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
 
     const miniRing = new PixiAttributeRing(stats, {
       mini: true,
-      width: 50,
-      height: 50,
+      width: 75,
+      height: 75,
       localStats,
       color,
       fingerprintId: id,
@@ -140,7 +140,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   }
 
   getPointsInPolygon(polygon: PointData[]): string[] {
-    // Convert global polygon points to local coordinates
     const localPolygon = polygon.map((point) => this.toLocal(point))
 
     return Array.from(this.pixiDimredPoints.values())

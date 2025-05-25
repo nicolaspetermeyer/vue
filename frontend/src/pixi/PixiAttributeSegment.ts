@@ -1,16 +1,16 @@
 import { PixiGraphic } from '@/pixi/Base/PixiGraphic'
-import type { FeatureStats, Position } from '@/models/data'
+import type { AttributeStats, Position } from '@/models/data'
 import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
 import { Colors, Styles } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
-import { line } from 'd3'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
-  public stats: FeatureStats
+  public stats: AttributeStats
   private localOverlays: Map<string, { color: number; norm: number }> = new Map()
 
   public startAngle: number = 0
@@ -20,15 +20,15 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public centerX: number = 0
   public centerY: number = 0
   public color: number = 0x000000
-
-  public mini: boolean = false
+  private mini: boolean = false
   private isHovered: boolean = false
   private isSelected: boolean = false
 
   constructor(
     attributeKey: string,
+    mini: boolean,
     norm: { globalNorm: number; localNorm?: number },
-    stats?: FeatureStats,
+    stats?: AttributeStats,
   ) {
     const { globalNorm, localNorm } = norm
     super()
@@ -36,6 +36,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.attributeKey = attributeKey
     this.globalNorm = globalNorm
     this.localNorm = localNorm
+    this.mini = mini
     this.stats = stats ?? { mean: 0, std: 0, normMean: 0, isGlobal: false }
 
     this.eventMode = 'static'
@@ -310,6 +311,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
   getTooltipContent(): string {
     let content = `Attribute: ${this.attributeKey}\n`
+    const fingerprintStore = useFingerprintStore()
 
     if (this.mini) {
       const fingerprintId =
@@ -317,21 +319,23 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           ? (this.parent as PixiAttributeRing).getFingerprint() || 'Unknown'
           : 'Unknown'
 
-      content += `Fingerprint: ${fingerprintId}\n`
+      const fp = fingerprintStore.getFingerprintById(fingerprintId)
+      if (fp) {
+        const stats = fp?.localStats[this.attributeKey]
 
-      if (this.localNorm !== undefined) {
-        const percentage = Math.round(this.localNorm * 100)
-        content += `Value: ${percentage}%`
+        const norm = stats.normMean
+        const delta = norm - this.globalNorm
+        const direction = delta > 0 ? 'higher' : 'lower'
+        const pctDiff = Math.abs(delta * 100).toFixed(1)
+
+        console.log(norm, this.globalNorm, delta, direction, pctDiff)
+
+        content += `Fingerprint: ${fp.name}\n`
+        content += `Normalized Mean: ${stats.normMean.toFixed(2)}`
+        content += `\nMean: ${stats.mean.toFixed(2)}`
+        content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
       }
 
-      if (this.stats) {
-        if (this.stats.mean !== undefined) {
-          content += `\nMean: ${this.stats.mean.toFixed(2)}`
-        }
-        if (this.stats.min !== undefined && this.stats.max !== undefined) {
-          content += `\nRange: ${this.stats.min.toFixed(2)} - ${this.stats.max.toFixed(2)}`
-        }
-      }
       return content
     } else {
       const tooltipLines = [

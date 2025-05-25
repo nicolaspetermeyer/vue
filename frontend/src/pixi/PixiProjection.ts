@@ -2,7 +2,7 @@ import { PixiContainer } from '@/pixi/Base/PixiContainer'
 import { Graphics } from 'pixi.js'
 import { PixiDimred } from '@/pixi/PixiDimred'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
-import type { FeatureStats, Projection } from '@/models/data'
+import type { AttributeStats, Projection } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
 import { Colors } from '@/config/Themes'
 import { PixiApp } from '@/pixi/Base/PixiApp'
@@ -16,7 +16,7 @@ export class PixiProjection extends PixiContainer {
 
   constructor(
     projectedPoints: Projection[],
-    globalStats: Record<string, FeatureStats>,
+    globalStats: Record<string, AttributeStats>,
     app: PixiApp,
   ) {
     super({

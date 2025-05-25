@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Projection, FeatureRanking, FeatureStats } from '@/models/data'
+import type { Projection, FeatureRanking, AttributeStats } from '@/models/data'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection, fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
@@ -12,12 +12,12 @@ export const useProjectionStore = defineStore('projection', () => {
   // State
   const unfilteredProjection = ref<Projection[]>([])
   const projection = ref<Projection[]>([])
-  const globalStats = ref<Record<string, FeatureStats>>({})
+  const globalStats = ref<Record<string, AttributeStats>>({})
 
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
   const projectionMethod = ref<'pca' | 'tsne'>('pca')
   const projectionHistory = ref<
-    { projection: Projection[]; stats: Record<string, FeatureStats>; parentId?: string }[]
+    { projection: Projection[]; stats: Record<string, AttributeStats>; parentId?: string }[]
   >([])
   const currentParentId = ref<string | undefined>(undefined)
   const canGoBack = computed(() => projectionHistory.value.length > 0)
@@ -94,7 +94,7 @@ export const useProjectionStore = defineStore('projection', () => {
     projection.value = newProjection
   }
 
-  function setGlobalStats(newGlobalStats: Record<string, FeatureStats>) {
+  function setGlobalStats(newGlobalStats: Record<string, AttributeStats>) {
     globalStats.value = newGlobalStats
   }
 

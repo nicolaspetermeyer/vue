@@ -1,5 +1,5 @@
 import { Colors } from '@/config/Themes'
-import type { Fingerprint, FeatureStats } from '@/models/data'
+import type { Fingerprint, AttributeStats } from '@/models/data'
 import type { PixiProjection } from '@/pixi/PixiProjection'
 
 export class FingerprintVisualizationService {

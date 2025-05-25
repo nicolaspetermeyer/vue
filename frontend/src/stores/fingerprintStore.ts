@@ -153,6 +153,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     return true
   }
 
+  function getFingerprintById(id: string): Fingerprint | undefined {
+    return fingerprints.value.find((fp) => fp.id === id)
+  }
+
   function toggleSelectedFingerprint(
     fingerprint: Fingerprint,
     projectionInstance: any | null | undefined,
@@ -170,7 +174,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       selectedFingerprints.value,
     )
   }
-  // function getTopFeatures(stats: Record<string, FeatureStats>, limit = 1): string[] {
+  // function getTopFeatures(stats: Record<string, AttributeStats>, limit = 1): string[] {
   //   return Object.entries(stats)
   //     .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
   //     .slice(0, limit)
@@ -196,6 +200,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     addFingerprint,
     removeFingerprint,
     clearFingerprints,
+    getFingerprintById,
     toggleSelectedFingerprint,
     calculateSelectionCentroid,
     renameFingerprint,

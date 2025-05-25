@@ -3,8 +3,7 @@ import { PixiText } from '@/pixi/Base/PixiText'
 import { PointData } from 'pixi.js'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
-import type { FeatureStats } from '@/models/data'
-import { Colors } from '@/config/Themes'
+import type { AttributeStats } from '@/models/data'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -20,7 +19,7 @@ export class PixiAttributeRing
   private fingerprintId?: string
 
   constructor(
-    globalStats: Record<string, FeatureStats>,
+    globalStats: Record<string, AttributeStats>,
     opts?: {
       width?: number
       height?: number
@@ -58,10 +57,10 @@ export class PixiAttributeRing
     for (const [attrKey, stat] of Object.entries(globalStats)) {
       if (this.mini) {
         const localNorm = this.localStats?.[attrKey]?.normMean
-        this.addMiniSegment(attrKey, localNorm)
+        this.addMiniSegment(attrKey, this.mini, localNorm)
       } else {
         const localStat = this.localStats?.[attrKey]
-        this.addAttributeSegment(attrKey, stat, localStat)
+        this.addAttributeSegment(attrKey, stat, this.mini, localStat)
       }
       this.attributeKeys.add(attrKey)
     }
@@ -70,8 +69,8 @@ export class PixiAttributeRing
     this.applyLayout()
   }
 
-  addMiniSegment(attributeName: string, localNorm?: number) {
-    const segment = new PixiAttributeSegment(attributeName, { globalNorm: -1, localNorm })
+  addMiniSegment(attributeName: string, mini: boolean, localNorm?: number) {
+    const segment = new PixiAttributeSegment(attributeName, mini, { globalNorm: -1, localNorm })
     if (this.color !== undefined) {
       segment.color = this.color
     }
@@ -81,13 +80,14 @@ export class PixiAttributeRing
 
   addAttributeSegment(
     attributeName: string,
-    globalStat: FeatureStats,
+    globalStat: AttributeStats,
+    mini: boolean,
     localStat?: { normMean?: number },
   ) {
     const globalNorm = globalStat.normMean ?? 0
     const localNorm = localStat?.normMean
     const stats = globalStat
-    const segment = new PixiAttributeSegment(attributeName, { globalNorm, localNorm }, stats)
+    const segment = new PixiAttributeSegment(attributeName, mini, { globalNorm, localNorm }, stats)
     if (this.mini && this.color !== undefined) {
       segment.color = this.color
     }

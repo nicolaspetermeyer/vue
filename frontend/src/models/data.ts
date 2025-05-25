@@ -16,21 +16,18 @@ export interface Projection {
 
 export interface ProjectionApiResponse {
   projectionData: Projection[]
-  globalStats: Record<string, FeatureStats>
+  globalStats: Record<string, AttributeStats>
   nonNumericAttributes: string[] | null
   categoryValues: Record<string, string[]>
 }
 
-export interface FeatureStats {
+export interface AttributeStats {
   // Core statistics
   mean: number
+  normMean: number
   std: number
   min?: number // Only required for global stats
   max?: number // Only required for global stats
-
-  // Normalized values
-  normMean: number // Value normalized to [0, 1] range
-  normStd?: number // Optional for local stats
 
   // Reference data (for local stats)
   globalMean?: number // Reference to global mean (for local stats)
@@ -55,13 +52,14 @@ export interface Point {
 }
 
 export type Fingerprint = {
-  id: string // simple UUID
+  id: string
   name: string
   projectedPoints: Projection[]
-  localStats: Record<string, FeatureStats>
+  localStats: Record<string, AttributeStats>
   centroid: Position
   color: number
   parentId?: string
+  depth?: number
 }
 
 export type FeatureRanking = {

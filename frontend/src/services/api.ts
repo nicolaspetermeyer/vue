@@ -2,7 +2,7 @@ import axios from 'axios'
 import type {
   Data,
   ProjectionApiResponse,
-  FeatureStats,
+  AttributeStats,
   Dataset,
   FeatureRanking,
 } from '@/models/data'
@@ -32,8 +32,8 @@ export async function fetchProjection(
   return response.data
 }
 
-export async function fetchStats(filename: string): Promise<Record<string, FeatureStats>> {
-  const response = await api.get<Record<string, FeatureStats>>(`/stats/`, {
+export async function fetchStats(filename: string): Promise<Record<string, AttributeStats>> {
+  const response = await api.get<Record<string, AttributeStats>>(`/stats/`, {
     params: {
       filename,
     },

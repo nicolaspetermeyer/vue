@@ -247,7 +247,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     if (!this.dimred) return
 
     // Find points that have high values for this attribute
-    const thresholdPercentile = 0.75 // Select top 25% of points for this attribute
+    const thresholdPercentile = 0.75
     const selectedPoints: PixiDimredPoint[] = []
 
     this.dimred.pixiDimredPoints.forEach((point) => {
