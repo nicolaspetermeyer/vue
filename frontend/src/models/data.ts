@@ -61,6 +61,7 @@ export type Fingerprint = {
   centroid: Position
   color: number
   parentId?: string
+  childIds: string[]
   depth?: number
 }
 

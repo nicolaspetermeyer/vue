@@ -41,7 +41,7 @@ onMounted(async () => {
 }
 
 .left {
-  width: 280px;
+  width: 350px;
   flex-shrink: 0;
   background-color: #f1f1f1;
   border-right: 1px solid #ddd;
@@ -49,7 +49,7 @@ onMounted(async () => {
 }
 
 .right {
-  width: 300px;
+  width: 350px;
   flex-shrink: 0;
   background-color: #f1f1f1;
   border-left: 1px solid #ddd;

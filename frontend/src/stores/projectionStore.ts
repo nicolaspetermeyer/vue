@@ -80,6 +80,11 @@ export const useProjectionStore = defineStore('projection', () => {
       categoryValues.value = result.categoryValues || {}
       featureCount.value = result.nummericAttributes.length
 
+      currentParentId.value = undefined
+      projectionHistory.value = []
+
+      useFingerprintStore().selectedFingerprints = []
+
       // await loadFeatureRanking()
     } catch {
       return null
@@ -104,6 +109,7 @@ export const useProjectionStore = defineStore('projection', () => {
     console.log('Clearing all projection data')
     projection.value = []
     featureRanking.value = []
+    currentParentId.value = undefined
     projectionHistory.value = []
     activeFilter.value = {
       category: null,
@@ -229,12 +235,39 @@ export const useProjectionStore = defineStore('projection', () => {
     if (previousProjection) {
       projection.value = previousProjection.projection
       globalStats.value = previousProjection.stats
+      currentParentId.value = previousProjection.parentId
+
+      const fingerprintStore = useFingerprintStore()
+      fingerprintStore.selectedFingerprints = []
 
       return true
     }
 
     return false
   }
+
+  function resetToBaseProjection() {
+    projectionHistory.value = []
+    currentParentId.value = undefined
+    if (unfilteredProjection.value.length > 0) {
+      projection.value = [...unfilteredProjection.value]
+    }
+    useFingerprintStore().selectedFingerprints = []
+  }
+
+  /**
+   * Check if the current view is a drilled-down view
+   */
+  const isDrilledDownView = computed(() => {
+    return currentParentId.value !== undefined
+  })
+
+  /**
+   * Get the current view's level (0 for base, >0 for drilled down)
+   */
+  const currentViewLevel = computed(() => {
+    return projectionHistory.value.length
+  })
 
   return {
     projection,
@@ -249,6 +282,10 @@ export const useProjectionStore = defineStore('projection', () => {
     neighborhoodRadius,
     projectionHistory,
     canGoBack,
+    currentParentId,
+    isDrilledDownView,
+    currentViewLevel,
+    resetToBaseProjection,
     loadProjection,
     loadFeatureRanking,
     getCategoryValues,

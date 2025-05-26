@@ -19,6 +19,11 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     return selectedFingerprints.value.flatMap((fingerprint) => fingerprint.projectedPoints)
   })
 
+  const currentParentId = computed(() => useProjectionStore().currentParentId)
+  const filteredFingerprints = computed(() => {
+    return fingerprints.value.filter((fp) => fp.parentId === currentParentId.value)
+  })
+
   //ACTIONS
   // triggers on brush select
   function setSelection(points: Projection[]) {
@@ -94,8 +99,8 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const localStats = calcFingerprintStats(originals)
     const id = crypto.randomUUID()
     const centroid = calculateSelectionCentroid(pointsToUse)
-
     const color = visualizationService.assignColor(id)
+    const parentId = currentParentId.value
 
     const fingerprint: Fingerprint = {
       id,
@@ -104,6 +109,15 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       localStats,
       centroid,
       color,
+      parentId,
+      childIds: [],
+    }
+
+    if (parentId) {
+      const parentFingerprint = fingerprints.value.find((fp) => fp.id === parentId)
+      if (parentFingerprint && parentFingerprint.childIds) {
+        parentFingerprint.childIds.push(id)
+      }
     }
 
     fingerprints.value.push(fingerprint)
@@ -115,6 +129,18 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const fingerprintToRemove = fingerprints.value.find((fp) => fp.id === id)
     if (!fingerprintToRemove) return
 
+    if (fingerprintToRemove.childIds && fingerprintToRemove.childIds.length > 0) {
+      ;[...fingerprintToRemove.childIds].forEach((childId) => {
+        removeFingerprint(childId, projectionInstance)
+      })
+    }
+
+    if (fingerprintToRemove.parentId) {
+      const parent = fingerprints.value.find((fp) => fp.id === fingerprintToRemove.parentId)
+      if (parent && parent.childIds) {
+        parent.childIds = parent.childIds.filter((cid) => cid !== id)
+      }
+    }
     visualizationService.releaseColor(id)
 
     fingerprints.value = fingerprints.value.filter((f) => f.id !== id)
@@ -192,6 +218,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     fingerprints,
     selectedFingerprints,
     selectedFingerprintPoints,
+    filteredFingerprints,
     setSelection,
     getFilterDescription,
     addFingerprint,
