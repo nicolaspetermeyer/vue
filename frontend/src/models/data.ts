@@ -26,15 +26,16 @@ export interface AttributeStats {
   mean: number
   normMean: number
   std: number
-  min?: number // Only required for global stats
-  max?: number // Only required for global stats
+  min: number
+  max: number
 
   // Reference data (for local stats)
   globalMean?: number // Reference to global mean (for local stats)
+  globalNormMean?: number // Reference to global normalized mean (for local stats)
   meanDelta?: number // Difference from reference mean (for local stats)
 
   // Metadata
-  attributeName?: number // Optional metadata
+  attributeName?: string // Optional metadata
   isNumeric?: boolean // Used primarily with global stats
 
   // Flags

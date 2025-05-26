@@ -32,7 +32,7 @@ export class PixiProjection extends PixiContainer {
     this.app = app
 
     // The attribute ring
-    this.attributeRing = new PixiAttributeRing(globalStats)
+    this.attributeRing = new PixiAttributeRing(globalStats, false)
     this.addChild(this.attributeRing)
 
     this.maskGraphic = new Graphics()

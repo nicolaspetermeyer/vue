@@ -14,31 +14,27 @@ export class PixiAttributeRing
   private maxOuterRadius: number
   private attributeKeys: Set<string> = new Set()
   private mini: boolean
-  private color?: number
-  private localStats?: Record<string, { normMean?: number }> = {}
-  private fingerprintId?: string
+  private fingerprint:
+    | { id: string; stats: Record<string, AttributeStats>; color?: number }
+    | undefined
 
   constructor(
     globalStats: Record<string, AttributeStats>,
-    opts?: {
-      width?: number
-      height?: number
-      mini?: boolean
-      localStats?: Record<string, { normMean?: number }>
+    mini: boolean,
+    fingerprint?: {
+      id: string
+      stats: Record<string, AttributeStats>
       color?: number
-      fingerprintId?: string
     },
   ) {
     super({
-      width: opts?.width ?? (opts?.mini ? 60 : 1000),
-      height: opts?.height ?? (opts?.mini ? 60 : 1000),
+      width: mini ? 75 : 1000,
+      height: mini ? 75 : 1000,
       background: null,
       positionAbsolute: true,
     })
-    this.mini = opts?.mini ?? false
-    this.color = opts?.color
-    this.localStats = opts?.localStats
-    this.fingerprintId = opts?.fingerprintId
+    this.mini = mini ?? false
+    this.fingerprint = fingerprint
 
     this.eventMode = 'static'
 
@@ -51,46 +47,35 @@ export class PixiAttributeRing
     // calculate inner radius of the ring
     const base = Math.min(this.layoutProps.width, this.layoutProps.height)
     this.innerRadius = base * 0.35
-    this.maxOuterRadius = base * (opts?.mini ? 0.9 : 0.6)
+    this.maxOuterRadius = base * (mini ? 0.9 : 0.6)
 
     // Add only numeric attribute segments
     for (const [attrKey, stat] of Object.entries(globalStats)) {
-      if (this.mini) {
-        const localNorm = this.localStats?.[attrKey]?.normMean
-        this.addMiniSegment(attrKey, this.mini, localNorm)
-      } else {
-        const localStat = this.localStats?.[attrKey]
-        this.addAttributeSegment(attrKey, stat, this.mini, localStat)
-      }
+      this.addSegment(attrKey, stat, mini, fingerprint)
       this.attributeKeys.add(attrKey)
     }
     this.drawAttributeSegments()
-
     this.applyLayout()
   }
 
-  addMiniSegment(attributeName: string, mini: boolean, localNorm?: number) {
-    const segment = new PixiAttributeSegment(attributeName, mini, { globalNorm: -1, localNorm })
-    if (this.color !== undefined) {
-      segment.color = this.color
-    }
-    this.segments.push(segment)
-    this.addChild(segment)
-  }
-
-  addAttributeSegment(
-    attributeName: string,
+  addSegment(
+    attrKey: string,
     globalStat: AttributeStats,
     mini: boolean,
-    localStat?: { normMean?: number },
+    fingerprint?: { id: string; stats: Record<string, AttributeStats>; color?: number },
   ) {
+    const localNorm = fingerprint?.stats?.[attrKey]?.normMean
     const globalNorm = globalStat.normMean ?? 0
-    const localNorm = localStat?.normMean
-    const stats = globalStat
-    const segment = new PixiAttributeSegment(attributeName, mini, { globalNorm, localNorm }, stats)
-    if (this.mini && this.color !== undefined) {
-      segment.color = this.color
-    }
+
+    const segment = new PixiAttributeSegment({
+      attributeKey: attrKey,
+      mini,
+      globalNorm,
+      localNorm,
+      color: fingerprint?.color,
+      stats: globalStat,
+      fingerprintId: fingerprint?.id,
+    })
 
     this.segments.push(segment)
     this.addChild(segment)
@@ -147,12 +132,12 @@ export class PixiAttributeRing
     id: string,
     localStats: Record<string, { normMean?: number }>,
     color: number,
+    fingerprintName: string,
   ) {
     for (const segment of this.segments) {
-      const local = localStats[segment.attrkey]
-      const newNorm = local?.normMean ?? undefined
-      if (newNorm !== undefined) {
-        segment.setLocalOverlay(id, newNorm, color)
+      const localNorm = localStats[segment.attrkey].normMean ?? undefined
+      if (localNorm !== undefined) {
+        segment.setLocalOverlay(id, localNorm, color, fingerprintName)
       }
     }
   }
@@ -197,7 +182,7 @@ export class PixiAttributeRing
       // fallback
       return this.segments[0] || null
     }
-    // For regular rings, check each segment
+
     for (const seg of this.segments) {
       if (seg.containsGlobal(global)) {
         return seg
@@ -229,7 +214,7 @@ export class PixiAttributeRing
   }
 
   getFingerprint(): string | undefined {
-    return this.fingerprintId
+    return this.fingerprint?.id
   }
 
   private isInsideMiniRing(local: PointData): boolean {

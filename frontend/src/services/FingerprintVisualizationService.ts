@@ -62,7 +62,7 @@ export class FingerprintVisualizationService {
 
         selectedFingerprints.forEach((fp) => {
           const color = colorMap[fp.id]
-          ring.setLocalRing(fp.id, fp.localStats, color)
+          ring.setLocalRing(fp.id, fp.localStats, color, fp.name)
         })
 
         this.highlightFingerprintPoints(projectionInstance, selectedFingerprints, colorMap)

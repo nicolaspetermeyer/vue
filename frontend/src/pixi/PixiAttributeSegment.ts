@@ -11,7 +11,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private globalNorm: number
   private localNorm: number | undefined
   public stats: AttributeStats
-  private localOverlays: Map<string, { color: number; norm: number }> = new Map()
+  private localOverlays: Map<string, { color: number; norm: number; fingerprintName: string }> =
+    new Map()
 
   public startAngle: number = 0
   public endAngle: number = 0
@@ -24,20 +25,45 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private isHovered: boolean = false
   private isSelected: boolean = false
 
-  constructor(
-    attributeKey: string,
-    mini: boolean,
-    norm: { globalNorm: number; localNorm?: number },
-    stats?: AttributeStats,
-  ) {
-    const { globalNorm, localNorm } = norm
+  constructor(options: {
+    attributeKey: string
+    mini: boolean
+    globalNorm: number
+    localNorm?: number
+    color?: number
+    stats?: AttributeStats
+    fingerprintId?: string
+  }) {
     super()
 
-    this.attributeKey = attributeKey
-    this.globalNorm = globalNorm
-    this.localNorm = localNorm
-    this.mini = mini
-    this.stats = stats ?? { mean: 0, std: 0, normMean: 0, isGlobal: false }
+    this.attributeKey = options.attributeKey
+    this.globalNorm = options.globalNorm
+    this.localNorm = options.localNorm
+    this.mini = options.mini
+    this.stats = options.stats || {
+      mean: 0,
+      normMean: 0,
+      std: 0,
+      min: 0,
+      max: 0,
+      isGlobal: true,
+    }
+
+    // Set color and local norm for mini rings
+    if (this.mini) {
+      if (options.color !== undefined) {
+        this.color = options.color
+      }
+      this.localNorm = options.localNorm
+    }
+    // For global rings, handle fingerprint data as overlay
+    else if (options.localNorm !== undefined && options.fingerprintId) {
+      this.localOverlays.set(options.fingerprintId, {
+        norm: options.localNorm,
+        color: options.color ?? 0x000000,
+        fingerprintName: options.attributeKey,
+      })
+    }
 
     this.eventMode = 'static'
     this.cursor = 'default'
@@ -246,10 +272,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.redraw()
   }
 
-  setLocalOverlay(id: string, localNorm: number, color: number): void {
-    this.localOverlays.set(id, { norm: localNorm, color })
+  setLocalOverlay(id: string, localNorm: number, color: number, fingerprintName: string): void {
+    this.localOverlays.set(id, { norm: localNorm, color, fingerprintName })
     this.localNorm = localNorm
     this.color = color
+
     this.redraw()
   }
 
@@ -323,17 +350,16 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       if (fp) {
         const stats = fp?.localStats[this.attributeKey]
 
-        const norm = stats.normMean
-        const delta = norm - this.globalNorm
-        const direction = delta > 0 ? 'higher' : 'lower'
-        const pctDiff = Math.abs(delta * 100).toFixed(1)
+        if (stats) {
+          const delta = stats.normMean - (stats.globalNormMean ?? 0)
+          const direction = delta > 0 ? 'higher' : 'lower'
+          const pctDiff = Math.abs(delta * 100).toFixed(1)
 
-        console.log(norm, this.globalNorm, delta, direction, pctDiff)
-
-        content += `Fingerprint: ${fp.name}\n`
-        content += `Normalized Mean: ${stats.normMean.toFixed(2)}`
-        content += `\nMean: ${stats.mean.toFixed(2)}`
-        content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
+          content += `Fingerprint: ${fp.name}\n`
+          content += `Normalized Mean: ${stats.normMean.toFixed(2)}`
+          content += `\nMean: ${stats.mean.toFixed(2)}`
+          content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
+        }
       }
 
       return content
@@ -355,12 +381,14 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       if (this.localOverlays && this.localOverlays.size > 0) {
         tooltipLines.push('', 'Comparisons:')
         this.localOverlays.forEach((overlay, id) => {
-          const norm = overlay.norm
+          const norm = overlay.norm.toFixed(2)
           const delta = overlay.norm - this.globalNorm
           const direction = delta > 0 ? 'higher' : 'lower'
-          const pctDiff = Math.abs(delta * 100).toFixed(1)
+          const pctDiff = Math.abs(delta * 100).toFixed(2)
 
-          tooltipLines.push(`Fingerprint ${id}: ${norm} ${pctDiff}% ${direction}`)
+          tooltipLines.push(
+            `Fingerprint ${overlay.fingerprintName}: ${norm} ${pctDiff}% ${direction}`,
+          )
         })
       }
 

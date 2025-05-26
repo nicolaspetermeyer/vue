@@ -58,15 +58,8 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
 
     this.removeMiniRing(fingerprint)
     this.hidePointsById(ids)
-
-    const miniRing = new PixiAttributeRing(stats, {
-      mini: true,
-      width: 75,
-      height: 75,
-      localStats,
-      color,
-      fingerprintId: id,
-    })
+    const mini = true
+    const miniRing = new PixiAttributeRing(stats, mini, { id, stats: localStats, color })
 
     miniRing.position.set(centroid.x - miniRing.width / 2, centroid.y - miniRing.height / 2)
 
@@ -96,18 +89,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.pixiGlyph.delete(fingerprint.id)
     this.showPointsById(ids)
     this.app.render()
-  }
-
-  // Method to update mini rings when data changes
-  updateMiniRing(
-    fingerprintId: string,
-    stats: Record<string, { normMean?: number }>,
-    color: number,
-  ): void {
-    const ring = this.pixiGlyph.get(fingerprintId)
-    if (ring) {
-      ring.setLocalRing(fingerprintId, stats, color)
-    }
   }
 
   updatePoints(projectedPoints: Projection[]) {
@@ -190,7 +171,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
         const color = pointColorMap[id]
         point.setFingerprintColor(true, color)
       } else {
-        // Dim other points
         point.setFingerprintColor(false)
       }
     })
