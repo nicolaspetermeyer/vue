@@ -388,6 +388,7 @@ async def project_data(
         "globalStats": global_stats,
         "nonNumericAttributes": dataset_info.non_numeric_cols,
         "categoryValues": category_values,
+        "numericAttributes": dataset_info.numeric_cols,
     }
 
     projection_cache[key] = result
