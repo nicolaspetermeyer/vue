@@ -50,7 +50,13 @@ export const Colors = {
 
 export const Styles = {
   LINEWIDTH: 1,
-  LINEWIDTH_MINI: 0.75,
   LINEWIDTH_HOVER: 2,
+
+  LINEWIDTH_MINI: 0.5,
   LINEWIDTH_HOVER_MINI: 1,
+
+  LINEWIDTH_MINI_THIN: 0.25,
+  LINEWIDTH_HOVER_MINI_THIN: 0.5,
+
+  POINT_SIZE: 5,
 }

@@ -5,6 +5,7 @@ import { Colors, Styles } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { useProjectionStore } from '@/stores/projectionStore'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
@@ -27,6 +28,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private isSelected: boolean = false
   private inSegment: boolean = false
   private inInnerCircle: boolean = false
+
+  private featureCount = useProjectionStore().featureCount
 
   constructor(options: {
     attributeKey: string
@@ -90,6 +93,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.centerY = centerY
     this.mini = mini
 
+    this.alpha = 0.5
+
     this.clear()
 
     if (mini) {
@@ -105,12 +110,17 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private drawMiniSegment() {
     if (typeof this.localNorm !== 'number') return
 
-    const lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER_MINI : Styles.LINEWIDTH_MINI
+    let lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER_MINI : Styles.LINEWIDTH_MINI
+    this.alpha = this.isHovered ? 1 : 0.75
+
+    if (this.featureCount > 50) {
+      lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER_MINI_THIN : Styles.LINEWIDTH_MINI_THIN
+    }
 
     // Draw inner circle in the mini ring
 
-    this.circle(this.centerX, this.centerY, this.innerRadius)
-    this.fill({ color: this.color, alpha: 0.05 })
+    // this.circle(this.centerX, this.centerY, this.innerRadius)
+    // this.fill({ color: this.color, alpha: this.alpha })
 
     // Calculate the outer radius based on the value
     const arcWidth = this.maxOuterRadius - this.innerRadius
@@ -124,7 +134,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.endAngle,
       this.color,
       this.color, // Border color
-      0.25,
+      this.alpha,
       lineWidth,
     )
   }
@@ -148,7 +158,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.endAngle,
       Colors.GLOBAL_SEGMENT,
       Colors.STANDARD_BORDER,
-      0.25,
+      this.alpha,
       lineWidth,
     )
 
@@ -179,7 +189,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           this.endAngle,
           fillColor,
           borderColor,
-          0.25,
+          this.alpha,
           lineWidth,
         )
       })
@@ -324,7 +334,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     if (this.isHovered !== hovered) {
       this.isHovered = hovered
       this.redraw()
-      this.alpha = hovered ? 0.5 : 1
+      this.alpha = hovered ? 1 : 0.5
     }
   }
 

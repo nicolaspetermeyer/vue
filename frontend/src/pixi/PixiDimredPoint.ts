@@ -2,7 +2,7 @@ import { Texture } from 'pixi.js'
 import { PixiSprite } from './Base/PixiSprite'
 import type { Projection } from '@/models/data'
 import { Hoverable } from '@/pixi/interactions/controllers/HoverManager'
-import { Colors } from '@/config/Themes'
+import { Colors, Styles } from '@/config/Themes'
 import { useProjectionStore } from '@/stores/projectionStore'
 
 // Create a static texture cache
@@ -42,7 +42,7 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
   private highlightColor: number
 
   constructor(projectedPoint: Projection) {
-    super(getOrCreateCircleTexture(5))
+    super(getOrCreateCircleTexture(Styles.POINT_SIZE))
 
     this.projectedPoint = projectedPoint
     this.anchor.set(0.5) // Set origin to center of sprite

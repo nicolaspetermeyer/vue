@@ -27,6 +27,7 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const filterCategories = ref<string[] | null>(null)
   const categoryValues = ref<Record<string, string[]>>({})
+  const featureCount = ref<number>(0)
 
   // Filtering
   const activeFilter = ref<{
@@ -77,6 +78,7 @@ export const useProjectionStore = defineStore('projection', () => {
       projection.value = [...unfilteredProjection.value]
       filterCategories.value = result.nonNumericAttributes
       categoryValues.value = result.categoryValues || {}
+      featureCount.value = result.nummericAttributes.length
 
       // await loadFeatureRanking()
     } catch {
@@ -240,6 +242,7 @@ export const useProjectionStore = defineStore('projection', () => {
     projectionMethod,
     globalStats,
     filterCategories,
+    featureCount,
     activeFilter,
     filteredPointIds,
     featureRanking,

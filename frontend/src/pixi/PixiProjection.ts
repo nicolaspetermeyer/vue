@@ -75,7 +75,6 @@ export class PixiProjection extends PixiContainer {
    * @param indices Array of point indices to show
    */
   filterPoints(indices: number[]): void {
-    console.log('Filtering points:', indices)
     this.dimred.filterPoints(indices)
   }
 

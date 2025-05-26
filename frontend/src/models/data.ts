@@ -19,6 +19,7 @@ export interface ProjectionApiResponse {
   globalStats: Record<string, AttributeStats>
   nonNumericAttributes: string[] | null
   categoryValues: Record<string, string[]>
+  nummericAttributes: string[]
 }
 
 export interface AttributeStats {

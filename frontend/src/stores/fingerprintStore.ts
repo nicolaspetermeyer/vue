@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
 import type { Fingerprint, Projection } from '@/models/data'
-import { ref, computed, inject, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { FingerprintVisualizationService } from '@/services/FingerprintVisualizationService'
 
@@ -12,10 +12,8 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   const selection = ref<Projection[]>([])
   const selectedFingerprints = ref<Fingerprint[]>([])
 
-  // Create visualization service
   const visualizationService = new FingerprintVisualizationService()
 
-  // Computed property for the selected fingerprint's points
   const selectedFingerprintPoints = computed(() => {
     if (selectedFingerprints.value.length === 0) return []
     return selectedFingerprints.value.flatMap((fingerprint) => fingerprint.projectedPoints)
@@ -109,7 +107,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     }
 
     fingerprints.value.push(fingerprint)
-    console.log('Fingerprints:', fingerprints.value)
 
     selection.value = []
   }
