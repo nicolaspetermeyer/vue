@@ -9,7 +9,7 @@ export interface Hoverable {
 }
 
 export interface HoverableProvider<T extends Hoverable> {
-  findElementAtGlobal(global: PointData): T | null
+  pointerInElement(global: PointData): T | null
 }
 
 export class HoverManager {
@@ -51,7 +51,7 @@ export class HoverManager {
     )
 
     for (const provider of miniRingProviders) {
-      const element = provider.findElementAtGlobal(e.global)
+      const element = provider.pointerInElement(e.global)
       if (element) {
         newHovered = element
         break
@@ -60,7 +60,7 @@ export class HoverManager {
 
     if (!newHovered) {
       for (const provider of otherProviders) {
-        const element = provider.findElementAtGlobal(e.global)
+        const element = provider.pointerInElement(e.global)
         if (element) {
           newHovered = element
           break

@@ -128,7 +128,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
       .map((point) => point.getId())
   }
 
-  findElementAtGlobal(global: PointData): PixiDimredPoint | null {
+  pointerInElement(global: PointData): PixiDimredPoint | null {
     const local = this.toLocal(global)
 
     for (const point of this.pixiDimredPoints.values()) {

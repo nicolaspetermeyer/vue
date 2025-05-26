@@ -22,8 +22,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public centerY: number = 0
   public color: number = 0x000000
   private mini: boolean = false
+
   private isHovered: boolean = false
   private isSelected: boolean = false
+  private inSegment: boolean = false
+  private inInnerCircle: boolean = false
 
   constructor(options: {
     attributeKey: string
@@ -286,27 +289,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     // Convert to polar coordinates
     const { radius, angle } = PolarGeometry.cartesianToPolar(local, this.centerX, this.centerY)
 
-    if (this.mini) {
-      const inSegment = PolarGeometry.isInSegment(
-        radius,
-        angle,
-        this.innerRadius,
-        this.maxOuterRadius,
-        this.startAngle,
-        this.endAngle,
-        this.maxOuterRadius,
-      )
-
-      const inInnerCircle = radius <= this.innerRadius
-
-      return inSegment || inInnerCircle
-    }
-
     //limit hit detection to drawn area
     const arcWidth = this.maxOuterRadius - this.innerRadius
     const actualOuterRadius = this.innerRadius + this.globalNorm * arcWidth
 
-    return PolarGeometry.isInSegment(
+    const inSegment = PolarGeometry.isInSegment(
       radius,
       angle,
       this.innerRadius,
@@ -315,6 +302,22 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.endAngle,
       actualOuterRadius,
     )
+
+    if (this.mini) {
+      const inInnerCircle = radius <= this.innerRadius
+      if (inSegment) {
+        this.inSegment = true
+        this.inInnerCircle = false
+        return true
+      }
+      if (inInnerCircle) {
+        this.inInnerCircle = true
+        this.inSegment = false
+        return true
+      }
+    }
+
+    return inSegment
   }
 
   setHovered(hovered: boolean) {
@@ -337,6 +340,9 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   getTooltipContent(): string {
+    if (this.mini && !this.inSegment) {
+      return 'Right click to drill down'
+    }
     let content = `Attribute: ${this.attributeKey}\n`
     const fingerprintStore = useFingerprintStore()
 

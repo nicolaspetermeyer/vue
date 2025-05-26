@@ -129,7 +129,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     if (this.dimred) {
       let miniRingResult
       for (const [id, ring] of this.dimred.pixiGlyph.entries()) {
-        if (ring.containsPoint(e.global)) {
+        if (ring.pointerInElement(e.global)) {
           miniRingResult = { ring, id }
         }
       }
@@ -148,13 +148,13 @@ export class PixiInteractionOverlay extends PixiContainer {
       }
     }
     if (this.attributeRing && e.button === 0) {
-      const segment = this.attributeRing.findElementAtGlobal(e.global)
+      const segment = this.attributeRing.pointerInElement(e.global)
       if (segment) {
         this.handleAttributeSegmentSelection(segment)
         return
       }
     } else if (this.attributeRing && e.button === 2) {
-      const segment = this.attributeRing.findElementAtGlobal(e.global)
+      const segment = this.attributeRing.pointerInElement(e.global)
       if (segment) {
         this.dimred?.pixiDimredPoints.forEach((point) => {
           const attributeKey = segment.attributeKey
@@ -238,7 +238,7 @@ export class PixiInteractionOverlay extends PixiContainer {
       localStats[key] = { normMean: value }
     }
 
-    this.attributeRing.setLocalRing('99', localStats, Colors.POINT_SELECT)
+    this.attributeRing.setLocalRing('99', localStats, Colors.POINT_SELECT, point.dimredpoint.id)
   }
 
   private handleAttributeSegmentSelection(segment: PixiAttributeSegment): void {
@@ -277,7 +277,7 @@ export class PixiInteractionOverlay extends PixiContainer {
   private onTapSelect(position: PointData) {
     if (!this.dimred) return
 
-    const point = this.dimred.findElementAtGlobal(position)
+    const point = this.dimred.pointerInElement(position)
     if (point) {
       this.dimred.setSelection([point.dimredpoint.id])
       this.fingerprintStore.setSelection(this.dimred.getSelectedProjections())
