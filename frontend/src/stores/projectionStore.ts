@@ -112,11 +112,6 @@ export const useProjectionStore = defineStore('projection', () => {
         value: null,
       }
 
-      console.log('metadata attributes:', metadataAttributes.value)
-      console.log('metadata categories:', metadataCategories.value)
-      console.log('attribute metadata:', attributeMetadata.value)
-      console.log('has metadata:', hasMetadata.value)
-
       currentParentId.value = undefined
       projectionHistory.value = []
 
@@ -136,7 +131,6 @@ export const useProjectionStore = defineStore('projection', () => {
       return
     }
 
-    // Set filter criteria
     attributeMetadataFilter.value = { category, value }
 
     // Filter attributes that have this category-value pair in their metadata

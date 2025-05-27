@@ -85,13 +85,8 @@ export class PixiProjection extends PixiContainer {
   updateAttributeRing(attributes: string[]): void {
     if (!this.attributeRing) return
 
-    if (!attributes || attributes.length === 0) {
-      // If no attributes provided, show all
-      this.attributeRing.showAllAttributes()
-    } else {
-      // Update the ring with filtered attributes
-      this.attributeRing.updateVisibleAttributes(attributes)
-    }
+    this.attributeRing.updateVisibleAttributes(attributes)
+    console.log('Updated attribute ring with attributes:', attributes)
   }
 
   /**
