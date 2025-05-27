@@ -93,6 +93,10 @@ export class PixiInteractionOverlay extends PixiContainer {
     this.hoverManager.removeProvider(ring)
   }
 
+  clearSelection(): void {
+    this.selectionController?.clearSelection()
+  }
+
   getHoverManager(): HoverManager {
     return this.hoverManager
   }

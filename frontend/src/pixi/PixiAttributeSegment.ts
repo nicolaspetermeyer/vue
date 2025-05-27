@@ -137,6 +137,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       innerScale = Math.min(this.innerRadius * expansionFactor, outerRadius * 0.95)
       color = 0x000000
     }
+    this.zIndex = 2000
 
     // Draw the segment arc
     this.drawArc(

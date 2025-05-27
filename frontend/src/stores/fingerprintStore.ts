@@ -123,6 +123,9 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     fingerprints.value.push(fingerprint)
 
     selection.value = []
+    dimredInstance?.pixiDimredPoints.forEach((point) => {
+      point.updateVisualState()
+    })
   }
 
   function removeFingerprint(id: string, projectionInstance: any | null | undefined) {
