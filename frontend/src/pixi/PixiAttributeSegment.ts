@@ -15,6 +15,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private localOverlays: Map<string, { color: number; norm: number; fingerprintName: string }> =
     new Map()
 
+  private static segmentRegistry: PixiAttributeSegment[] = []
+
   public startAngle: number = 0
   public endAngle: number = 0
   public innerRadius: number = 0
@@ -55,7 +57,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       isGlobal: true,
     }
 
-    // Set color and local norm for mini rings
     if (this.mini) {
       if (options.color !== undefined) {
         this.color = options.color
@@ -73,6 +74,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     this.eventMode = 'static'
     this.cursor = 'default'
+
+    PixiAttributeSegment.segmentRegistry.push(this)
   }
 
   drawSegment(
@@ -111,7 +114,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     if (typeof this.localNorm !== 'number') return
 
     let lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER_MINI : Styles.LINEWIDTH_MINI
-    this.alpha = this.isHovered ? 1 : 0.75
+    this.alpha = this.isHovered ? 1 : 0.9
+    let color = this.color
 
     if (this.featureCount > 50) {
       lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER_MINI_THIN : Styles.LINEWIDTH_MINI_THIN
@@ -124,16 +128,24 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     // Calculate the outer radius based on the value
     const arcWidth = this.maxOuterRadius - this.innerRadius
-    const outerRadius = this.innerRadius + this.localNorm * arcWidth
+    let outerRadius = this.innerRadius + this.localNorm * arcWidth
+    let innerScale = this.innerRadius
+
+    if (this.isHovered) {
+      const expansionFactor = 1.1
+      outerRadius = Math.min(outerRadius * expansionFactor, this.maxOuterRadius * 1.05)
+      innerScale = Math.min(this.innerRadius * expansionFactor, outerRadius * 0.95)
+      color = Colors.HOVERED
+    }
 
     // Draw the segment arc
     this.drawArc(
-      this.innerRadius,
+      innerScale,
       outerRadius,
       this.startAngle,
       this.endAngle,
-      this.color,
-      this.color, // Border color
+      color,
+      color, // Border color
       this.alpha,
       lineWidth,
     )
@@ -224,9 +236,9 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       )
       .arc(this.centerX, this.centerY, innerRadius, endAngle, startAngle, true)
       .closePath()
-
-    this.stroke({ color: borderColor ?? fillColor, width: lineWidth })
-
+    if (!this.mini) {
+      this.stroke({ color: borderColor ?? fillColor, width: lineWidth })
+    }
     if (Colors.FILL_STYLE) {
       this.fill({ color: fillColor, alpha: alpha })
     }
@@ -330,11 +342,19 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     return inSegment
   }
 
-  setHovered(hovered: boolean) {
+  setHovered(hovered: boolean, propagate: boolean = true) {
     if (this.isHovered !== hovered) {
       this.isHovered = hovered
       this.redraw()
       this.alpha = hovered ? 1 : 0.5
+
+      if (propagate) {
+        PixiAttributeSegment.segmentRegistry.forEach((segment) => {
+          if (segment !== this && segment.attributeKey === this.attributeKey) {
+            segment.setHovered(hovered, false)
+          }
+        })
+      }
     }
   }
 
@@ -410,6 +430,14 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
       return tooltipLines.join('\n')
     }
+  }
+
+  destroy(options?: any): void {
+    const index = PixiAttributeSegment.segmentRegistry.indexOf(this)
+    if (index === -1) {
+      PixiAttributeSegment.segmentRegistry.splice(index, 1)
+    }
+    super.destroy(options)
   }
 
   getId(): string {

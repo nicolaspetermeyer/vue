@@ -82,7 +82,7 @@ export class PixiAttributeRing
   }
 
   drawAttributeSegments() {
-    const gapAngle = this.mini ? 0 : this.segments.length < 50 ? 0.02 : 0.005
+    const gapAngle = this.mini ? 0.0005 : this.segments.length > 30 ? 0.005 : 0.02
     const segmentCount = this.segments.length
     const anglePerSegment = (Math.PI * 2) / segmentCount
     for (let i = 0; i < segmentCount; i++) {
