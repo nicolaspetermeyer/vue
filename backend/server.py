@@ -142,6 +142,66 @@ def read_csv_file(filename: str):
     return df
 
 
+# Add this function above your API routes
+
+
+def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
+    """
+    Load attribute metadata from VotingAttributeMetadata.csv and match it to attributes
+    in the target dataset.
+
+    Args:
+        target_filename: Name of the dataset to match metadata with
+
+    Returns:
+        Dictionary containing attribute metadata
+    """
+    # Only process metadata for the voting dataset
+    if target_filename != "Voting-data-cleaned.csv":
+        return {}
+
+    metadata_path = os.path.join("./metadata/VotingAttributeMetadata.csv")
+
+    # Check if metadata file exists
+    if not os.path.exists(metadata_path):
+        print(f"Warning: Metadata file not found at {metadata_path}")
+        return {}
+
+    try:
+        # Read metadata CSV
+        metadata_df = pd.read_csv(metadata_path, encoding="utf-8")
+
+        # First row contains the attribute names
+        attributes = metadata_df.columns[1:].tolist()
+        # Get category names from the first column
+        categories = metadata_df.iloc[:, 0].tolist()
+
+        # Process metadata for each attribute
+        attribute_metadata = {}
+        for col in metadata_df.columns[1:]:
+            # Create category-value mappings for this attribute
+            category_values = {}
+            for idx, category in enumerate(categories):
+                if idx < len(metadata_df):
+                    category_values[category] = metadata_df.iloc[idx][col]
+
+            # Store structured metadata for this attribute
+            attribute_metadata[col] = {
+                "categories": category_values,
+                # Add any other metadata processing you need
+            }
+
+        return {
+            "attributeMetadata": attribute_metadata,
+            "attributes": attributes,
+            "categoryList": categories,
+        }
+
+    except Exception as e:
+        print(f"Error loading metadata: {e}")
+        return {}
+
+
 # ============================================================================
 # PROJECTION METHODS
 # ============================================================================
@@ -383,6 +443,9 @@ async def project_data(
                     "original": id_to_original[point_id],
                 }
             )
+
+    attribute_metadata = load_attribute_metadata(filename)
+
     result = {
         "projectionData": matched_data,
         "globalStats": global_stats,
@@ -390,6 +453,10 @@ async def project_data(
         "categoryValues": category_values,
         "numericAttributes": dataset_info.numeric_cols,
     }
+
+    if attribute_metadata:
+
+        result["attributeMetadata"] = attribute_metadata
 
     projection_cache[key] = result
 

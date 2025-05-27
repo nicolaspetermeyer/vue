@@ -81,6 +81,7 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
    */
   setSelected(selected: boolean) {
     if (this.Selected !== selected) {
+      this.zIndex = selected ? 1 : 0
       this.Selected = selected
       this.updateVisualState()
     }

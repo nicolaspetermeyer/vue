@@ -135,7 +135,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       const expansionFactor = 1.1
       outerRadius = Math.min(outerRadius * expansionFactor, this.maxOuterRadius * 1.05)
       innerScale = Math.min(this.innerRadius * expansionFactor, outerRadius * 0.95)
-      color = Colors.HOVERED
+      color = 0x000000
     }
 
     // Draw the segment arc
@@ -375,6 +375,27 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     }
     let content = `Attribute: ${this.attributeKey}\n`
     const fingerprintStore = useFingerprintStore()
+    const projectionStore = useProjectionStore()
+
+    let metadataContent = ''
+    if (
+      projectionStore.hasMetadata &&
+      projectionStore.attributeMetadata &&
+      projectionStore.attributeMetadata[this.attributeKey]
+    ) {
+      const metadata = projectionStore.attributeMetadata[this.attributeKey]
+
+      if (metadata.categories) {
+        metadataContent += '\nMetadata:\n'
+
+        // Add each category value pair from metadata
+        Object.entries(metadata.categories).forEach(([category, value]) => {
+          if (value) {
+            metadataContent += `${category}: ${value}\n`
+          }
+        })
+      }
+    }
 
     if (this.mini) {
       const fingerprintId =
@@ -395,6 +416,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           content += `Normalized Mean: ${stats.normMean.toFixed(2)}`
           content += `\nMean: ${stats.mean.toFixed(2)}`
           content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
+          content += metadataContent
         }
       }
 
@@ -426,6 +448,14 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
             `Fingerprint ${overlay.fingerprintName}: ${norm} ${pctDiff}% ${direction}`,
           )
         })
+      }
+      // Add metadata information if available
+      if (metadataContent) {
+        tooltipLines.push('', 'Metadata:')
+
+        // Get individual metadata lines (skip the header)
+        const metadataLines = metadataContent.split('\n').slice(2)
+        tooltipLines.push(...metadataLines)
       }
 
       return tooltipLines.join('\n')

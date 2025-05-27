@@ -17,6 +17,7 @@ export class PixiAttributeRing
   private fingerprint:
     | { id: string; stats: Record<string, AttributeStats>; color?: number }
     | undefined
+  private visibleSegments: PixiAttributeSegment[] = []
 
   constructor(
     globalStats: Record<string, AttributeStats>,
@@ -54,6 +55,9 @@ export class PixiAttributeRing
       this.addSegment(attrKey, stat, mini, fingerprint)
       this.attributeKeys.add(attrKey)
     }
+
+    this.visibleSegments = [...this.segments]
+
     this.drawAttributeSegments()
     this.applyLayout()
   }
@@ -168,6 +172,85 @@ export class PixiAttributeRing
     //   label.rotation += Math.PI
     // }
     this.addChild(label)
+  }
+
+  updateVisibleAttributes(attributeNames: string[]): void {
+    const attributeSet = new Set(attributeNames)
+
+    // Reset visibility for all segments
+    for (const segment of this.segments) {
+      // Remove all segments from parent first
+      if (this.children.includes(segment)) {
+        this.removeChild(segment)
+      }
+    }
+
+    // Filter segments based on the attribute names
+    this.visibleSegments = this.segments.filter((segment) => attributeSet.has(segment.attributeKey))
+
+    // Add filtered segments back to the container
+    for (const segment of this.visibleSegments) {
+      this.addChild(segment)
+    }
+    this.redrawSegments()
+  }
+
+  redrawSegments(): void {
+    // Remove text labels
+    this.children.forEach((child) => {
+      if (child instanceof PixiText) {
+        this.removeChild(child)
+      }
+    })
+
+    // Calculate new angles based on visible segments
+    const gapAngle = this.mini ? 0.0005 : this.visibleSegments.length > 30 ? 0.005 : 0.02
+    const segmentCount = this.visibleSegments.length
+
+    if (segmentCount === 0) return // Nothing to draw
+
+    const anglePerSegment = (Math.PI * 2) / segmentCount
+
+    // Redraw each segment with new angles
+    for (let i = 0; i < segmentCount; i++) {
+      const segment = this.visibleSegments[i]
+      const slotStart = i * anglePerSegment
+      const startAngle = slotStart + gapAngle / 2
+      const endAngle = slotStart + anglePerSegment - gapAngle / 2
+
+      segment.drawSegment(
+        this.innerRadius,
+        this.maxOuterRadius,
+        startAngle,
+        endAngle,
+        this.layoutProps.width / 2,
+        this.layoutProps.height / 2,
+        this.mini,
+      )
+
+      // Add labels if needed
+      if (!this.mini && segmentCount < 20) {
+        this.drawLabelForSegment(segment, startAngle, endAngle)
+      }
+    }
+  }
+
+  // Reset to show all attributes
+  showAllAttributes(): void {
+    this.visibleSegments = [...this.segments]
+
+    // Remove all segments first
+    for (const segment of this.segments) {
+      if (this.children.includes(segment)) {
+        this.removeChild(segment)
+      }
+    }
+
+    // Add all segments back
+    for (const segment of this.segments) {
+      this.addChild(segment)
+    }
+    this.redrawSegments()
   }
 
   pointerInElement(global: PointData): PixiAttributeSegment | null {

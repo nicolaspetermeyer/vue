@@ -52,6 +52,13 @@ ENV/
 **/.mypy_cache/
 **/.pytest_cache/
 **/.pytest_cache/
+/backend/data_not_cleaned
+/backend/archive
+
+z_implemented_features.txt
+z_to_be_implemented.txt
+Inputs_to_do_michael.txt
+
 
 # Testing
 coverage

@@ -79,6 +79,22 @@ export class PixiProjection extends PixiContainer {
   }
 
   /**
+   * Update which attributes are shown in the attribute ring
+   * @param attributes Array of attribute names to display
+   */
+  updateAttributeRing(attributes: string[]): void {
+    if (!this.attributeRing) return
+
+    if (!attributes || attributes.length === 0) {
+      // If no attributes provided, show all
+      this.attributeRing.showAllAttributes()
+    } else {
+      // Update the ring with filtered attributes
+      this.attributeRing.updateVisibleAttributes(attributes)
+    }
+  }
+
+  /**
    * Register keyboard event handlers
    */
   registerKeyboardEvents() {

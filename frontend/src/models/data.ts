@@ -14,12 +14,21 @@ export interface Projection {
   parentId?: string
 }
 
+export interface AttributeMetadata {
+  categories: Record<string, string>
+}
+
 export interface ProjectionApiResponse {
   projectionData: Projection[]
   globalStats: Record<string, AttributeStats>
   nonNumericAttributes: string[] | null
   categoryValues: Record<string, string[]>
-  nummericAttributes: string[]
+  numericAttributes: string[]
+  attributeMetadata?: {
+    attributeMetadata: Record<string, AttributeMetadata>
+    attributes: string[]
+    categoryList: string[]
+  }
 }
 
 export interface AttributeStats {
