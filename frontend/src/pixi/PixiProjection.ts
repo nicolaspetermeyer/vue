@@ -86,7 +86,6 @@ export class PixiProjection extends PixiContainer {
     if (!this.attributeRing) return
 
     this.attributeRing.updateVisibleAttributes(attributes)
-    console.log('Updated attribute ring with attributes:', attributes)
   }
 
   /**

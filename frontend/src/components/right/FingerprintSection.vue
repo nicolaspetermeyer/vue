@@ -1,41 +1,58 @@
 <script setup lang="ts">
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { SelectionMode } from '@/pixi/interactions/controllers/SelectionController'
 
 const fingerprintStore = useFingerprintStore()
-
 const { fingerprints } = storeToRefs(fingerprintStore)
-
-const projectionStore = useProjectionStore()
-const { projectionInstance, activeFilter } = storeToRefs(projectionStore)
 const { addFingerprint, removeFingerprint } = fingerprintStore
 
-const hasActiveFilters = computed(() => {
-  return activeFilter.value.category && activeFilter.value.values.length > 0
+const projectionStore = useProjectionStore()
+const { projectionInstance } = storeToRefs(projectionStore)
+
+const pointFilterStore = usePointFilterStore()
+const { activePointFilter } = storeToRefs(pointFilterStore)
+
+const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
+const selectionModeText = computed(() =>
+  currentMode.value === SelectionMode.RECTANGLE ? 'Rectangle Selection' : 'Lasso Selection',
+)
+
+const hasactivePointFilters = computed(() => {
+  return activePointFilter.value.category && activePointFilter.value.values.length > 0
 })
 
 const filterDescription = computed(() => {
-  if (!activeFilter.value.category || activeFilter.value.values.length === 0) {
+  if (!activePointFilter.value.category || activePointFilter.value.values.length === 0) {
     return ''
   }
 
-  const category = activeFilter.value.category
-  const values = activeFilter.value.values
+  const values = activePointFilter.value.values
 
   if (values.length === 1) {
-    return `${category} = ${values[0]}`
+    return `Fingerprint = ${values[0]}`
   } else if (values.length <= 3) {
-    return `${category} = ${values.join(', ')}`
+    return `Fingerprint = ${values.join(', ')}`
   } else {
-    return `${category} (${values.length} values)`
+    return `Fingerprint (${values.length} values)`
   }
 })
 
 function clear() {
   for (const fingerprint of fingerprints.value) {
     removeFingerprint(fingerprint.id, projectionInstance.value)
+  }
+}
+
+const toggleSelectionMode = () => {
+  if (projectionInstance.value) {
+    projectionInstance.value.toggleSelectionMode()
+    currentMode.value =
+      currentMode.value === SelectionMode.RECTANGLE ? SelectionMode.LASSO : SelectionMode.RECTANGLE
   }
 }
 </script>
@@ -50,7 +67,7 @@ function clear() {
     </div>
 
     <div class="text-xs text-gray-500">
-      <span v-if="hasActiveFilters">
+      <span v-if="hasactivePointFilters">
         <span class="font-medium">Filter applied:</span> {{ filterDescription }}
       </span>
       <span v-else> If no selection, will create fingerprint from all points. </span>
@@ -59,6 +76,9 @@ function clear() {
     <div class="flex items-center space-x-2 mb-2">
       <button @click="clear()" class="btn btn-sm btn-primary flex-1">Clear Fingerprints</button>
     </div>
+    <button @click="toggleSelectionMode" class="btn btn-sm btn-primary flex-1">
+      <a>{{ selectionModeText }}</a>
+    </button>
   </section>
 </template>
 

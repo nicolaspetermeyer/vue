@@ -5,6 +5,8 @@ import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection, fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { useAttributeFilterStore } from './attributeFilterStore'
 
 export const useProjectionStore = defineStore('projection', () => {
   const datasetStore = useDatasetStore()
@@ -24,46 +26,6 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)
-
-  const filterCategories = ref<string[] | null>(null)
-  const categoryValues = ref<Record<string, string[]>>({})
-  const featureCount = ref<number>(0)
-
-  // Attribute filter state
-  const allNumericAttributes = ref<string[]>([])
-  const filteredAttributes = ref<string[]>([])
-  const attributeFilterActive = ref<boolean>(false)
-
-  // metadata state
-  const attributeMetadata = ref<Record<string, AttributeMetadata>>({})
-  const metadataAttributes = ref<string[]>([])
-  const metadataCategories = ref<string[]>([])
-  const hasMetadata = computed(() => metadataAttributes.value.length > 0)
-
-  // metadata filter state
-  const attributeMetadataFilter = ref<{
-    category: string | null
-    value: string | null
-  }>({
-    category: null,
-    value: null,
-  })
-
-  const activeAttributes = computed(() => {
-    if (!attributeFilterActive.value) {
-      return allNumericAttributes.value
-    }
-    return filteredAttributes.value
-  })
-
-  // Filtering
-  const activeFilter = ref<{
-    category: string | null
-    values: string[]
-  }>({
-    category: null,
-    values: [],
-  })
 
   const isLoading = ref<boolean>(false)
 
@@ -87,30 +49,17 @@ export const useProjectionStore = defineStore('projection', () => {
 
       globalStats.value = result.globalStats
       unfilteredProjection.value = result.projectionData
-      projection.value = [...unfilteredProjection.value]
-      filterCategories.value = result.nonNumericAttributes
-      categoryValues.value = result.categoryValues || {}
-      featureCount.value = result.numericAttributes.length
+      projection.value = result.projectionData
 
-      if (result.attributeMetadata) {
-        console.log('Received attribute metadata:', result.attributeMetadata)
-        attributeMetadata.value = result.attributeMetadata.attributeMetadata || {}
-        metadataAttributes.value = result.attributeMetadata.attributes || []
-        metadataCategories.value = result.attributeMetadata.categoryList || []
-      } else {
-        attributeMetadata.value = {}
-        metadataAttributes.value = []
-        metadataCategories.value = []
-      }
+      usePointFilterStore().initAvailablePointFilters(
+        result.nonNumericAttributes,
+        result.categoryValues || {},
+      )
 
-      allNumericAttributes.value = result.numericAttributes || []
-      filteredAttributes.value = [...allNumericAttributes.value]
-
-      attributeFilterActive.value = false
-      attributeMetadataFilter.value = {
-        category: null,
-        value: null,
-      }
+      useAttributeFilterStore().initAttributeMetadata(
+        result.numericAttributes,
+        result.attributeMetadata,
+      )
 
       currentParentId.value = undefined
       projectionHistory.value = []
@@ -124,60 +73,6 @@ export const useProjectionStore = defineStore('projection', () => {
       isLoading.value = false
     }
   }
-
-  function filterAttributesByMetadata(category: string, value: string) {
-    if (!category || !value || !hasMetadata.value) {
-      clearAttributeFilter()
-      return
-    }
-
-    attributeMetadataFilter.value = { category, value }
-
-    // Filter attributes that have this category-value pair in their metadata
-    filteredAttributes.value = allNumericAttributes.value.filter((attribute) => {
-      if (!attributeMetadata.value[attribute]) return false
-
-      const categoryValue = attributeMetadata.value[attribute].categories[category]
-      return categoryValue === value
-    })
-
-    attributeFilterActive.value = true
-
-    // Signal that the attribute ring should update
-    if (projectionInstance.value) {
-      projectionInstance.value.updateAttributeRing(filteredAttributes.value)
-    }
-  }
-
-  function clearAttributeFilter() {
-    attributeMetadataFilter.value = {
-      category: null,
-      value: null,
-    }
-
-    filteredAttributes.value = [...allNumericAttributes.value]
-    attributeFilterActive.value = false
-
-    // Signal that the attribute ring should update to show all attributes
-    if (projectionInstance.value) {
-      projectionInstance.value.updateAttributeRing(allNumericAttributes.value)
-    }
-  }
-
-  const filteredPointIds = computed(() => {
-    if (!activeFilter.value.category || activeFilter.value.values.length === 0) {
-      return projection.value.map((p) => p.id)
-    }
-
-    return projection.value
-      .filter((point) => {
-        const { category, values } = activeFilter.value
-        if (!category || !point.original) return false
-        const pointValue = point.original[category]
-        return pointValue !== undefined && values.includes(String(pointValue))
-      })
-      .map((p) => p.id)
-  })
 
   function setProjectionInstance(instance: PixiProjection) {
     projectionInstance.value = instance
@@ -197,18 +92,7 @@ export const useProjectionStore = defineStore('projection', () => {
     featureRanking.value = []
     currentParentId.value = undefined
     projectionHistory.value = []
-    activeFilter.value = {
-      category: null,
-      values: [],
-    }
-    allNumericAttributes.value = []
-    filteredAttributes.value = []
-    attributeFilterActive.value = false
-
-    attributeMetadataFilter.value = {
-      category: null,
-      value: null,
-    }
+    useAttributeFilterStore().clearAll()
 
     useFingerprintStore().clearFingerprints()
   }
@@ -227,49 +111,6 @@ export const useProjectionStore = defineStore('projection', () => {
       )
     } catch (error) {
       console.error('Failed to load feature ranking:', error)
-    }
-  }
-
-  function getCategoryValues(category: string): string[] {
-    return categoryValues.value[category] || []
-  }
-
-  function applyFilter(category: string, values: string[]) {
-    activeFilter.value = {
-      category,
-      values: [...values],
-    }
-    if (!projectionInstance.value) return
-
-    if (values.length === 0) {
-      projectionInstance.value.showAllPoints()
-      return
-    }
-
-    const filteredPointIndices = projection.value
-      .map((point, index) => {
-        // Check if point has the category value in its original data
-        if (point.original && point.original[category] !== undefined) {
-          const pointValue = String(point.original[category])
-
-          return values.includes(pointValue) ? index : -1
-        }
-        return -1
-      })
-      .filter((index) => index !== -1)
-
-    // Apply the filter to the projection instance
-    projectionInstance.value.filterPoints(filteredPointIndices)
-  }
-
-  function clearFilters() {
-    activeFilter.value = {
-      category: null,
-      values: [],
-    }
-
-    if (projectionInstance.value) {
-      projection.value = [...unfilteredProjection.value]
     }
   }
 
@@ -368,15 +209,7 @@ export const useProjectionStore = defineStore('projection', () => {
     projectionInstance,
     projectionMethod,
     globalStats,
-    filterCategories,
-    featureCount,
-    activeFilter,
-    filteredPointIds,
-    allNumericAttributes,
-    activeAttributes,
-    filteredAttributes,
-    attributeFilterActive,
-    attributeMetadataFilter,
+
     featureRanking,
     neighborhoodRadius,
     projectionHistory,
@@ -384,28 +217,21 @@ export const useProjectionStore = defineStore('projection', () => {
     currentParentId,
     isDrilledDownView,
     currentViewLevel,
-    attributeMetadata,
-    metadataAttributes,
-    metadataCategories,
-    hasMetadata,
 
     resetToBaseProjection,
     loadProjection,
     loadFeatureRanking,
-    getCategoryValues,
-    applyFilter,
+
     getFeatureRankingForPoint,
     // getTopFeaturesForPoint,
     updateNeighborhoodRadius,
     setProjectionInstance,
     setProjection,
     setGlobalStats,
-    clearFilters,
+
     clearProjectionInstance,
     clearAllProjectionData,
     drillDownToProjection,
     goBackToPreviousProjection,
-    filterAttributesByMetadata,
-    clearAttributeFilter,
   }
 })

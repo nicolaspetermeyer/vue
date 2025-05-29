@@ -6,6 +6,7 @@ import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
@@ -31,7 +32,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private inSegment: boolean = false
   private inInnerCircle: boolean = false
 
-  private featureCount = useProjectionStore().featureCount
+  private featureCount = useAttributeFilterStore().featureCount
 
   constructor(options: {
     attributeKey: string
@@ -376,15 +377,15 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     }
     let content = `Attribute: ${this.attributeKey}\n`
     const fingerprintStore = useFingerprintStore()
-    const projectionStore = useProjectionStore()
+    const attributeFilterStore = useAttributeFilterStore()
 
     let metadataContent = ''
     if (
-      projectionStore.hasMetadata &&
-      projectionStore.attributeMetadata &&
-      projectionStore.attributeMetadata[this.attributeKey]
+      attributeFilterStore.hasMetadata &&
+      attributeFilterStore.attributeMetadata &&
+      attributeFilterStore.attributeMetadata[this.attributeKey]
     ) {
-      const metadata = projectionStore.attributeMetadata[this.attributeKey]
+      const metadata = attributeFilterStore.attributeMetadata[this.attributeKey]
 
       if (metadata.categories) {
         metadataContent += '\nMetadata:\n'

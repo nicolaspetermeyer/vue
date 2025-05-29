@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, computed } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { storeToRefs } from 'pinia'
-import { SelectionMode } from '@/pixi/interactions/controllers/SelectionController'
+import PointFilterPanel from './left/PointFilterPanel.vue'
+import AttributeFilterPanel from './left/AttributeFilterPanel.vue'
 import Instructions from './left/Instructions.vue'
 
 const datasetStore = useDatasetStore()
@@ -12,116 +13,7 @@ const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
 const { setSelectedDatasetId } = datasetStore
 
 const projectionStore = useProjectionStore()
-const {
-  projectionMethod,
-  projectionInstance,
-  filterCategories,
-  activeFilter,
-  attributeMetadata,
-  metadataAttributes,
-  metadataCategories,
-  hasMetadata,
-  attributeMetadataFilter,
-  attributeFilterActive,
-  activeAttributes,
-} = storeToRefs(projectionStore)
-
-const { clearFilters, filterAttributesByMetadata, clearAttributeFilter } = projectionStore
-
-const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
-const selectionModeText = computed(() =>
-  currentMode.value === SelectionMode.RECTANGLE ? 'Rectangle Selection' : 'Lasso Selection',
-)
-
-const selectedCategory = computed({
-  get: () => activeFilter.value.category,
-  set: (value) => {
-    if (value !== activeFilter.value.category) {
-      activeFilter.value.category = value
-      activeFilter.value.values = []
-
-      if (value === null) {
-        projectionStore.clearFilters()
-      }
-    }
-  },
-})
-
-const availableCategoryValues = computed(() => {
-  if (!selectedCategory.value) return []
-  return projectionStore.getCategoryValues(selectedCategory.value)
-})
-
-const selectedValues = computed({
-  get: () => activeFilter.value.values,
-  set: (values) => {
-    if (selectedCategory.value) {
-      projectionStore.applyFilter(selectedCategory.value, values)
-    }
-  },
-})
-
-const hasActiveFilters = computed(() => {
-  return activeFilter.value.category && activeFilter.value.values.length > 0
-})
-
-// Metadata filtering for attributes
-const selectedMetadataCategory = computed({
-  get: () => attributeMetadataFilter.value.category,
-  set: (value) => {
-    if (value !== attributeMetadataFilter.value.category) {
-      attributeMetadataFilter.value.category = value
-      attributeMetadataFilter.value.value = null
-    }
-  },
-})
-/**
- * TODO Replace with backend metadata filtering for unique values
- */
-// Get unique values for the selected category across all attributes
-const availableAttributeCategoryValues = computed(() => {
-  if (!selectedMetadataCategory.value) return []
-
-  const uniqueValues = new Set<string>()
-
-  // Loop through all attributes with metadata
-  Object.keys(attributeMetadata.value || {}).forEach((attr) => {
-    const metadata = attributeMetadata.value[attr]
-    const category = selectedMetadataCategory.value
-    if (category && metadata?.categories) {
-      const value = metadata.categories[category]
-      if (value) {
-        uniqueValues.add(value)
-      }
-    }
-  })
-
-  return Array.from(uniqueValues).sort()
-})
-
-const selectedMetadataValue = computed({
-  get: () => attributeMetadataFilter.value.value,
-  set: (value) => {
-    attributeMetadataFilter.value.value = value
-
-    // Apply filter when value changes
-    if (value && selectedMetadataCategory.value) {
-      filterAttributesByMetadata(selectedMetadataCategory.value, value)
-    } else {
-      clearAttributeFilter()
-    }
-  },
-})
-
-const attributeFilterStats = computed(() => {
-  return {
-    shown: activeAttributes.value.length,
-    total: projectionStore.allNumericAttributes.length,
-    filtered: projectionStore.allNumericAttributes.length - activeAttributes.value.length,
-  }
-})
-
-const hasActiveAttributeFilter = computed(() => attributeFilterActive.value)
+const { projectionMethod } = storeToRefs(projectionStore)
 
 const loadProj = async () => {
   projectionStore.clearAllProjectionData()
@@ -134,24 +26,6 @@ const handleSelect = (event: Event) => {
   if (select) {
     setSelectedDatasetId(Number(select.value || null))
   }
-}
-
-const toggleSelectionMode = () => {
-  if (projectionInstance.value) {
-    projectionInstance.value.toggleSelectionMode()
-    currentMode.value =
-      currentMode.value === SelectionMode.RECTANGLE ? SelectionMode.LASSO : SelectionMode.RECTANGLE
-  }
-}
-
-const selectAllValues = () => {
-  if (selectedCategory.value) {
-    selectedValues.value = [...availableCategoryValues.value]
-  }
-}
-
-const deselectAllValues = () => {
-  selectedValues.value = []
 }
 
 onMounted(async () => {})
@@ -184,139 +58,10 @@ onMounted(async () => {})
     </section>
 
     <!-- Point Filter Section -->
-    <section class="section">
-      <div class="flex items-center justify-between">
-        <h3 class="section-title">Filters</h3>
-        <button v-if="hasActiveFilters" @click="clearFilters" class="btn btn-xs btn-ghost">
-          Clear
-        </button>
-      </div>
-      <button @click="toggleSelectionMode" class="btn btn-sm btn-primary flex-1">
-        <a>{{ selectionModeText }}</a>
-      </button>
+    <PointFilterPanel />
 
-      <div v-if="filterCategories && filterCategories.length > 0" class="filter-container">
-        <!-- Category Selector -->
-        <div class="form-control">
-          <label class="label pb-1">
-            <span class="label-text">Category</span>
-          </label>
-          <select class="select select-sm w-full" v-model="selectedCategory">
-            <option :value="null">Select category...</option>
-            <option v-for="category in filterCategories" :key="category" :value="category">
-              {{ category }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Values MultiSelect -->
-        <div v-if="selectedCategory" class="mt-2">
-          <div class="form-control">
-            <div class="flex items-center justify-between">
-              <label class="label-text">Values</label>
-              <div class="flex gap-1">
-                <button
-                  @click="selectAllValues"
-                  class="btn btn-xs btn-ghost py-1"
-                  :disabled="selectedValues.length === availableCategoryValues.length"
-                >
-                  All
-                </button>
-                <button
-                  @click="deselectAllValues"
-                  class="btn btn-xs btn-ghost py-1"
-                  :disabled="selectedValues.length === 0"
-                >
-                  None
-                </button>
-              </div>
-            </div>
-
-            <div class="mt-1 text-xs text-gray-500" v-if="selectedValues.length > 0">
-              {{ selectedValues.length }} selected
-            </div>
-
-            <div class="checkboxes-container">
-              <div v-for="value in availableCategoryValues" :key="value" class="form-control">
-                <label class="label cursor-pointer justify-start py-1">
-                  <input
-                    type="checkbox"
-                    :value="value"
-                    v-model="selectedValues"
-                    class="checkbox checkbox-xs mr-2"
-                  />
-                  <span class="label-text">{{ value }}</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        v-else-if="filterCategories && filterCategories.length === 0"
-        class="text-sm text-gray-500"
-      >
-        No categorical data available for filtering
-      </div>
-      <div v-else class="text-sm text-gray-500">Load a projection to enable filtering</div>
-    </section>
     <!-- Attribute Filter Section (only show if metadata is available) -->
-    <section class="section" v-if="hasMetadata">
-      <div class="flex items-center justify-between">
-        <h3 class="section-title">Attribute Filter</h3>
-        <button
-          v-if="hasActiveAttributeFilter"
-          @click="clearAttributeFilter"
-          class="btn btn-xs btn-ghost"
-        >
-          Clear
-        </button>
-      </div>
-
-      <div class="mb-2 text-sm">
-        <p>Filter attributes shown in the attribute ring</p>
-      </div>
-
-      <div class="filter-container">
-        <!-- Category Selector -->
-        <div class="form-control">
-          <label class="label pb-1">
-            <span class="label-text">Category</span>
-          </label>
-          <select class="select select-sm w-full" v-model="selectedMetadataCategory">
-            <option :value="null">Select category...</option>
-            <option v-for="category in metadataCategories" :key="category" :value="category">
-              {{ category }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Value Selector -->
-        <div v-if="selectedMetadataCategory" class="form-control mt-2">
-          <label class="label pb-1">
-            <span class="label-text">Value</span>
-          </label>
-          <select class="select select-sm w-full" v-model="selectedMetadataValue">
-            <option :value="null">Select value...</option>
-            <option v-for="value in availableAttributeCategoryValues" :key="value" :value="value">
-              {{ value }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Filter stats -->
-        <div
-          v-if="hasActiveAttributeFilter"
-          class="mt-3 px-2 py-1 bg-blue-50 text-blue-800 rounded text-sm"
-        >
-          Showing {{ attributeFilterStats.shown }} of {{ attributeFilterStats.total }} attributes
-          <span v-if="attributeFilterStats.filtered > 0">
-            ({{ attributeFilterStats.filtered }} filtered out)
-          </span>
-        </div>
-      </div>
-    </section>
+    <AttributeFilterPanel />
     <!-- Instructions Section -->
     <Instructions />
   </div>

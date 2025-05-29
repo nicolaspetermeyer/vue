@@ -220,8 +220,6 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.pixiDimredPoints.forEach((point) => {
       point.visible = true
     })
-
-    this.app.render()
   }
 
   filterPoints(indices: number[]): void {

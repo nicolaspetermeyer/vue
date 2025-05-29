@@ -5,10 +5,14 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 import { Colors } from '@/config/Themes'
 import BackButton from '@/components/canvas/BackButton.vue'
 
 const projectionStore = useProjectionStore()
+const pointFilterStore = usePointFilterStore()
+const attributeFilterStore = useAttributeFilterStore()
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -80,6 +84,48 @@ watch(
     if (newMatch.length > 0 && app) {
       createProjectionInstance()
     }
+  },
+  { deep: true },
+)
+
+watch(
+  [() => projectionStore.projection, () => pointFilterStore.activePointFilter],
+  ([projection, _filter]) => {
+    if (!projection || projection.length === 0) return
+    if (!projectionStore.projectionInstance) return
+
+    const filteredIds = pointFilterStore.filterPointIds(projection)
+
+    if (filteredIds.length === projection.length) {
+      projectionStore.projectionInstance.showAllPoints()
+      return
+    }
+
+    const filteredIndices = projection
+      .map((point, i) => (filteredIds.includes(point.id) ? i : -1))
+      .filter((idx) => idx !== -1)
+
+    projectionStore.projectionInstance.filterPoints(filteredIndices)
+  },
+  { immediate: true },
+)
+
+watch(
+  [() => attributeFilterStore.activeAttributes, () => attributeFilterStore.attributeFilterActive],
+  ([attributes, isActive]) => {
+    if (!projectionStore.projectionInstance) return
+
+    // Update the attribute ring with the filtered attributes
+    if (projectionStore.projectionInstance.updateAttributeRing) {
+      projectionStore.projectionInstance.updateAttributeRing(attributes)
+    }
+
+    // if there's a specific method for filtering attributes:
+    // if (isActive) {
+    //   projectionStore.projectionInstance.filterAttributes(attributes)
+    // } else {
+    //   projectionStore.projectionInstance.showAllAttributes()
+    // }
   },
   { deep: true },
 )

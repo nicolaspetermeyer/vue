@@ -3,6 +3,7 @@ import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
 import type { Fingerprint, Projection } from '@/models/data'
 import { ref, computed } from 'vue'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { FingerprintVisualizationService } from '@/services/FingerprintVisualizationService'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
@@ -62,7 +63,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       pointsToUse = selection.value
       name = `Fingerprint ${fingerprintCounter.value++}`
     } else {
-      const activeFilter = projectionStore.activeFilter
+      const activeFilter = usePointFilterStore().activePointFilter
       let filteredIds: string[] = []
 
       if (activeFilter.category && activeFilter.values.length > 0) {
@@ -224,15 +225,16 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     filteredFingerprints,
     setSelection,
     getFilterDescription,
+
     addFingerprint,
     removeFingerprint,
     clearFingerprints,
+
     getFingerprintById,
     toggleSelectedFingerprint,
     calculateSelectionCentroid,
     renameFingerprint,
     // getTopFeatures,
-
     // Expose visualization service
     visualizationService,
   }
