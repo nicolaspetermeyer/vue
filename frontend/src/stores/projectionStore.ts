@@ -1,12 +1,13 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Projection, FeatureRanking, AttributeStats, AttributeMetadata } from '@/models/data'
+import type { Projection, FeatureRanking, AttributeStats } from '@/models/data'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchProjection, fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { useAttributeFilterStore } from './attributeFilterStore'
+import { useDrillDownStore } from './drillDownStore'
 
 export const useProjectionStore = defineStore('projection', () => {
   const datasetStore = useDatasetStore()
@@ -18,11 +19,6 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
   const projectionMethod = ref<'pca' | 'tsne'>('pca')
-  const projectionHistory = ref<
-    { projection: Projection[]; stats: Record<string, AttributeStats>; parentId?: string }[]
-  >([])
-  const currentParentId = ref<string | undefined>(undefined)
-  const canGoBack = computed(() => projectionHistory.value.length > 0)
 
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)
@@ -61,8 +57,7 @@ export const useProjectionStore = defineStore('projection', () => {
         result.attributeMetadata,
       )
 
-      currentParentId.value = undefined
-      projectionHistory.value = []
+      useDrillDownStore().clearHistory()
 
       useFingerprintStore().selectedFingerprints = []
 
@@ -90,10 +85,8 @@ export const useProjectionStore = defineStore('projection', () => {
     console.log('Clearing all projection data')
     projection.value = []
     featureRanking.value = []
-    currentParentId.value = undefined
-    projectionHistory.value = []
+    useDrillDownStore().clearHistory()
     useAttributeFilterStore().clearAll()
-
     useFingerprintStore().clearFingerprints()
   }
 
@@ -145,93 +138,25 @@ export const useProjectionStore = defineStore('projection', () => {
     }
   }
 
-  function drillDownToProjection(newProjection: Projection[], parentId?: string) {
-    if (projection.value.length > 0) {
-      projectionHistory.value.push({
-        projection: [...projection.value],
-        stats: { ...globalStats.value },
-        parentId: currentParentId.value,
-      })
-    }
-
-    currentParentId.value = parentId
-    projection.value = newProjection
-  }
-
-  /**
-   * Go back to previous projection
-   */
-  function goBackToPreviousProjection(): boolean {
-    if (projectionHistory.value.length === 0) {
-      return false
-    }
-
-    const previousProjection = projectionHistory.value.pop()
-    if (previousProjection) {
-      projection.value = previousProjection.projection
-      globalStats.value = previousProjection.stats
-      currentParentId.value = previousProjection.parentId
-
-      const fingerprintStore = useFingerprintStore()
-      fingerprintStore.selectedFingerprints = []
-
-      return true
-    }
-
-    return false
-  }
-
-  function resetToBaseProjection() {
-    projectionHistory.value = []
-    currentParentId.value = undefined
-    if (unfilteredProjection.value.length > 0) {
-      projection.value = [...unfilteredProjection.value]
-    }
-    useFingerprintStore().selectedFingerprints = []
-  }
-
-  /**
-   * Check if the current view is a drilled-down view
-   */
-  const isDrilledDownView = computed(() => {
-    return currentParentId.value !== undefined
-  })
-
-  /**
-   * Get the current view's level (0 for base, >0 for drilled down)
-   */
-  const currentViewLevel = computed(() => {
-    return projectionHistory.value.length
-  })
-
   return {
     projection,
+    unfilteredProjection,
     projectionInstance,
     projectionMethod,
     globalStats,
 
     featureRanking,
     neighborhoodRadius,
-    projectionHistory,
-    canGoBack,
-    currentParentId,
-    isDrilledDownView,
-    currentViewLevel,
 
-    resetToBaseProjection,
     loadProjection,
     loadFeatureRanking,
-
     getFeatureRankingForPoint,
     // getTopFeaturesForPoint,
     updateNeighborhoodRadius,
     setProjectionInstance,
     setProjection,
     setGlobalStats,
-
     clearProjectionInstance,
     clearAllProjectionData,
-    drillDownToProjection,
-    goBackToPreviousProjection,
   }
 })

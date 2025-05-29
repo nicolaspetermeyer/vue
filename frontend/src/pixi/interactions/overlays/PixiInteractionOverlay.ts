@@ -28,6 +28,7 @@ import {
 // Stores
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { useDrillDownStore } from '@/stores/drillDownStore'
 
 // Utils
 import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
@@ -208,7 +209,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     const fingerprint = this.fingerprintStore.fingerprints.find((fp) => fp.id === fingerprintId)
     if (!fingerprint) return
 
-    useProjectionStore().drillDownToProjection(fingerprint.projectedPoints, fingerprintId)
+    useDrillDownStore().drillDownToProjection(fingerprint.projectedPoints, fingerprintId)
     useProjectionStore().setGlobalStats(fingerprint.localStats)
   }
 

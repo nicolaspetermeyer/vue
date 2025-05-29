@@ -61,3 +61,23 @@ export async function fetchFeatureRanking(
 
   return response.data
 }
+
+export async function fetchSubsetProjection(
+  dataset: string,
+  method: string,
+  pointIds: string[],
+): Promise<any> {
+  const response = await fetch(`/api/projection/subset/?filename=${dataset}&method=${method}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ point_ids: pointIds }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch subset projection: ${response.status}`)
+  }
+
+  return await response.json()
+}

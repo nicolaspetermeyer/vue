@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
-import { useProjectionStore } from '@/stores/projectionStore'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Fingerprint } from '@/models/data'
+import { useProjectionStore } from '@/stores/projectionStore'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { useDrillDownStore } from '@/stores/drillDownStore'
 import FingerprintItem from './FingerprintItem.vue'
 
 const props = defineProps<{
@@ -12,10 +13,13 @@ const props = defineProps<{
 }>()
 
 const fingerprintStore = useFingerprintStore()
-const { fingerprints, filteredFingerprints } = storeToRefs(fingerprintStore)
+const { fingerprints } = storeToRefs(fingerprintStore)
 
 const projectionStore = useProjectionStore()
-const { projectionInstance, currentParentId } = storeToRefs(projectionStore)
+const { projectionInstance } = storeToRefs(projectionStore)
+
+const drillDownStore = useDrillDownStore()
+const { currentParentId } = storeToRefs(drillDownStore)
 
 const visibleMiniRings = ref<Set<string>>(new Set())
 const editingFingerprintId = ref<string | null>(null)

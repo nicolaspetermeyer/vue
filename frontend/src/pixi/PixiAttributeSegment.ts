@@ -466,7 +466,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
   destroy(options?: any): void {
     const index = PixiAttributeSegment.segmentRegistry.indexOf(this)
-    if (index === -1) {
+    if (index !== -1) {
       PixiAttributeSegment.segmentRegistry.splice(index, 1)
     }
     super.destroy(options)

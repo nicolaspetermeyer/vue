@@ -4,6 +4,7 @@ import type { Fingerprint, Projection } from '@/models/data'
 import { ref, computed } from 'vue'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { useDrillDownStore } from './drillDownStore'
 import { FingerprintVisualizationService } from '@/services/FingerprintVisualizationService'
 
 export const useFingerprintStore = defineStore('fingerprintStore', () => {
@@ -20,7 +21,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     return selectedFingerprints.value.flatMap((fingerprint) => fingerprint.projectedPoints)
   })
 
-  const currentParentId = computed(() => useProjectionStore().currentParentId)
+  const currentParentId = computed(() => useDrillDownStore().currentParentId)
   const filteredFingerprints = computed(() => {
     return fingerprints.value.filter((fp) => fp.parentId === currentParentId.value)
   })

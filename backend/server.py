@@ -581,6 +581,89 @@ async def get_feature_ranking(
     return result
 
 
+from fastapi import Body
+
+
+@app.post("/api/projection/subset/")
+async def project_data_subset(
+    filename: str = Query(...),
+    method: Literal["pca", "tsne"] = "pca",
+    point_ids: List[str] = Body(...),
+):
+    """
+    Perform PCA or t-SNE on a subset of points identified by their IDs.
+
+    Args:
+        filename: Name of the dataset file
+        method: Projection method ('pca' or 'tsne')
+        point_ids: List of point IDs to include in the calculation
+
+    Returns:
+        JSON: Projected data with original IDs preserved
+    """
+    point_ids_key = ",".join(sorted(point_ids))
+    key = (filename, method, point_ids_key)
+
+    if key in projection_cache:
+        return projection_cache[key]
+
+    # Check if full projection exists in cache
+    full_key = (filename, method)
+    if full_key not in projection_cache:
+        await project_data(filename=filename, method=method)
+
+    full_projection = projection_cache[full_key]
+    dataset_info = dataset_cache[filename]
+
+    point_ids_set = set(point_ids)
+    id_to_idx = {id_val: idx for idx, id_val in enumerate(dataset_info.ids)}
+    filtered_indices = [
+        id_to_idx[id_val] for id_val in point_ids_set if id_val in id_to_idx
+    ]
+
+    if not filtered_indices:
+        raise HTTPException(
+            status_code=400, detail="No matching points found for the provided IDs"
+        )
+
+    subset_df = dataset_info.numeric_df.iloc[filtered_indices]
+    if method == "pca":
+        projected_data = compute_pca(subset_df)
+    elif method == "tsne":
+        projected_data = compute_tsne(subset_df)
+
+    # Create a copy of the existing projection data
+    result = dict(full_projection)
+    result["subsetProjection"] = True
+
+    # Create a lookup of new positions by ID
+    new_positions = {}
+    for i, idx in enumerate(filtered_indices):
+        point_id = dataset_info.ids[idx]
+        new_positions[point_id] = {
+            "x": float(projected_data[i][0]),
+            "y": float(projected_data[i][1]),
+        }
+
+    # Get only the points that are in our subset
+    result["projectionData"] = [
+        point
+        for point in full_projection["projectionData"]
+        if point["id"] in point_ids_set
+    ]
+
+    # Update positions directly in the existing data structure
+    for point in result["projectionData"]:
+        point_id = point["id"]
+        if point_id in new_positions:
+            point["pos"]["x"] = new_positions[point_id]["x"]
+            point["pos"]["y"] = new_positions[point_id]["y"]
+
+    projection_cache[key] = result
+
+    return result
+
+
 # Run the server using:
 # uvicorn script_name:app --reload
 # uvicorn backend.mock_server:app --reload

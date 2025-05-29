@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
-import { useProjectionStore } from '@/stores/projectionStore'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { useDrillDownStore } from '@/stores/drillDownStore'
 import { computed } from 'vue'
 
 import FingerprintItem from './FingerprintItem.vue'
@@ -9,8 +9,8 @@ import FingerprintItem from './FingerprintItem.vue'
 const fingerprintStore = useFingerprintStore()
 const { fingerprints } = storeToRefs(fingerprintStore)
 
-const projectionStore = useProjectionStore()
-const { currentParentId } = storeToRefs(projectionStore)
+const drillDownStore = useDrillDownStore()
+const { currentParentId } = storeToRefs(drillDownStore)
 
 const topLevelFingerprints = computed(() => {
   return fingerprints.value.filter((fp) => fp.parentId === currentParentId.value)

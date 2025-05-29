@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { useProjectionStore } from '@/stores/projectionStore'
+import { useDrillDownStore } from '@/stores/drillDownStore'
 import { computed } from 'vue'
 
-const projectionStore = useProjectionStore()
-const canGoBack = computed(() => projectionStore.canGoBack)
+const canGoBack = computed(() => useDrillDownStore().canGoBack)
 
 function goBack() {
-  if (projectionStore.goBackToPreviousProjection()) {
+  if (useDrillDownStore().goBackToPreviousProjection()) {
   } else {
     console.error('No previous projection to go back to.')
   }
