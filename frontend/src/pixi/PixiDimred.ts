@@ -1,15 +1,20 @@
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
-import { Colors } from '@/config/Themes'
-import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
-import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
-import type { Projection, AttributeStats, Fingerprint } from '@/models/data'
+import { PixiApp } from '@/pixi/Base/PixiApp'
 import { Rectangle, PointData } from 'pixi.js'
+import type { Projection, AttributeStats, Fingerprint } from '@/models/data'
+import { Colors } from '@/config/Themes'
+
+// Pixi imports
+import { PixiDimredPoint } from '@/pixi/PixiDimredPoint'
+import { PixiAttributeRing } from './PixiAttributeRing'
+import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
+
+// Utils and services
+import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
 import { CoordinateTransformer } from '@/utils/transformers/CoordinateTransformer'
 import { PolygonUtils } from '@/utils/geometry/PolygonUtils'
-import { PixiAttributeRing } from './PixiAttributeRing'
-import { PixiApp } from '@/pixi/Base/PixiApp'
-import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
+import { animationService } from '@/services/animationService'
 
 export class PixiDimred extends PixiContainer implements HoverableProvider<PixiDimredPoint> {
   pixiDimredPoints: Map<string, PixiDimredPoint> = new Map()
@@ -33,6 +38,8 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
 
     this.updatePoints(projectedPoints)
     this.app = app
+
+    animationService.registerPixiInstance(this)
   }
 
   getOrCreatePoint(projectedPoints: Projection): PixiDimredPoint {
@@ -91,25 +98,28 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.app.render()
   }
 
-  updatePoints(projectedPoints: Projection[]) {
+  updatePoints(projectedPoints: Projection[], animate: boolean = false) {
     if (projectedPoints.length === 0) return
 
-    const normPoints = ProjectionTransformer.normalizeToSize(
-      projectedPoints,
-      this.width,
-      this.height,
-    )
+    const normPoints = ProjectionTransformer.normalizeToSize(projectedPoints, 460, 460)
 
     normPoints.forEach((point) => {
       const pixiDimredPoint = this.getOrCreatePoint(point)
       pixiDimredPoint.dimredpoint.pos = point.pos
-      pixiDimredPoint.position.set(point.pos.x, point.pos.y)
+
+      if (!animate) {
+        pixiDimredPoint.position.set(point.pos.x, point.pos.y)
+      }
+
       pixiDimredPoint.updateVisualState()
 
       if (this.highlightedFingerprintPoints.has(point.id)) {
         pixiDimredPoint.setFingerprintColor(true)
       }
     })
+    if (animate) {
+      animationService.startTransition(800, normPoints)
+    }
   }
 
   getPointsInBounds(bounds: Rectangle): string[] {

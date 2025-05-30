@@ -32,26 +32,42 @@ export class ProjectionTransformer {
     points: Projection[],
     targetWidth: number,
     targetHeight: number,
-    padding: number = 0,
   ): Projection[] {
     if (points.length === 0) return []
 
     // Convert to unit space first
     const unitPoints = this.normalizeToUnitSpace(points)
 
-    // Calculate effective dimensions accounting for padding
-    const effectiveWidth = targetWidth - padding * 2
-    const effectiveHeight = targetHeight - padding * 2
-
     // Scale to target size and apply padding offset
     return unitPoints.map((point) => {
-      return {
+      const normalizedPoint = {
         ...point,
         pos: {
-          x: point.pos.x * effectiveWidth + padding,
-          y: point.pos.y * effectiveHeight + padding,
+          x: point.pos.x * targetWidth,
+          y: point.pos.y * targetHeight,
         },
       }
+      if ('basePos' in point && point.basePos) {
+        // Calculate the relative position in unit space for basePos
+        const bounds = this.calculateBounds(points)
+        const rangeX = bounds.maxX - bounds.minX
+        const rangeY = bounds.maxY - bounds.minY
+
+        // Avoid division by zero
+        const scaleX = rangeX !== 0 ? 1 / rangeX : 0
+        const scaleY = rangeY !== 0 ? 1 / rangeY : 0
+
+        // Normalize basePos to unit space then to target dimensions
+        const unitBaseX = (point.basePos.x - bounds.minX) * scaleX
+        const unitBaseY = (point.basePos.y - bounds.minY) * scaleY
+
+        normalizedPoint.basePos = {
+          x: unitBaseX * targetWidth,
+          y: unitBaseY * targetHeight,
+        }
+      }
+
+      return normalizedPoint
     })
   }
 

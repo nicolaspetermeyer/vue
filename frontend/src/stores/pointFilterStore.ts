@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import type { Projection } from '@/models/data'
 
 export const usePointFilterStore = defineStore('pointFilter', () => {
-  // available categories for filtering and unique values
   const pointFilterCategories = ref<string[] | null>(null)
   const pointCategoryValues = ref<Record<string, string[]>>({})
 

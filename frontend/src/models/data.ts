@@ -9,6 +9,7 @@ export interface Data {
 
 export interface Projection {
   id: string
+  basePos?: Position
   pos: Position
   original: Data
   parentId?: string
@@ -40,13 +41,13 @@ export interface AttributeStats {
   max: number
 
   // Reference data (for local stats)
-  globalMean?: number // Reference to global mean (for local stats)
-  globalNormMean?: number // Reference to global normalized mean (for local stats)
-  meanDelta?: number // Difference from reference mean (for local stats)
+  globalMean?: number
+  globalNormMean?: number
+  meanDelta?: number
 
   // Metadata
-  attributeName?: string // Optional metadata
-  isNumeric?: boolean // Used primarily with global stats
+  attributeName?: string
+  isNumeric?: boolean
 
   // Flags
   isGlobal: boolean
@@ -78,4 +79,11 @@ export type FeatureRanking = {
   id: string
   features: string[]
   scores: number[]
+}
+
+export type ProjectionHistoryState = {
+  projection: Projection[]
+  stats: Record<string, AttributeStats>
+  parentId?: string
+  originalPositions?: Map<string, { x: number; y: number }>
 }

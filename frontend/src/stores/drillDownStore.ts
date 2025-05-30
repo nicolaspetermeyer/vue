@@ -1,98 +1,69 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Projection, AttributeStats } from '@/models/data'
-import { useProjectionStore } from './projectionStore'
-import { useFingerprintStore } from './fingerprintStore'
+import type { ProjectionHistoryState } from '@/models/data'
 
 export const useDrillDownStore = defineStore('drillDown', () => {
   // State
-  const projectionHistory = ref<
-    { projection: Projection[]; stats: Record<string, AttributeStats>; parentId?: string }[]
-  >([])
+  const projectionHistory = ref<ProjectionHistoryState[]>([])
   const currentParentId = ref<string | undefined>(undefined)
+  const originalPositions = ref<Map<string, { x: number; y: number }>>(new Map())
+  const isLoading = ref<boolean>(false)
 
   // Computed
   const canGoBack = computed(() => projectionHistory.value.length > 0)
   const isDrilledDownView = computed(() => currentParentId.value !== undefined)
   const currentViewLevel = computed(() => projectionHistory.value.length)
 
-  /**
-   * Drill down to a filtered projection
-   */
-  function drillDownToProjection(newProjection: Projection[], parentId?: string) {
-    const projectionStore = useProjectionStore()
-
-    if (projectionStore.projection.length > 0) {
-      projectionHistory.value.push({
-        projection: [...projectionStore.projection],
-        stats: { ...projectionStore.globalStats },
-        parentId: currentParentId.value,
-      })
-    }
-
-    currentParentId.value = parentId
-    projectionStore.setProjection(newProjection)
+  function saveProjectionState(state: ProjectionHistoryState) {
+    projectionHistory.value.push(state)
   }
 
-  /**
-   * Go back to previous projection
-   */
-  function goBackToPreviousProjection(): boolean {
-    if (projectionHistory.value.length === 0) {
-      return false
-    }
-
-    const previousProjection = projectionHistory.value.pop()
-    if (previousProjection) {
-      const projectionStore = useProjectionStore()
-      projectionStore.setProjection(previousProjection.projection)
-      projectionStore.setGlobalStats(previousProjection.stats)
-      currentParentId.value = previousProjection.parentId
-
-      const fingerprintStore = useFingerprintStore()
-      fingerprintStore.selectedFingerprints = []
-
-      return true
-    }
-
-    return false
+  function popHistoryState(): ProjectionHistoryState | undefined {
+    return projectionHistory.value.pop()
   }
 
-  /**
-   * Reset to the base projection
-   */
-  function resetToBaseProjection() {
-    const projectionStore = useProjectionStore()
-    projectionHistory.value = []
-    currentParentId.value = undefined
-
-    // Reset to the unfiltered projection if available
-    if (projectionStore.unfilteredProjection.length > 0) {
-      projectionStore.setProjection([...projectionStore.unfilteredProjection])
-    }
-
-    // Clear fingerprints
-    useFingerprintStore().selectedFingerprints = []
+  function setParentId(id: string | undefined) {
+    currentParentId.value = id
   }
 
-  /**
-   * Clear history when loading a new projection
-   */
+  function setOriginalPositions(positions: Map<string, { x: number; y: number }>) {
+    originalPositions.value = positions
+  }
+
+  function setLoading(loading: boolean) {
+    isLoading.value = loading
+  }
+
+  function truncateHistoryAt(index: number) {
+    if (index >= 0 && index < projectionHistory.value.length) {
+      projectionHistory.value = projectionHistory.value.slice(0, index + 1)
+    }
+  }
+
   function clearHistory() {
     projectionHistory.value = []
     currentParentId.value = undefined
   }
 
   return {
+    // State
     projectionHistory,
     currentParentId,
+    originalPositions,
+    isLoading,
+
+    // Computed
     canGoBack,
     isDrilledDownView,
     currentViewLevel,
 
-    drillDownToProjection,
-    goBackToPreviousProjection,
-    resetToBaseProjection,
+    // Actions
+    saveProjectionState,
+    popHistoryState,
+    setParentId,
+    setOriginalPositions,
+    setLoading,
+    truncateHistoryAt,
     clearHistory,
   }
 })

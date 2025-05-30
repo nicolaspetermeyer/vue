@@ -9,6 +9,7 @@ import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 import { Colors } from '@/config/Themes'
 import BackButton from '@/components/canvas/BackButton.vue'
+import TransitionIndicator from '@/components/canvas/TransitionIndicator.vue'
 
 const projectionStore = useProjectionStore()
 const pointFilterStore = usePointFilterStore()
@@ -25,13 +26,9 @@ function resetView() {
   currentProjection.value?.resetView()
 }
 
-function update() {
-  console.log('update')
-}
+function update() {}
 
 async function init() {
-  console.log('init')
-
   if (!canvasRef.value || !wrapperRef.value) return
 
   // Initialize dimensions
@@ -50,7 +47,6 @@ async function init() {
 
 function createProjectionInstance() {
   if (!app) return
-  console.log('createProjectionInstance')
 
   // Clean up any existing projection
   if (currentProjection.value) {
@@ -74,8 +70,6 @@ function createProjectionInstance() {
 
   // Store reference in the store
   projectionStore.setProjectionInstance(projection)
-
-  console.log('Projection instance created with', projectionStore.projection.length, 'points')
 }
 
 watch(
@@ -149,6 +143,7 @@ function debug() {
 <template>
   <div ref="wrapperRef" class="relative w-full h-full">
     <BackButton />
+    <TransitionIndicator />
     <canvas
       class="w-full h-full"
       ref="canvasRef"

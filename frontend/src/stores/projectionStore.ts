@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Projection, FeatureRanking, AttributeStats } from '@/models/data'
 import { useDatasetStore } from '@/stores/datasetStore'
@@ -74,7 +74,19 @@ export const useProjectionStore = defineStore('projection', () => {
   }
 
   function setProjection(newProjection: Projection[]) {
-    projection.value = newProjection
+    projection.value = newProjection.map((point) => {
+      const drillDownStore = useDrillDownStore()
+      if (drillDownStore.isDrilledDownView && !('basePos' in point)) {
+        const existingPoint = projection.value.find((p) => p.id === point.id)
+        if (existingPoint) {
+          return {
+            ...point,
+            basePos: { ...existingPoint.pos },
+          }
+        }
+      }
+      return point
+    })
   }
 
   function setGlobalStats(newGlobalStats: Record<string, AttributeStats>) {
