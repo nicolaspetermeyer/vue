@@ -43,13 +43,13 @@ export const Colors = {
     0xbdc3c7, // Silver
   ],
 
-  FILL_STYLE: true,
+  FILL_STYLE: false,
 
   MINI_INNER_RING: 0xffffff,
 }
 
 export const Styles = {
-  LINEWIDTH: 1,
+  LINEWIDTH: 2,
   LINEWIDTH_HOVER: 2,
 
   LINEWIDTH_MINI: 0.5,

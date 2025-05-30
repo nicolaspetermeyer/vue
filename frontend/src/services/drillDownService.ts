@@ -5,6 +5,7 @@ import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { useDrillDownStore } from '@/stores/drillDownStore'
 import { animationService } from './animationService'
+import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
 
 export class DrillDownService {
   /**
@@ -121,7 +122,8 @@ export class DrillDownService {
     // Update stores
     projectionStore.setProjection(restoredProjection)
     // Start animation
-    animationService.startTransition()
+    const normPoints = ProjectionTransformer.normalizeToSize(restoredProjection, 460, 460)
+    //animationService.startTransition(800, normPoints)
 
     if (previousState.stats) {
       projectionStore.setGlobalStats({ ...previousState.stats })
@@ -136,31 +138,6 @@ export class DrillDownService {
     fingerprintStore.selectedFingerprints = []
 
     return true
-  }
-
-  /**
-   * Get transition projection for animation
-   * @param progress Transition progress (0-1)
-   */
-  getTransitionProgress(progress: number): Projection[] {
-    const projectionStore = useProjectionStore()
-
-    if (projectionStore.projection.length === 0) return []
-
-    return projectionStore.projection.map((point) => {
-      if ('basePos' in point && point.basePos) {
-        const basePos = point.basePos as { x: number; y: number }
-
-        return {
-          ...point,
-          pos: {
-            x: basePos.x + (point.pos.x - basePos.x) * progress,
-            y: basePos.y + (point.pos.y - basePos.y) * progress,
-          },
-        }
-      }
-      return point
-    })
   }
 }
 

@@ -5,7 +5,6 @@ import { Colors, Styles } from '@/config/Themes'
 import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
-import { useProjectionStore } from '@/stores/projectionStore'
 import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
@@ -136,9 +135,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       const expansionFactor = 1.1
       outerRadius = Math.min(outerRadius * expansionFactor, this.maxOuterRadius * 1.05)
       innerScale = Math.min(this.innerRadius * expansionFactor, outerRadius * 0.95)
-      color = 0x000000
+      this.alpha = 1
     }
-    this.zIndex = 2000
 
     // Draw the segment arc
     this.drawArc(
@@ -146,8 +144,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       outerRadius,
       this.startAngle,
       this.endAngle,
-      color,
-      color, // Border color
+      this.color,
+      this.color, // Border color
       this.alpha,
       lineWidth,
     )
@@ -162,7 +160,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     const lineWidth = this.isHovered ? Styles.LINEWIDTH_HOVER : Styles.LINEWIDTH
 
     const arcWidth = this.maxOuterRadius - this.innerRadius
-    const globalOuterRadius = this.innerRadius + this.globalNorm * arcWidth
+    const globalOuterRadius = this.innerRadius + 0.5 * arcWidth
 
     // Draw global segment
     this.drawArc(
@@ -178,22 +176,22 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     // Draw overlays if present
     const overlays = this.localOverlays
-    const singleComparison = overlays?.size === 1
+    // const singleComparison = overlays?.size === 1
 
     if (overlays && overlays.size > 0) {
       overlays.forEach((overlay) => {
         const localOuterRadius = this.innerRadius + overlay.norm * arcWidth
 
         let fillColor = overlay.color
-        let borderColor = Colors.STANDARD_BORDER
+        let borderColor = overlay.color
 
-        if (singleComparison) {
-          fillColor =
-            localOuterRadius > globalOuterRadius
-              ? Colors.OVERLAY_SEGMENT_BIGGER
-              : Colors.OVERLAY_SEGMENT_SMALLER
-          borderColor = fillColor
-        }
+        // if (singleComparison) {
+        //   fillColor =
+        //     localOuterRadius > globalOuterRadius
+        //       ? Colors.OVERLAY_SEGMENT_BIGGER
+        //       : Colors.OVERLAY_SEGMENT_SMALLER
+        //   borderColor = fillColor
+        // }
 
         // Draw the overlay arc
         this.drawArc(
@@ -238,10 +236,10 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       )
       .arc(this.centerX, this.centerY, innerRadius, endAngle, startAngle, true)
       .closePath()
-    if (!this.mini) {
-      this.stroke({ color: borderColor ?? fillColor, width: lineWidth })
-    }
-    if (Colors.FILL_STYLE) {
+
+    this.stroke({ color: borderColor ?? fillColor, width: lineWidth })
+
+    if (Colors.FILL_STYLE || this.mini) {
       this.fill({ color: fillColor, alpha: alpha })
     }
   }
