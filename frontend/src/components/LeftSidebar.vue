@@ -3,6 +3,7 @@ import { onMounted, computed } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { projectionService } from '@/services/projectionService'
 import { storeToRefs } from 'pinia'
 import PointFilterPanel from './left/PointFilterPanel.vue'
 import AttributeFilterPanel from './left/AttributeFilterPanel.vue'
@@ -18,7 +19,7 @@ const { projectionMethod } = storeToRefs(projectionStore)
 const loadProj = async () => {
   projectionStore.clearAllProjectionData()
 
-  await projectionStore.loadProjection()
+  await projectionService.loadProjection()
 }
 
 const handleSelect = (event: Event) => {

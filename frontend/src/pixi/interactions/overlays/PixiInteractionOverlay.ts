@@ -28,7 +28,7 @@ import {
 // Stores
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
-import { drillDownService } from '@/services/drillDownService'
+import { projectionService } from '@/services/projectionService'
 
 // Utils
 import { StatisticalNormalizer } from '@/utils/calculations/StatisticalNormalizer'
@@ -208,9 +208,12 @@ export class PixiInteractionOverlay extends PixiContainer {
   private handleDrillDown(fingerprintId: string): void {
     const fingerprint = this.fingerprintStore.fingerprints.find((fp) => fp.id === fingerprintId)
     if (!fingerprint) return
+    const pointIds = fingerprint.projectedPoints.map((p) => p.id)
+
+    if (!fingerprint) return
 
     useProjectionStore().setGlobalStats(fingerprint.localStats)
-    drillDownService.drillDownToFingerprint(fingerprintId)
+    projectionService.drillDownToSubset(pointIds)
   }
 
   private handleMiniRingSelection(fingerprintId: string): void {

@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Projection, FeatureRanking, AttributeStats } from '@/models/data'
 import { useDatasetStore } from '@/stores/datasetStore'
-import { fetchProjection, fetchFeatureRanking } from '@/services/api'
+import { fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
@@ -10,8 +10,6 @@ import { useAttributeFilterStore } from './attributeFilterStore'
 import { useDrillDownStore } from './drillDownStore'
 
 export const useProjectionStore = defineStore('projection', () => {
-  const datasetStore = useDatasetStore()
-
   // State
   const unfilteredProjection = ref<Projection[]>([])
   const projection = ref<Projection[]>([])
@@ -25,50 +23,9 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const isLoading = ref<boolean>(false)
 
-  async function loadProjection() {
-    const dataset = datasetStore.selectedDatasetName
-
-    if (!dataset) {
-      return null
-    }
-
-    // Prevent concurrent loads
-    if (isLoading.value) {
-      console.warn('Projection loading already in progress')
-      return
-    }
-
-    isLoading.value = true
-
-    try {
-      const result = await fetchProjection(dataset, projectionMethod.value)
-
-      globalStats.value = result.globalStats
-      unfilteredProjection.value = result.projectionData
-      projection.value = result.projectionData
-
-      usePointFilterStore().initAvailablePointFilters(
-        result.nonNumericAttributes,
-        result.categoryValues || {},
-      )
-
-      useAttributeFilterStore().initAttributeMetadata(
-        result.numericAttributes,
-        result.attributeMetadata,
-      )
-
-      useDrillDownStore().clearHistory()
-
-      useFingerprintStore().selectedFingerprints = []
-
-      // await loadFeatureRanking()
-    } catch {
-      return null
-    } finally {
-      isLoading.value = false
-    }
+  function resetToBaseProjection() {
+    projection.value = unfilteredProjection.value
   }
-
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
@@ -160,11 +117,11 @@ export const useProjectionStore = defineStore('projection', () => {
     projectionInstance,
     projectionMethod,
     globalStats,
-
+    isLoading,
     featureRanking,
     neighborhoodRadius,
 
-    loadProjection,
+    resetToBaseProjection,
     setLoading,
     loadFeatureRanking,
     getFeatureRankingForPoint,

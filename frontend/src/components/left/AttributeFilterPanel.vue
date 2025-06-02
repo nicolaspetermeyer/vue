@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
-import { attributeProjectionService } from '@/services/attributeFilterProjectionService'
 import { useProjectionStore } from '@/stores/projectionStore'
+import { projectionService } from '@/services/projectionService'
 
 const attributeFilterStore = useAttributeFilterStore()
 const {
@@ -22,6 +22,7 @@ const {
 const { updateAttributeFilter, clearAttributeFilter } = attributeFilterStore
 
 const projectionStore = useProjectionStore()
+const { resetToBaseProjection } = projectionStore
 
 // Metadata filtering for attributes
 const selectedMetadataCategory = computed({
@@ -70,8 +71,7 @@ const hasActiveAttributeFilter = computed(() => attributeFilterActive.value)
 
 const clearFilter = () => {
   clearAttributeFilter()
-  console.log('All attributes: ', allNumericAttributes.value)
-  projectionStore.projectionInstance?.updateAttributeRing(allNumericAttributes.value)
+  projectionService.resetToBaseProjection()
   selectedMetadataCategory.value = null
   selectedMetadataValue.value = null
 }
@@ -80,7 +80,7 @@ const recalculateProjection = async () => {
   if (activeAttributes.value.length > 0) {
     attributeFilterStore.setRecalculating(true)
     try {
-      await attributeProjectionService.recalculateWithAttributes(activeAttributes.value)
+      await projectionService.recalculateWithAttributes(activeAttributes.value)
       projectionStore.projectionInstance?.updateAttributeRing(activeAttributes.value)
     } catch (error) {
       console.error('Failed to recalculate projection:', error)

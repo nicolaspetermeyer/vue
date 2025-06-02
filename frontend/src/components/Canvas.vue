@@ -81,29 +81,6 @@ watch(
   { deep: true },
 )
 
-// Watch for changes in the point filter store and apply filtering to the projection
-watch(
-  [() => projectionStore.projection, () => pointFilterStore.activePointFilter],
-  ([projection, _filter]) => {
-    if (!projection || projection.length === 0) return
-    if (!projectionStore.projectionInstance) return
-
-    const filteredIds = pointFilterStore.filterPointIds(projection)
-
-    if (filteredIds.length === projection.length) {
-      projectionStore.projectionInstance.showAllPoints()
-      return
-    }
-
-    const filteredIndices = projection
-      .map((point, i) => (filteredIds.includes(point.id) ? i : -1))
-      .filter((idx) => idx !== -1)
-
-    projectionStore.projectionInstance.filterPoints(filteredIndices)
-  },
-  { immediate: true },
-)
-
 onMounted(async () => {
   await init()
   update()

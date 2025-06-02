@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { projectionService } from '@/services/projectionService'
 import { storeToRefs } from 'pinia'
 
 const pointFilterStore = usePointFilterStore()
 
 const { pointFilterCategories, activePointFilter } = storeToRefs(pointFilterStore)
 
-const { setActivePointFilter, clearActivePointFilter, getPointCategoryValues } = pointFilterStore
+const { getPointCategoryValues } = pointFilterStore
 
 const selectedCategory = computed({
   get: () => activePointFilter.value.category,
   set: (value) => {
     if (value !== activePointFilter.value.category) {
-      setActivePointFilter(value, [])
+      projectionService.applyPointFilter(value, [])
     }
   },
 })
@@ -26,7 +27,7 @@ const availableCategoryValues = computed(() => {
 const selectedValues = computed({
   get: () => activePointFilter.value.values,
   set: (values) => {
-    setActivePointFilter(selectedCategory.value, values)
+    projectionService.applyPointFilter(selectedCategory.value, values)
   },
 })
 
@@ -36,12 +37,16 @@ const hasActiveFilters = computed(() => {
 
 const selectAllValues = () => {
   if (selectedCategory.value) {
-    setActivePointFilter(selectedCategory.value, [...availableCategoryValues.value])
+    projectionService.applyPointFilter(selectedCategory.value, [...availableCategoryValues.value])
   }
 }
 
 const deselectAllValues = () => {
-  setActivePointFilter(selectedCategory.value, [])
+  projectionService.applyPointFilter(selectedCategory.value, [])
+}
+
+const clear = () => {
+  projectionService.clearPointFilter()
 }
 </script>
 
@@ -49,9 +54,7 @@ const deselectAllValues = () => {
   <section class="section">
     <div class="flex items-center justify-between">
       <h3 class="section-title">Filters</h3>
-      <button v-if="hasActiveFilters" @click="clearActivePointFilter" class="btn btn-xs btn-ghost">
-        Clear
-      </button>
+      <button v-if="hasActiveFilters" @click="clear" class="btn btn-xs btn-ghost">Clear</button>
     </div>
 
     <div v-if="pointFilterCategories && pointFilterCategories.length > 0" class="filter-container">
