@@ -6,6 +6,8 @@ import type { AttributeStats, Projection } from '@/models/data'
 import { PixiInteractionOverlay } from '@/pixi/interactions/overlays/PixiInteractionOverlay'
 import { Colors } from '@/config/Themes'
 import { PixiApp } from '@/pixi/Base/PixiApp'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { useProjectionStore } from '@/stores/projectionStore'
 
 export class PixiProjection extends PixiContainer {
   dimred: PixiDimred
@@ -83,9 +85,28 @@ export class PixiProjection extends PixiContainer {
    * @param attributes Array of attribute names to display
    */
   updateAttributeRing(attributes: string[]): void {
-    if (!this.attributeRing) return
+    console.log('Updating attribute ring with attributes:', attributes)
+    const globalStats = useProjectionStore().globalStats
+    if (this.attributeRing) {
+      this.attributeRing.updateVisibleAttributes(globalStats, attributes)
+    }
+    if (this.dimred?.pixiGlyph) {
+      this.dimred.pixiGlyph.forEach((ring, fingerprintId) => {
+        const fingerprint = useFingerprintStore().getFingerprintById(fingerprintId)
+        if (fingerprint) {
+          // Filter fingerprint stats to only include the filtered attributes
+          const filteredStats = {} as Record<string, AttributeStats>
+          for (const attr of attributes) {
+            if (attr in fingerprint.localStats) {
+              filteredStats[attr] = fingerprint.localStats[attr]
+            }
+          }
 
-    this.attributeRing.updateVisibleAttributes(attributes)
+          // Rebuild the mini ring
+          ring.updateVisibleAttributes(filteredStats, attributes)
+        }
+      })
+    }
   }
 
   /**

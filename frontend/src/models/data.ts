@@ -29,6 +29,7 @@ export interface ProjectionApiResponse {
     attributeMetadata: Record<string, AttributeMetadata>
     attributes: string[]
     categoryList: string[]
+    categoryUniqueValues: Record<string, string[]>
   }
 }
 

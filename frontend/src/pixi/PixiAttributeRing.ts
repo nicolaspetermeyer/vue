@@ -89,11 +89,13 @@ export class PixiAttributeRing
     const gapAngle = this.mini ? 0.0005 : this.visibleSegments.length > 30 ? 0.005 : 0.02
     const segmentCount = this.visibleSegments.length
     const anglePerSegment = (Math.PI * 2) / segmentCount
+
     for (let i = 0; i < segmentCount; i++) {
       const segment = this.visibleSegments[i]
       const slotStart = i * anglePerSegment
       const startAngle = slotStart + gapAngle / 2
       const endAngle = slotStart + anglePerSegment - gapAngle / 2
+
       segment.drawSegment(
         this.innerRadius,
         this.maxOuterRadius,
@@ -174,19 +176,32 @@ export class PixiAttributeRing
     this.addChild(label)
   }
 
-  updateVisibleAttributes(attributeNames: string[]): void {
-    const attributeSet = new Set(attributeNames)
-
+  updateVisibleAttributes(
+    globalStats: Record<string, AttributeStats>,
+    attributeNames: string[],
+  ): void {
+    // Clear existing segments
     this.segments.forEach((segment) => {
       if (this.children.includes(segment)) {
         this.removeChild(segment)
       }
     })
-    this.visibleSegments = this.segments.filter((segment) => attributeSet.has(segment.attributeKey))
 
-    for (const segment of this.visibleSegments) {
-      this.addChild(segment)
+    // remove text label children
+    this.children = this.children.filter((child) => !(child instanceof PixiText))
+
+    this.segments = []
+    this.attributeKeys.clear()
+
+    const attributeSet = new Set(attributeNames)
+
+    for (const [attrKey, stat] of Object.entries(globalStats)) {
+      if (attributeSet.has(attrKey)) {
+        this.addSegment(attrKey, stat, this.mini, this.fingerprint)
+        this.attributeKeys.add(attrKey)
+      }
     }
+    this.visibleSegments = [...this.segments]
     this.drawAttributeSegments()
   }
 

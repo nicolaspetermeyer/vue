@@ -1,8 +1,5 @@
 import { ref } from 'vue'
-import { drillDownService } from './drillDownService'
 import type { Projection } from '@/models/data'
-import { useProjectionStore } from '@/stores/projectionStore'
-import { ProjectionTransformer } from '@/utils/transformers/ProjectionTransformer'
 
 class AnimationService {
   private animationFrame: number | null = null
@@ -10,6 +7,10 @@ class AnimationService {
   private duration: number = 800 // ms
   private pixiInstance: any = null
   private activePointSet: Projection[] = []
+  private frameCount = 0
+  private lastFpsUpdate = 0
+  private lastRenderTime = 0
+  public fps = ref(0)
 
   // Reactive state
   public progress = ref(0)
@@ -32,12 +33,28 @@ class AnimationService {
     this.progress.value = 0
     this.startTime = performance.now()
 
-    this.activePointSet = normPoints || []
+    const pointBatches: Projection[][] = []
+    const batchSize = 500
+
+    for (let i = 0; i < normPoints.length; i += batchSize) {
+      pointBatches.push(normPoints.slice(i, i + batchSize))
+    }
+
+    this.activePointSet = pointBatches[0] || []
+    let currentBatch = 0
 
     return new Promise<void>((resolve) => {
       const animate = (timestamp: number) => {
         const elapsed = timestamp - this.startTime
         this.progress.value = Math.min(elapsed / this.duration, 1)
+
+        if (currentBatch < pointBatches.length - 1) {
+          const progressThreshold = (currentBatch + 1) / pointBatches.length
+          if (this.progress.value >= progressThreshold) {
+            currentBatch++
+            this.activePointSet = [...this.activePointSet, ...pointBatches[currentBatch]]
+          }
+        }
 
         // Update point positions with the new progress
         this.updatePointPositions(this.progress.value)
@@ -61,6 +78,17 @@ class AnimationService {
    */
   private updatePointPositions(progress: number) {
     if (!this.pixiInstance) return
+
+    const now = performance.now()
+    this.lastRenderTime = now
+    this.frameCount++
+
+    if (now - this.lastFpsUpdate > 1000) {
+      this.fps.value = Math.round((this.frameCount * 1000) / (now - this.lastFpsUpdate))
+      this.frameCount = 0
+      this.lastFpsUpdate = now
+      console.log(`Animation FPS: ${this.fps.value}, Points: ${this.activePointSet.length}`)
+    }
 
     // Update each point's position
     this.activePointSet.forEach((point) => {

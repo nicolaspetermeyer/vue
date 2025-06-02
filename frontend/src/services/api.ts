@@ -62,21 +62,6 @@ export async function fetchFeatureRanking(
   return response.data
 }
 
-// export async function fetchSubsetProjection(
-//   dataset: string,
-//   method: string,
-//   pointIds: string[],
-// ): Promise<any> {
-//   const response = await api.post(`/projection/subset/`, pointIds, {
-//     params: {
-//       filename: dataset,
-//       method: method,
-//     },
-//   })
-
-//   return response.data
-// }
-
 export async function fetchSubsetProjection(
   dataset: string,
   method: 'pca' | 'tsne',
@@ -87,6 +72,24 @@ export async function fetchSubsetProjection(
   subsetSize: number
 }> {
   const response = await api.post(`/projection/subset/`, pointIds, {
+    params: {
+      filename: dataset,
+      method: method,
+    },
+  })
+  return response.data
+}
+
+export async function fetchAttributeSubset(
+  dataset: string,
+  method: 'pca' | 'tsne',
+  attributes: string[],
+): Promise<{
+  projectionData: any[]
+  globalStats: Record<string, AttributeStats>
+  numericAttributes: string[]
+}> {
+  const response = await api.post(`/projection/attributes/`, attributes, {
     params: {
       filename: dataset,
       method: method,

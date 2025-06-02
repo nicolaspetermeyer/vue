@@ -96,7 +96,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.centerY = centerY
     this.mini = mini
 
-    this.alpha = 0.5
+    this.alpha = mini ? 0.9 : 0.5
 
     this.clear()
 

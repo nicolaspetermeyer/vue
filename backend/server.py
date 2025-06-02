@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, APIRouter, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Body
 import pandas as pd
 import numpy as np
 from pydantic import BaseModel
@@ -178,23 +179,36 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
 
         # Process metadata for each attribute
         attribute_metadata = {}
+
+        # Pre-compute unique values for each category
+        category_unique_values = {category: set() for category in categories}
+
         for col in metadata_df.columns[1:]:
             # Create category-value mappings for this attribute
             category_values = {}
             for idx, category in enumerate(categories):
                 if idx < len(metadata_df):
-                    category_values[category] = metadata_df.iloc[idx][col]
+                    value = metadata_df.iloc[idx][col]
+                    category_values[category] = value
+
+                    if pd.notna(value) and value:
+                        category_unique_values[category].add(value)
 
             # Store structured metadata for this attribute
             attribute_metadata[col] = {
                 "categories": category_values,
-                # Add any other metadata processing you need
             }
+
+        category_unique_values = {
+            category: sorted(list(values))
+            for category, values in category_unique_values.items()
+        }
 
         return {
             "attributeMetadata": attribute_metadata,
             "attributes": attributes,
             "categoryList": categories,
+            "categoryUniqueValues": category_unique_values,
         }
 
     except Exception as e:
@@ -581,95 +595,6 @@ async def get_feature_ranking(
     return result
 
 
-from fastapi import Body
-
-
-# @app.post("/api/projection/subset/")
-# async def project_data_subset(
-#     filename: str = Query(...),
-#     method: Literal["pca", "tsne"] = "pca",
-#     point_ids: List[str] = Body(...),
-# ):
-#     """
-#     Perform PCA or t-SNE on a subset of points identified by their IDs.
-
-#     Args:
-#         filename: Name of the dataset file
-#         method: Projection method ('pca' or 'tsne')
-#         point_ids: List of point IDs to include in the calculation
-
-#     Returns:
-#         JSON: Projected data with original IDs preserved
-#     """
-
-#     # Check if full projection exists in cache
-#     full_key = (filename, method)
-#     if full_key not in projection_cache:
-#         await project_data(filename=filename, method=method)
-
-#     full_projection = projection_cache[full_key]
-#     dataset_info = dataset_cache[filename]
-
-#     point_ids_set = set(point_ids)
-#     id_to_idx = {id_val: idx for idx, id_val in enumerate(dataset_info.ids)}
-#     filtered_indices = [
-#         id_to_idx[id_val] for id_val in point_ids_set if id_val in id_to_idx
-#     ]
-
-#     if not filtered_indices:
-#         raise HTTPException(
-#             status_code=400, detail="No matching points found for the provided IDs"
-#         )
-
-#     subset_df = dataset_info.numeric_df.iloc[filtered_indices]
-#     if method == "pca":
-#         projected_data = compute_pca(subset_df)
-#     elif method == "tsne":
-#         projected_data = compute_tsne(subset_df)
-
-#     result = {
-#         "subsetProjection": True,
-#         "nonNumericAttributes": full_projection.get("nonNumericAttributes", []),
-#         "categoryValues": full_projection.get("categoryValues", {}),
-#         "numericAttributes": full_projection.get("numericAttributes", []),
-#         "globalStats": full_projection.get("globalStats", {}),
-#     }
-
-#     if "attributeMetadata" in full_projection:
-#         result["attributeMetadata"] = full_projection["attributeMetadata"]
-
-#     id_to_original = {
-#         point["id"]: point["original"]
-#         for point in full_projection["projectionData"]
-#         if point["id"] in point_ids_set
-#     }
-
-#     # Get only the points that are in our subset
-#     result["projectionData"] = [
-#         point
-#         for point in full_projection["projectionData"]
-#         if point["id"] in point_ids_set
-#     ]
-#     new_projection_data = []
-#     for i, idx in enumerate(filtered_indices):
-#         point_id = dataset_info.ids[idx]
-#         if point_id in id_to_original:
-#             new_projection_data.append(
-#                 {
-#                     "id": point_id,
-#                     "pos": {
-#                         "x": float(projected_data[i][0]),
-#                         "y": float(projected_data[i][1]),
-#                     },
-#                     "original": id_to_original[point_id],
-#                 }
-#             )
-
-#     result["projectionData"] = new_projection_data
-
-#     return result
-
-
 @app.post("/api/projection/subset/")
 async def project_data_subset(
     filename: str = Query(...),
@@ -726,6 +651,129 @@ async def project_data_subset(
         "positionMapping": position_mapping,
         "subsetSize": len(position_mapping),
     }
+
+
+@app.post("/api/projection/attributes/")
+async def project_data_with_attributes(
+    filename: str = Query(...),
+    method: Literal["pca", "tsne"] = "pca",
+    attributes: List[str] = Body(...),
+):
+    """
+    Perform PCA or t-SNE on the dataset using only the specified attributes.
+    Reuses cached dataset but computes a new projection.
+
+    Args:
+        filename: Name of the dataset file
+        method: Projection method ('pca' or 'tsne')
+        attributes: List of attribute names to include in the calculation
+
+    Returns:
+        JSON: New projection data calculated only with the specified attributes
+    """
+    # Check if full projection exists in cache
+    full_key = (filename, method)
+    if full_key not in projection_cache:
+        await project_data(filename=filename, method=method)
+
+    # Get the full projection data to preserve original attributes
+    full_projection = projection_cache[full_key]
+
+    dataset_info = dataset_cache[filename]
+
+    # Ensure requested attributes exist in the dataset
+    valid_attributes = [
+        attr for attr in attributes if attr in dataset_info.numeric_cols
+    ]
+
+    if not valid_attributes:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid numeric attributes provided for projection",
+        )
+
+    # Create filtered dataset with only specified attributes
+    filtered_df = dataset_info.df[valid_attributes]
+
+    # Compute the new projection
+    if method == "pca":
+        projected_data = compute_pca(filtered_df)
+    elif method == "tsne":
+        projected_data = compute_tsne(filtered_df)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid projection method")
+
+    # Get global stats for the specified attributes
+    if filename in stats_cache:
+        all_stats = stats_cache[filename]
+        filtered_stats = {
+            attr: all_stats[attr] for attr in valid_attributes if attr in all_stats
+        }
+    else:
+        # If stats aren't cached, compute them for the filtered attributes
+        filtered_stats = {}
+        for col in valid_attributes:
+            col_data = dataset_info.df[col]
+            mean = col_data.mean()
+            std = col_data.std()
+            min_val = col_data.min()
+            max_val = col_data.max()
+            range_val = max_val - min_val
+            norm_mean = (mean - min_val) / range_val if range_val > 0 else 0
+            norm_std = std / range_val if range_val > 0 else 0
+
+            filtered_stats[col] = {
+                "mean": float(mean),
+                "std": float(std),
+                "min": float(min_val),
+                "max": float(max_val),
+                "normMean": float(norm_mean),
+                "normStd": float(norm_std),
+                "isNumeric": True,
+            }
+
+    # Get the original data (needed to reconstruct complete points)
+    original_data = await get_file_data(filename)
+    id_to_original = {item["id"]: item for item in original_data["data"]}
+
+    # Create the projection result
+    matched_data = []
+    for i, point_id in enumerate(dataset_info.ids):
+        if i < len(projected_data) and point_id in id_to_original:
+            matched_data.append(
+                {
+                    "id": point_id,
+                    "pos": {
+                        "x": float(projected_data[i][0]),
+                        "y": float(projected_data[i][1]),
+                    },
+                    "original": id_to_original[point_id],
+                }
+            )
+
+    # Get category values for non-numeric attributes (same as original)
+    category_values = {}
+    for col in dataset_info.non_numeric_cols:
+        unique_vals = dataset_info.df[col].unique()
+        category_values[col] = [str(val) for val in unique_vals]
+
+    # Load attribute metadata if available
+    attribute_metadata = load_attribute_metadata(filename)
+
+    # Construct final result
+    result = {
+        "projectionData": matched_data,
+        "globalStats": filtered_stats,
+        "nonNumericAttributes": dataset_info.non_numeric_cols,
+        "categoryValues": category_values,
+        "numericAttributes": valid_attributes,
+        "filteredAttributes": True,
+    }
+
+    if attribute_metadata:
+        result["attributeMetadata"] = attribute_metadata
+
+    return result
 
 
 # Run the server using:

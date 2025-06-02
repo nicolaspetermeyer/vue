@@ -6,14 +6,12 @@ import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
-import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 import { Colors } from '@/config/Themes'
 import BackButton from '@/components/canvas/BackButton.vue'
 import TransitionIndicator from '@/components/canvas/TransitionIndicator.vue'
 
 const projectionStore = useProjectionStore()
 const pointFilterStore = usePointFilterStore()
-const attributeFilterStore = useAttributeFilterStore()
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -72,6 +70,7 @@ function createProjectionInstance() {
   projectionStore.setProjectionInstance(projection)
 }
 
+// Watch for changes in the projection store and create a new instance if needed
 watch(
   () => projectionStore.projection,
   (newMatch) => {
@@ -82,6 +81,7 @@ watch(
   { deep: true },
 )
 
+// Watch for changes in the point filter store and apply filtering to the projection
 watch(
   [() => projectionStore.projection, () => pointFilterStore.activePointFilter],
   ([projection, _filter]) => {
@@ -102,26 +102,6 @@ watch(
     projectionStore.projectionInstance.filterPoints(filteredIndices)
   },
   { immediate: true },
-)
-
-watch(
-  [() => attributeFilterStore.activeAttributes, () => attributeFilterStore.attributeFilterActive],
-  ([attributes, isActive]) => {
-    if (!projectionStore.projectionInstance) return
-
-    // Update the attribute ring with the filtered attributes
-    if (projectionStore.projectionInstance.updateAttributeRing) {
-      projectionStore.projectionInstance.updateAttributeRing(attributes)
-    }
-
-    // if there's a specific method for filtering attributes:
-    // if (isActive) {
-    //   projectionStore.projectionInstance.filterAttributes(attributes)
-    // } else {
-    //   projectionStore.projectionInstance.showAllAttributes()
-    // }
-  },
-  { deep: true },
 )
 
 onMounted(async () => {

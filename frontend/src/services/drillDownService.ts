@@ -1,4 +1,3 @@
-import type { Projection } from '@/models/data'
 import { fetchSubsetProjection } from './api'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
@@ -102,40 +101,44 @@ export class DrillDownService {
     const previousState = drillDownStore.popHistoryState()
     if (!previousState) return false
 
-    const currentPositions = new Map<string, { x: number; y: number }>()
-    projectionStore.projection.forEach((point) => {
-      currentPositions.set(point.id, { ...point.pos })
-    })
-    // Restore projection with original positions
-    const restoredProjection = previousState.projection.map((point) => {
-      if (previousState.originalPositions && previousState.originalPositions.has(point.id)) {
-        const originalPos = previousState.originalPositions.get(point.id)!
-        return {
-          ...point,
-          basePos: currentPositions.has(point.id) ? currentPositions.get(point.id)! : point.pos,
-          pos: { ...previousState.originalPositions.get(point.id)! },
+    requestAnimationFrame(() => {
+      // Calculate current positions
+      const currentPositions = new Map<string, { x: number; y: number }>()
+      projectionStore.projection.forEach((point) => {
+        currentPositions.set(point.id, { ...point.pos })
+      })
+      // Restore projection with original positions
+      const restoredProjection = previousState.projection.map((point) => {
+        if (previousState.originalPositions && previousState.originalPositions.has(point.id)) {
+          const originalPos = previousState.originalPositions.get(point.id)!
+          return {
+            ...point,
+            basePos: currentPositions.has(point.id) ? currentPositions.get(point.id)! : point.pos,
+            pos: { ...previousState.originalPositions.get(point.id)! },
+          }
         }
+        return point
+      })
+
+      // Update stores
+      projectionStore.setProjection(restoredProjection)
+      requestAnimationFrame(() => {
+        const normPoints = ProjectionTransformer.normalizeToSize(restoredProjection, 460, 460)
+        animationService.startTransition(800, normPoints)
+      })
+
+      if (previousState.stats) {
+        projectionStore.setGlobalStats({ ...previousState.stats })
       }
-      return point
+
+      drillDownStore.setParentId(previousState.parentId)
+
+      if (previousState.originalPositions) {
+        drillDownStore.setOriginalPositions(previousState.originalPositions)
+      }
+
+      fingerprintStore.selectedFingerprints = []
     })
-
-    // Update stores
-    projectionStore.setProjection(restoredProjection)
-    // Start animation
-    const normPoints = ProjectionTransformer.normalizeToSize(restoredProjection, 460, 460)
-    //animationService.startTransition(800, normPoints)
-
-    if (previousState.stats) {
-      projectionStore.setGlobalStats({ ...previousState.stats })
-    }
-
-    drillDownStore.setParentId(previousState.parentId)
-
-    if (previousState.originalPositions) {
-      drillDownStore.setOriginalPositions(previousState.originalPositions)
-    }
-
-    fingerprintStore.selectedFingerprints = []
 
     return true
   }

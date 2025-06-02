@@ -2,20 +2,26 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
+import { attributeProjectionService } from '@/services/attributeFilterProjectionService'
+import { useProjectionStore } from '@/stores/projectionStore'
 
 const attributeFilterStore = useAttributeFilterStore()
 const {
   attributeMetadata,
   metadataAttributes,
   metadataCategories,
+  uniqueValues,
   hasMetadata,
   attributeMetadataFilter,
   attributeFilterActive,
   activeAttributes,
   allNumericAttributes,
+  isRecalculating,
 } = storeToRefs(attributeFilterStore)
 
-const { filterAttributesByMetadata, clearAttributeFilter } = attributeFilterStore
+const { updateAttributeFilter, clearAttributeFilter } = attributeFilterStore
+
+const projectionStore = useProjectionStore()
 
 // Metadata filtering for attributes
 const selectedMetadataCategory = computed({
@@ -32,21 +38,10 @@ const selectedMetadataCategory = computed({
 const availableAttributeCategoryValues = computed(() => {
   if (!selectedMetadataCategory.value) return []
 
-  const uniqueValues = new Set<string>()
-
-  // Loop through all attributes with metadata
-  Object.keys(attributeMetadata.value || {}).forEach((attr) => {
-    const metadata = attributeMetadata.value[attr]
-    const category = selectedMetadataCategory.value
-    if (category && metadata?.categories) {
-      const value = metadata.categories[category]
-      if (value) {
-        uniqueValues.add(value)
-      }
-    }
-  })
-
-  return Array.from(uniqueValues).sort()
+  const category = selectedMetadataCategory.value
+  if (uniqueValues.value && category in uniqueValues.value) {
+    return uniqueValues.value[category]
+  }
 })
 
 const selectedMetadataValue = computed({
@@ -56,7 +51,7 @@ const selectedMetadataValue = computed({
 
     // Apply filter when value changes
     if (value && selectedMetadataCategory.value) {
-      filterAttributesByMetadata(selectedMetadataCategory.value, value)
+      updateAttributeFilter(selectedMetadataCategory.value, value)
     } else {
       clearAttributeFilter()
     }
@@ -72,17 +67,35 @@ const attributeFilterStats = computed(() => {
 })
 
 const hasActiveAttributeFilter = computed(() => attributeFilterActive.value)
+
+const clearFilter = () => {
+  clearAttributeFilter()
+  console.log('All attributes: ', allNumericAttributes.value)
+  projectionStore.projectionInstance?.updateAttributeRing(allNumericAttributes.value)
+  selectedMetadataCategory.value = null
+  selectedMetadataValue.value = null
+}
+
+const recalculateProjection = async () => {
+  if (activeAttributes.value.length > 0) {
+    attributeFilterStore.setRecalculating(true)
+    try {
+      await attributeProjectionService.recalculateWithAttributes(activeAttributes.value)
+      projectionStore.projectionInstance?.updateAttributeRing(activeAttributes.value)
+    } catch (error) {
+      console.error('Failed to recalculate projection:', error)
+    } finally {
+      attributeFilterStore.setRecalculating(false)
+    }
+  }
+}
 </script>
 
 <template>
   <section class="section" v-if="hasMetadata">
     <div class="flex items-center justify-between">
       <h3 class="section-title">Attribute Filter</h3>
-      <button
-        v-if="hasActiveAttributeFilter"
-        @click="() => clearAttributeFilter"
-        class="btn btn-xs btn-ghost"
-      >
+      <button v-if="hasActiveAttributeFilter" @click="clearFilter" class="btn btn-xs btn-ghost">
         Clear
       </button>
     </div>
@@ -127,6 +140,20 @@ const hasActiveAttributeFilter = computed(() => attributeFilterActive.value)
         <span v-if="attributeFilterStats.filtered > 0">
           ({{ attributeFilterStats.filtered }} filtered out)
         </span>
+
+        <!-- Add Recalculate button -->
+        <div class="mt-2">
+          <button @click="recalculateProjection" class="btn btn-sm btn-primary w-full">
+            <span v-if="!isRecalculating">Recalculate Projection</span>
+            <span v-else class="loading loading-spinner loading-xs mr-1"></span>
+            <span v-if="isRecalculating">Recalculating...</span>
+          </button>
+        </div>
+      </div>
+      <!-- Loading indicator -->
+      <div v-if="isRecalculating" class="mt-3 text-center">
+        <span class="loading loading-spinner loading-sm"></span>
+        Recalculating projection...
       </div>
     </div>
   </section>

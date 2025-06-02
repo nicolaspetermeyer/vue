@@ -69,6 +69,10 @@ export const useProjectionStore = defineStore('projection', () => {
     }
   }
 
+  function setLoading(loading: boolean) {
+    isLoading.value = loading
+  }
+
   function setProjectionInstance(instance: PixiProjection) {
     projectionInstance.value = instance
   }
@@ -161,6 +165,7 @@ export const useProjectionStore = defineStore('projection', () => {
     neighborhoodRadius,
 
     loadProjection,
+    setLoading,
     loadFeatureRanking,
     getFeatureRankingForPoint,
     // getTopFeaturesForPoint,

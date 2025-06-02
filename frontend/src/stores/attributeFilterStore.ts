@@ -13,7 +13,10 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
   const attributeMetadata = ref<Record<string, AttributeMetadata>>({})
   const metadataAttributes = ref<string[]>([])
   const metadataCategories = ref<string[]>([])
+  const uniqueValues = ref<Record<string, string[]>>({})
   const hasMetadata = computed(() => metadataAttributes.value.length > 0)
+
+  const isRecalculating = ref<boolean>(false)
 
   // metadata filter state
   const attributeMetadataFilter = ref<{
@@ -25,54 +28,52 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
   })
 
   const activeAttributes = computed(() => {
-    if (!attributeFilterActive.value) {
-      return allNumericAttributes.value
+    if (attributeFilterActive.value) {
+      return filteredAttributes.value
     }
-    return filteredAttributes.value
+    return allNumericAttributes.value
   })
 
+  function setRecalculating(value: boolean) {
+    isRecalculating.value = value
+  }
+
   function initAttributeMetadata(
-    numericAttributes: string[],
+    attributes: string[],
     metadata?: {
       attributeMetadata?: Record<string, AttributeMetadata>
       attributes?: string[]
       categoryList?: string[]
+      categoryUniqueValues?: Record<string, string[]>
     },
   ) {
-    featureCount.value = numericAttributes.length
-    allNumericAttributes.value = numericAttributes || []
-    filteredAttributes.value = [...allNumericAttributes.value]
+    allNumericAttributes.value = [...attributes]
+    filteredAttributes.value = [...attributes]
+    featureCount.value = attributes.length
+    attributeFilterActive.value = false
 
     if (metadata) {
       attributeMetadata.value = metadata.attributeMetadata || {}
       metadataAttributes.value = metadata.attributes || []
       metadataCategories.value = metadata.categoryList || []
+      uniqueValues.value = metadata.categoryUniqueValues || {}
     } else {
       attributeMetadata.value = {}
       metadataAttributes.value = []
       metadataCategories.value = []
-    }
-
-    attributeFilterActive.value = false
-    attributeMetadataFilter.value = {
-      category: null,
-      value: null,
+      uniqueValues.value = {}
     }
   }
 
-  function filterAttributesByMetadata(
-    category: string,
-    value: string,
-    updateCallback?: (attributes: string[]) => void,
-  ) {
+  function updateAttributeFilter(category: string, value: string) {
     if (!category || !value || !hasMetadata.value) {
-      clearAttributeFilter(updateCallback)
+      clearAttributeFilter()
       return
     }
 
     attributeMetadataFilter.value = { category, value }
 
-    // Filter attributes that have this category-value pair in their metadata
+    // Filter attributes with the selected metadata
     filteredAttributes.value = allNumericAttributes.value.filter((attribute) => {
       if (!attributeMetadata.value[attribute]) return false
 
@@ -81,14 +82,10 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
     })
 
     attributeFilterActive.value = true
-
-    // Signal that the attribute ring should update
-    if (updateCallback) {
-      updateCallback(filteredAttributes.value)
-    }
+    isRecalculating.value = true
   }
 
-  function clearAttributeFilter(updateCallback?: (attributes: string[]) => void) {
+  function clearAttributeFilter() {
     attributeMetadataFilter.value = {
       category: null,
       value: null,
@@ -96,11 +93,6 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
 
     filteredAttributes.value = [...allNumericAttributes.value]
     attributeFilterActive.value = false
-
-    // Signal that the attribute ring should update to show all attributes
-    if (updateCallback) {
-      updateCallback(allNumericAttributes.value)
-    }
   }
 
   function clearAll() {
@@ -120,17 +112,19 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
   return {
     featureCount,
     allNumericAttributes,
+    uniqueValues,
     activeAttributes,
     filteredAttributes,
     attributeFilterActive,
     attributeMetadataFilter,
+    isRecalculating,
     attributeMetadata,
     metadataAttributes,
     metadataCategories,
     hasMetadata,
-
+    setRecalculating,
     initAttributeMetadata,
-    filterAttributesByMetadata,
+    updateAttributeFilter,
     clearAttributeFilter,
     clearAll,
   }
