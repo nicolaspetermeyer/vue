@@ -35,19 +35,7 @@ export const useProjectionStore = defineStore('projection', () => {
   }
 
   function setProjection(newProjection: Projection[]) {
-    projection.value = newProjection.map((point) => {
-      const drillDownStore = useDrillDownStore()
-      if (drillDownStore.isDrilledDownView && !('basePos' in point)) {
-        const existingPoint = projection.value.find((p) => p.id === point.id)
-        if (existingPoint) {
-          return {
-            ...point,
-            basePos: { ...existingPoint.pos },
-          }
-        }
-      }
-      return point
-    })
+    projection.value = newProjection
   }
 
   function setGlobalStats(newGlobalStats: Record<string, AttributeStats>) {

@@ -25,7 +25,6 @@ export const usePointFilterStore = defineStore('pointFilter', () => {
   }
 
   function setPointFilter(category: string | null, values: string[]) {
-    console.log('Setting point filter:', category, values)
     activePointFilter.value = {
       category,
       values: [...values],

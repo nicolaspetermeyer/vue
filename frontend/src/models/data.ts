@@ -35,15 +35,14 @@ export interface ProjectionApiResponse {
 
 export interface AttributeStats {
   // Core statistics
-  mean: number
-  normMean: number
+  mean: number // global
+  normMean: number // global
   std: number
   min: number
   max: number
 
-  // Reference data (for local stats)
-  globalMean?: number
-  globalNormMean?: number
+  localMean?: number
+  localNormMean?: number
   meanDelta?: number
 
   // Metadata

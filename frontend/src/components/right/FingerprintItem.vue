@@ -16,7 +16,7 @@ const fingerprintStore = useFingerprintStore()
 const { fingerprints } = storeToRefs(fingerprintStore)
 
 const projectionStore = useProjectionStore()
-const { projectionInstance } = storeToRefs(projectionStore)
+const { projectionInstance, globalStats } = storeToRefs(projectionStore)
 
 const drillDownStore = useDrillDownStore()
 const { currentParentId } = storeToRefs(drillDownStore)
@@ -60,7 +60,11 @@ function toggleMiniRing(id: string, event: Event) {
     const colorInt = fingerprint.color || parseInt('888888', 16)
     const stats = fingerprint.localStats
 
-    projectionInstance.value?.dimred?.addMiniRingForFingerprint(fingerprint, colorInt, stats)
+    projectionInstance.value?.dimred?.addMiniRingForFingerprint(
+      fingerprint,
+      colorInt,
+      globalStats.value,
+    )
     visibleMiniRings.value.add(id)
   }
 }

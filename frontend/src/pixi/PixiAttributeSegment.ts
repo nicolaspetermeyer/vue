@@ -128,7 +128,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     // Calculate the outer radius based on the value
     const arcWidth = this.maxOuterRadius - this.innerRadius
-    let outerRadius = this.innerRadius + this.localNorm * arcWidth
+    let outerRadius = this.innerRadius + (0.5 + (this.localNorm - this.globalNorm)) * arcWidth
     let innerScale = this.innerRadius
 
     if (this.isHovered) {
@@ -180,7 +180,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     if (overlays && overlays.size > 0) {
       overlays.forEach((overlay) => {
-        const localOuterRadius = this.innerRadius + overlay.norm * arcWidth
+        const normDifference = overlay.norm - this.globalNorm
+        const localOuterRadius = this.innerRadius + (0.5 + normDifference) * arcWidth
 
         let fillColor = overlay.color
         let borderColor = overlay.color
@@ -408,12 +409,13 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         const stats = fp?.localStats[this.attributeKey]
 
         if (stats) {
-          const delta = stats.normMean - (stats.globalNormMean ?? 0)
+          const _localNorm = stats.localNormMean ?? 0
+          const delta = _localNorm - stats.normMean
           const direction = delta > 0 ? 'higher' : 'lower'
           const pctDiff = Math.abs(delta * 100).toFixed(1)
 
           content += `Fingerprint: ${fp.name}\n`
-          content += `Normalized Mean: ${stats.normMean.toFixed(2)}`
+          content += `Normalized Mean: ${_localNorm.toFixed(2)}`
           content += `\nMean: ${stats.mean.toFixed(2)}`
           content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
           content += metadataContent

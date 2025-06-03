@@ -17,26 +17,27 @@ export function calcFingerprintStats(
 
     if (values.length === 0) continue
 
-    const mean = values.reduce((a, b) => a + b, 0) / values.length
+    const localMean = values.reduce((a, b) => a + b, 0) / values.length
 
-    const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length
+    const variance =
+      values.reduce((acc, val) => acc + Math.pow(val - localMean, 2), 0) / values.length
     const std = Math.sqrt(variance)
 
-    const { min, max, mean: globalMean, normMean: globalNormMean } = globalStats[key]
+    const { min, max, mean, normMean } = globalStats[key]
 
     if (min === undefined || max === undefined) {
       continue
     }
     const range = max - min || 1 // prevent division by 0
-    const normMean = (mean - min) / range
-    const meanDelta = mean - globalMean
+    const localNormMean = (localMean - min) / range
+    const meanDelta = localMean - mean
 
     result[key] = {
       mean,
       normMean,
       std,
-      globalMean,
-      globalNormMean,
+      localMean,
+      localNormMean,
       meanDelta,
       min,
       max,

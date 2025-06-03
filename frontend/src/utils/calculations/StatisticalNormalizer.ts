@@ -5,59 +5,6 @@ import type { AttributeStats } from '@/models/data'
  */
 export class StatisticalNormalizer {
   /**
-   * Normalize a single value using min-max normalization
-   *
-   * @param value - Value to normalize
-   * @param min - Minimum value in the range
-   * @param max - Maximum value in the range
-   * @returns Normalized value between 0 and 1
-   */
-  static minMaxNormalize(value: number, min: number, max: number): number {
-    // Check for division by zero case
-    if (max === min) return 0.5
-
-    // Standard min-max normalization
-    let normalized = (value - min) / (max - min)
-
-    return normalized
-  }
-
-  /**
-   * Normalize a single value using Z-score normalization
-   *
-   * @param value - Value to normalize
-   * @param mean - Mean of the distribution
-   * @param std - Standard deviation of the distribution
-   * @returns Z-score normalized value
-   */
-  static zScoreNormalize(value: number, mean: number, std: number): number {
-    // Check for division by zero case
-    if (std === 0) return 0
-
-    return (value - mean) / std
-  }
-
-  /**
-   * Normalize a value using feature statistics
-   *
-   * @param value - Value to normalize
-   * @param stats - Feature statistics containing min, max, mean, std
-   * @param method - Normalization method ('minmax' or 'zscore')
-   * @returns Normalized value
-   */
-  static normalizeWithStats(
-    value: number,
-    stats: AttributeStats,
-    method: 'minmax' | 'zscore' = 'minmax',
-  ): number {
-    if (method === 'minmax' && stats.min !== undefined && stats.max !== undefined) {
-      return this.minMaxNormalize(value, stats.min, stats.max)
-    } else {
-      return this.zScoreNormalize(value, stats.mean, stats.std)
-    }
-  }
-
-  /**
    * Normalize a map of attributes using their respective feature statistics
    *
    * @param attributes - Object containing attribute key-value pairs
@@ -67,71 +14,26 @@ export class StatisticalNormalizer {
    */
   static normalizeAttributes(
     attributes: Record<string, number>,
-    statsMap: Map<string, AttributeStats> | Record<string, AttributeStats>,
+    globalStats: Record<string, AttributeStats>,
     method: 'minmax' | 'zscore' = 'minmax',
   ): Record<string, number> {
-    const normalized: Record<string, number> = {}
+    const result: Record<string, number> = {}
 
     for (const [key, value] of Object.entries(attributes)) {
-      let stats: AttributeStats | undefined
+      if (!globalStats[key]) continue
 
-      // Handle both Map and Record types for statsMap
-      if (statsMap instanceof Map) {
-        stats = statsMap.get(key)
-      } else {
-        stats = statsMap[key]
-      }
+      const { min, max, std, mean } = globalStats[key]
 
-      // Only normalize if we have stats for this attribute
-      if (stats) {
-        normalized[key] = this.normalizeWithStats(value, stats, method)
-      } else {
-        // Keep original if no stats available
-        normalized[key] = value
+      if (method === 'minmax') {
+        const actualMin = min ?? 0
+        const actualMax = max ?? 1
+        const range = actualMax - actualMin || 1 // Prevent division by zero
+        result[key] = (value - actualMin) / range
+      } else if (method === 'zscore') {
+        result[key] = (value - mean) / std
       }
     }
 
-    return normalized
-  }
-
-  /**
-   * Formats normalized data for use in Attribute Ring components
-   *
-   * @param normalizedValues - Record of normalized values
-   * @returns Object formatted for attribute ring consumption
-   */
-  static formatForAttributeRing(
-    normalizedValues: Record<string, number>,
-  ): Record<string, { normMean: number }> {
-    const formattedStats: Record<string, { normMean: number }> = {}
-
-    for (const [key, value] of Object.entries(normalizedValues)) {
-      formattedStats[key] = { normMean: value }
-    }
-
-    return formattedStats
-  }
-
-  /**
-   * Extract numeric attributes from an object
-   *
-   * @param obj - Object with mixed type properties
-   * @param excludeKeys - Optional array of keys to exclude
-   * @returns Record with only numeric properties
-   */
-  static extractNumericAttributes(
-    obj: Record<string, any>,
-    excludeKeys: string[] = ['id'],
-  ): Record<string, number> {
-    const attributes: Record<string, number> = {}
-
-    for (const [key, value] of Object.entries(obj)) {
-      if (excludeKeys.includes(key.toLowerCase())) continue
-      if (typeof value === 'number') {
-        attributes[key] = value
-      }
-    }
-
-    return attributes
+    return result
   }
 }

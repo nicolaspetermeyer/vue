@@ -194,10 +194,17 @@ class ProjectionService {
   /**
    * Drill down to analyze a data subset
    */
-  async drillDownToSubset(pointIds: string[]): Promise<boolean> {
+  async drillDownToSubset(fingerprintId: string): Promise<boolean> {
     const datasetStore = useDatasetStore()
     const projectionStore = useProjectionStore()
     const drillDownStore = useDrillDownStore()
+
+    const fingerprint = useFingerprintStore().getFingerprintById(fingerprintId)
+    if (!fingerprint) {
+      console.error(`Fingerprint with ID ${fingerprintId} not found`)
+      return false
+    }
+    const pointIds = fingerprint.projectedPoints.map((p) => p.id)
 
     const dataset = datasetStore.selectedDatasetName
     if (!dataset || !pointIds.length) {
@@ -220,6 +227,7 @@ class ProjectionService {
         parentId: drillDownStore.currentParentId,
         originalPositions: currentPositions,
       })
+      console.log('Saved current projection state to history:', drillDownStore.projectionHistory)
 
       // Fetch subprojection from backend
       const result = await fetchSubsetProjection(
@@ -243,11 +251,31 @@ class ProjectionService {
           return point
         })
 
+      const transformedGlobalStats: Record<string, AttributeStats> = {}
+
+      for (const [key, stat] of Object.entries(fingerprint.localStats)) {
+        transformedGlobalStats[key] = {
+          // Convert local values to global values in the new context
+          mean: stat.localMean || stat.mean,
+          normMean: stat.localNormMean || stat.normMean,
+          std: stat.std,
+          min: stat.min,
+          max: stat.max,
+
+          // Set the same values for normMean for compatibility
+          localMean: stat.localMean || stat.mean,
+          localNormMean: stat.localNormMean || stat.normMean,
+
+          // Mark as global since these are now the global stats for the drilled-down view
+          isGlobal: true,
+        }
+      }
+
       // Update stores
+      useProjectionStore().setGlobalStats(transformedGlobalStats)
       projectionStore.setProjection(filteredProjection)
-      projectionStore.setGlobalStats(projectionStore.globalStats)
       drillDownStore.setOriginalPositions(currentPositions)
-      drillDownStore.setParentId(pointIds[0]) // Use first point as parent ID reference
+      drillDownStore.setParentId(fingerprintId)
 
       // Update visualization with animation
       this.updateVisualizationWithAnimation(filteredProjection)
@@ -277,6 +305,7 @@ class ProjectionService {
       return false
     }
 
+    // requestAnimationFrame(() => {
     // Calculate current positions for transition animation
     const currentPositions = new Map<string, { x: number; y: number }>()
     projectionStore.projection.forEach((point) => {

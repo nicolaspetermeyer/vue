@@ -8,6 +8,7 @@ import {
   Circle,
 } from 'pixi.js'
 import { PixiContainer } from '@/pixi/Base/PixiContainer'
+import { AttributeStats } from '@/models/data'
 
 // Pixi Components
 import { PixiTooltip } from './PixiTooltip'
@@ -206,14 +207,7 @@ export class PixiInteractionOverlay extends PixiContainer {
    * Creates a new projection that only includes points from this fingerprint
    */
   private handleDrillDown(fingerprintId: string): void {
-    const fingerprint = this.fingerprintStore.fingerprints.find((fp) => fp.id === fingerprintId)
-    if (!fingerprint) return
-    const pointIds = fingerprint.projectedPoints.map((p) => p.id)
-
-    if (!fingerprint) return
-
-    useProjectionStore().setGlobalStats(fingerprint.localStats)
-    projectionService.drillDownToSubset(pointIds)
+    projectionService.drillDownToSubset(fingerprintId)
   }
 
   private handleMiniRingSelection(fingerprintId: string): void {
@@ -226,6 +220,7 @@ export class PixiInteractionOverlay extends PixiContainer {
   private updateAttributeRingForPoint(point: PixiDimredPoint | null) {
     if (!this.attributeRing || !point) return
     const globalStats = useProjectionStore().globalStats
+    console.log('Updating attribute ring for point:', point.dimredpoint)
 
     const attributes: Record<string, number> = {}
     for (const [key, value] of Object.entries(point.dimredpoint.original)) {
@@ -241,11 +236,20 @@ export class PixiInteractionOverlay extends PixiContainer {
       'minmax',
     )
 
-    const localStats: Record<string, { normMean?: number }> = {}
+    const localStats: Record<string, AttributeStats> = {}
     for (const [key, value] of Object.entries(normalizedValues)) {
-      localStats[key] = { normMean: value }
+      if (globalStats[key]) {
+        localStats[key] = {
+          mean: globalStats[key].mean,
+          normMean: globalStats[key].normMean,
+          min: globalStats[key].min,
+          max: globalStats[key].max,
+          std: globalStats[key].std,
+          localNormMean: value,
+          isGlobal: false,
+        }
+      }
     }
-
     this.attributeRing.setLocalRing('99', localStats, Colors.POINT_SELECT, point.dimredpoint.id)
   }
 

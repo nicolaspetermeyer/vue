@@ -85,7 +85,6 @@ export class PixiProjection extends PixiContainer {
    * @param attributes Array of attribute names to display
    */
   updateAttributeRing(attributes: string[]): void {
-    console.log('Updating attribute ring with attributes:', attributes)
     const globalStats = useProjectionStore().globalStats
     if (this.attributeRing) {
       this.attributeRing.updateVisibleAttributes(globalStats, attributes)

@@ -56,7 +56,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
   addMiniRingForFingerprint(
     fingerprint: Fingerprint,
     color: number,
-    stats: Record<string, AttributeStats>,
+    globalStats: Record<string, AttributeStats>,
   ) {
     const { centroid, localStats, id, projectedPoints } = fingerprint
     const ids = projectedPoints.map((point) => point.id)
@@ -66,7 +66,7 @@ export class PixiDimred extends PixiContainer implements HoverableProvider<PixiD
     this.removeMiniRing(fingerprint)
     this.hidePointsById(ids)
     const mini = true
-    const miniRing = new PixiAttributeRing(stats, mini, { id, stats: localStats, color })
+    const miniRing = new PixiAttributeRing(globalStats, mini, { id, stats: localStats, color })
 
     miniRing.position.set(centroid.x - miniRing.width / 2, centroid.y - miniRing.height / 2)
 
