@@ -10,7 +10,7 @@ const fingerprintStore = useFingerprintStore()
 const { fingerprints } = storeToRefs(fingerprintStore)
 
 const drillDownStore = useDrillDownStore()
-const { currentParentId } = storeToRefs(drillDownStore)
+const { currentParentId, currentViewLevel } = storeToRefs(drillDownStore)
 
 const topLevelFingerprints = computed(() => {
   return fingerprints.value.filter((fp) => fp.parentId === currentParentId.value)
@@ -21,7 +21,9 @@ const topLevelFingerprints = computed(() => {
   <div class="fingerprint-list">
     <div class="fingerprint-header">
       <h2 class="text-lg font-semibold mb-2">Fingerprints</h2>
-      <div v-if="currentParentId" class="drilled-down-indicator">Drilled down view</div>
+      <div v-if="currentParentId" class="drilled-down-indicator">
+        Drilled down level {{ currentViewLevel }}
+      </div>
     </div>
 
     <div v-if="topLevelFingerprints.length === 0" class="text-sm text-gray-500">

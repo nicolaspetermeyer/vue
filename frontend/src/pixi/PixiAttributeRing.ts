@@ -152,22 +152,42 @@ export class PixiAttributeRing
 
   private drawLabelForSegment(segment: PixiAttributeSegment, startAngle: number, endAngle: number) {
     const midAngle = (startAngle + endAngle) / 2
-    const outerRadius =
-      this.innerRadius + segment.globValue * (this.maxOuterRadius - this.innerRadius)
-    const radius = (this.innerRadius + outerRadius) / 2 // midpoint radius
+    const arcWidth = this.maxOuterRadius - this.innerRadius
+    const globalOuterRadius = this.innerRadius + 0.5 * arcWidth
 
-    const labelX = this.layoutProps.width / 2 + radius * Math.cos(midAngle)
-    const labelY = this.layoutProps.height / 2 + radius * Math.sin(midAngle)
+    const middleRadius = (this.innerRadius + globalOuterRadius) / 2 // midpoint radius
+
+    const labelX = this.layoutProps.width / 2 + middleRadius * Math.cos(midAngle)
+    const labelY = this.layoutProps.height / 2 + middleRadius * Math.sin(midAngle)
+
+    const angleDiff = endAngle - startAngle
+    const arcLength = angleDiff * middleRadius
+    const maxWidth = Math.min(arcLength * 0.7, 80)
+
+    let displayText = segment.attrkey
+    let fontSize = 14
+
+    // Adjust font size and text based on available space
+    if (arcLength < 40) {
+      // For very small segments, just use first letter or first few letters
+      displayText = displayText.substring(0, 2)
+      fontSize = 10
+    } else if (segment.attrkey.length > 16) {
+      fontSize = 12
+    }
 
     const label = new PixiText({
-      text: segment.attrkey,
+      text: displayText,
       x: labelX,
       y: labelY,
       anchor: 0.5,
       style: {
-        fontSize: 16,
+        fontSize: fontSize,
         fill: 0x000000,
         align: 'center',
+        wordWrap: arcLength > 60,
+        wordWrapWidth: maxWidth,
+        breakWords: true,
       },
     })
 
