@@ -305,7 +305,6 @@ class ProjectionService {
       return false
     }
 
-    // requestAnimationFrame(() => {
     // Calculate current positions for transition animation
     const currentPositions = new Map<string, { x: number; y: number }>()
     projectionStore.projection.forEach((point) => {
@@ -331,7 +330,9 @@ class ProjectionService {
     drillDownStore.setParentId(previousState.parentId)
 
     // Update visualization with animation
-    this.updateVisualizationWithAnimation(restoredProjection)
+    requestAnimationFrame(() => {
+      this.updateVisualizationWithAnimation(restoredProjection)
+    })
 
     return true
   }

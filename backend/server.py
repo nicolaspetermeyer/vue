@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing import Literal, List, Dict, Any, Optional, Tuple
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+import umap
 from sklearn.preprocessing import StandardScaler
 import os
 
@@ -19,7 +20,7 @@ dataset_cache = {}
 
 
 class ProjectionRequest(BaseModel):
-    method: Literal["pca", "tsne"]
+    method: Literal["pca", "tsne", "umap"]
     filename: str
 
 
@@ -221,6 +222,44 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
 # ============================================================================
 
 
+def compute_pca(data, n_components: int = 2) -> List[List[float]]:
+    """Compute PCA projection"""
+    if isinstance(data, pd.DataFrame):
+        # Filter out any ID-like columns
+        id_cols = [col for col in data.columns if col.lower() == "id"]
+        if id_cols:
+            data = data.drop(columns=id_cols)
+
+    df_scaled = StandardScaler().fit_transform(data)
+    pca = PCA(n_components=n_components)
+    embedding = pca.fit_transform(df_scaled)
+    loadings = pca.components_.T
+    explained_var = pca.explained_variance_ratio_
+
+    print("Loadings:")
+    print(loadings)
+    print("Explained Variance Ratio:")
+    print(explained_var)
+    # Calculate feature attribution based on squared loadings
+    squared_loadings = loadings**2
+    feature_attribution = np.sum(squared_loadings, axis=1)
+    print("Squared Loadings:")
+    print(squared_loadings)
+    print("Feature Attribution:")
+    print(feature_attribution)
+
+    weighted_loadings = squared_loadings * explained_var
+    feature_attribution_weighted = np.sum(weighted_loadings, axis=1)
+
+    relative_contribution = feature_attribution_weighted / np.sum(
+        feature_attribution_weighted
+    )
+    print("Relative Contribution:")
+    print(relative_contribution)
+
+    return embedding.tolist()
+
+
 def compute_tsne(data) -> List[List[float]]:
     """Compute t-SNE projection"""
     # Remove ID columns
@@ -234,7 +273,6 @@ def compute_tsne(data) -> List[List[float]]:
     tsne = TSNE(
         n_components=2,
         perplexity=30,
-        # random_state=42,
         learning_rate="auto",
         init="random",
         max_iter=250,
@@ -243,8 +281,9 @@ def compute_tsne(data) -> List[List[float]]:
     return embedding.tolist()
 
 
-def compute_pca(data, n_components: int = 2) -> List[List[float]]:
-    """Compute PCA projection"""
+def compute_umap(data) -> List[List[float]]:
+    """Compute UMAP projection"""
+    # Remove ID columns
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
@@ -252,9 +291,21 @@ def compute_pca(data, n_components: int = 2) -> List[List[float]]:
             data = data.drop(columns=id_cols)
 
     df_scaled = StandardScaler().fit_transform(data)
-    pca = PCA(n_components=n_components)
-    embedding = pca.fit_transform(df_scaled)
-    return embedding.tolist()
+    reducer = umap.UMAP(
+        n_components=2,
+        n_neighbors=15,
+        min_dist=0.1,
+        metric="euclidean",
+    )
+
+    embedding = reducer.fit_transform(df_scaled)
+    # Convert to standard numpy array and then to list to handle various return types
+    if isinstance(embedding, tuple):  # For tuple returns
+        return np.array(embedding).tolist()
+    elif hasattr(embedding, "toarray"):  # For sparse matrices
+        return embedding.toarray().tolist()
+    else:  # For numpy arrays
+        return np.array(embedding).tolist()
 
 
 def compute_local_variance(data: np.ndarray, proj: np.ndarray, radius: float):
@@ -393,10 +444,10 @@ async def get_organized_data(filename: str):
 @app.get("/api/projection/")
 async def project_data(
     filename: str = Query(...),
-    method: Literal["pca", "tsne"] = "pca",
+    method: Literal["pca", "tsne", "umap"] = "pca",
 ):
     """
-    Perform PCA or t-SNE on the provided data.
+    Perform PCA, t-SNE or umap on the provided data.
 
     Args:
         request (ProjectionRequest): Request body containing projection method and data.
@@ -426,6 +477,8 @@ async def project_data(
         print("projected")
     elif method == "tsne":
         projected_data = compute_tsne(dataset_info.numeric_df)
+    elif method == "umap":
+        projected_data = compute_umap(dataset_info.numeric_df)
     else:
         raise HTTPException(status_code=400, detail="Invalid projection method")
 
@@ -527,14 +580,14 @@ async def get_global_stats(filename: str):
 
 @app.get("/api/feature-ranking/")
 async def get_feature_ranking(
-    filename: str, method: Literal["pca", "tsne"] = "pca", radius: float = 0.1
+    filename: str, method: Literal["pca", "tsne", "umap"] = "pca", radius: float = 0.1
 ):
     """
     Compute variance-based feature ranking for each point in the dataset.
 
     Args:
         filename (str): Name of the CSV file to analyze
-        method (str): Projection method to use ('pca' or 'tsne')
+        method (str): Projection method to use ('pca', 'tsne' or 'umap')
         radius (float): Neighborhood radius to consider in projection space
 
     Returns:
@@ -598,16 +651,16 @@ async def get_feature_ranking(
 @app.post("/api/projection/subset/")
 async def project_data_subset(
     filename: str = Query(...),
-    method: Literal["pca", "tsne"] = "pca",
+    method: Literal["pca", "tsne", "umap"] = "pca",
     point_ids: List[str] = Body(...),
 ):
     """
-    Perform PCA or t-SNE on a subset of points identified by their IDs.
+    Perform PCA, t-SNE or umap on a subset of points identified by their IDs.
     Returns only the new positions to minimize payload size.
 
     Args:
         filename: Name of the dataset file
-        method: Projection method ('pca' or 'tsne')
+        method: Projection method ('pca', 'tsne', 'umap')
         point_ids: List of point IDs to include in the calculation
 
     Returns:
@@ -636,6 +689,8 @@ async def project_data_subset(
         projected_data = compute_pca(subset_df)
     elif method == "tsne":
         projected_data = compute_tsne(subset_df)
+    elif method == "umap":
+        projected_data = compute_umap(subset_df)
 
     # Create minimal response with just the new positions
     position_mapping = {}
@@ -656,16 +711,16 @@ async def project_data_subset(
 @app.post("/api/projection/attributes/")
 async def project_data_with_attributes(
     filename: str = Query(...),
-    method: Literal["pca", "tsne"] = "pca",
+    method: Literal["pca", "tsne", "umap"] = "pca",
     attributes: List[str] = Body(...),
 ):
     """
-    Perform PCA or t-SNE on the dataset using only the specified attributes.
+    Perform PCA, t-SNE or umap on the dataset using only the specified attributes.
     Reuses cached dataset but computes a new projection.
 
     Args:
         filename: Name of the dataset file
-        method: Projection method ('pca' or 'tsne')
+        method: Projection method ('pca', 'tsne', 'umap')
         attributes: List of attribute names to include in the calculation
 
     Returns:
@@ -700,6 +755,8 @@ async def project_data_with_attributes(
         projected_data = compute_pca(filtered_df)
     elif method == "tsne":
         projected_data = compute_tsne(filtered_df)
+    elif method == "umap":
+        projected_data = compute_umap(filtered_df)
     else:
         raise HTTPException(status_code=400, detail="Invalid projection method")
 

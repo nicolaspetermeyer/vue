@@ -58,5 +58,5 @@ export const Styles = {
   LINEWIDTH_MINI_THIN: 0,
   LINEWIDTH_HOVER_MINI_THIN: 0,
 
-  POINT_SIZE: 5,
+  POINT_SIZE: 3,
 }

@@ -21,7 +21,7 @@ export async function fetchRawData(filename: string): Promise<Data[]> {
 
 export async function fetchProjection(
   filename: string,
-  method: 'pca' | 'umap' | 'tsne',
+  method: 'pca' | 'tsne' | 'umap',
 ): Promise<ProjectionApiResponse> {
   const response = await api.get<ProjectionApiResponse>(`/projection/`, {
     params: {
@@ -48,7 +48,7 @@ export async function fetchDatasets(): Promise<Dataset[]> {
 
 export async function fetchFeatureRanking(
   dataset: string,
-  method: 'pca' | 'tsne' = 'pca',
+  method: 'pca' | 'tsne' | 'umap' = 'pca',
   radius: number = 0.2,
 ): Promise<FeatureRanking[]> {
   const response = await api.get<FeatureRanking[]>(`/feature-ranking/`, {
@@ -64,7 +64,7 @@ export async function fetchFeatureRanking(
 
 export async function fetchSubsetProjection(
   dataset: string,
-  method: 'pca' | 'tsne',
+  method: 'pca' | 'tsne' | 'umap',
   pointIds: string[],
 ): Promise<{
   subsetProjection: boolean
@@ -82,7 +82,7 @@ export async function fetchSubsetProjection(
 
 export async function fetchAttributeSubset(
   dataset: string,
-  method: 'pca' | 'tsne',
+  method: 'pca' | 'tsne' | 'umap',
   attributes: string[],
 ): Promise<{
   projectionData: any[]

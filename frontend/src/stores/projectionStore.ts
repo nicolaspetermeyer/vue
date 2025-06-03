@@ -16,7 +16,7 @@ export const useProjectionStore = defineStore('projection', () => {
   const globalStats = ref<Record<string, AttributeStats>>({})
 
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
-  const projectionMethod = ref<'pca' | 'tsne'>('pca')
+  const projectionMethod = ref<'pca' | 'tsne' | 'umap'>('pca')
 
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)

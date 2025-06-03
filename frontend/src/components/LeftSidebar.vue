@@ -52,6 +52,7 @@ onMounted(async () => {})
           <select class="select-sm" v-model="projectionMethod">
             <option value="pca">PCA</option>
             <option value="tsne">t-SNE</option>
+            <option value="umap">UMAP</option>
           </select>
           <button @click="loadProj()" class="btn btn-sm btn-primary">Compute</button>
         </div>
