@@ -3,10 +3,13 @@ import { computed } from 'vue'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { projectionService } from '@/services/projectionService'
 import { storeToRefs } from 'pinia'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
 
 const pointFilterStore = usePointFilterStore()
-
 const { pointFilterCategories, activePointFilter } = storeToRefs(pointFilterStore)
+
+const fingerprintStore = useFingerprintStore()
+const { addFingerprint } = fingerprintStore
 
 const { getPointCategoryValues } = pointFilterStore
 
@@ -77,6 +80,13 @@ const clear = () => {
           <div class="flex items-center justify-between">
             <label class="label-text">Values</label>
             <div class="flex gap-1">
+              <button
+                @click="addFingerprint()"
+                class="btn btn-xs btn-ghost py-1"
+                :disabled="selectedValues.length === availableCategoryValues.length"
+              >
+                Create Fingerprint
+              </button>
               <button
                 @click="selectAllValues"
                 class="btn btn-xs btn-ghost py-1"

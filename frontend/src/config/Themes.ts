@@ -38,9 +38,7 @@ export const Colors = {
     0x16a085, // Dark Turquoise
     0x2c3e50, // Navy
     0xd35400, // Pumpkin
-    0x7f8c8d, // Slate Grey
     0x8e44ad, // Wisteria
-    0xbdc3c7, // Silver
   ],
 
   FILL_STYLE: true,
@@ -55,8 +53,8 @@ export const Styles = {
   LINEWIDTH_MINI: 0.5,
   LINEWIDTH_HOVER_MINI: 1,
 
-  LINEWIDTH_MINI_THIN: 0,
-  LINEWIDTH_HOVER_MINI_THIN: 0,
+  LINEWIDTH_MINI_THIN: 0.25,
+  LINEWIDTH_HOVER_MINI_THIN: 0.5,
 
-  POINT_SIZE: 3,
+  POINT_SIZE: 4,
 }

@@ -222,7 +222,9 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
 # ============================================================================
 
 
-def compute_pca(data, n_components: int = 2) -> List[List[float]]:
+def compute_pca(
+    data, n_components: int = 2
+) -> Tuple[List[List[float]], Dict[str, float]]:
     """Compute PCA projection"""
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
@@ -236,28 +238,32 @@ def compute_pca(data, n_components: int = 2) -> List[List[float]]:
     loadings = pca.components_.T
     explained_var = pca.explained_variance_ratio_
 
-    print("Loadings:")
-    print(loadings)
-    print("Explained Variance Ratio:")
-    print(explained_var)
     # Calculate feature attribution based on squared loadings
     squared_loadings = loadings**2
     feature_attribution = np.sum(squared_loadings, axis=1)
-    print("Squared Loadings:")
-    print(squared_loadings)
-    print("Feature Attribution:")
-    print(feature_attribution)
 
+    # Calculate weighted feature attribution based on explained variance
     weighted_loadings = squared_loadings * explained_var
     feature_attribution_weighted = np.sum(weighted_loadings, axis=1)
 
-    relative_contribution = feature_attribution_weighted / np.sum(
+    # Normalize feature attribution to get relative contributions
+    relative_contribution = feature_attribution / np.sum(feature_attribution)
+    relative_contribution_weighted = feature_attribution_weighted / np.sum(
         feature_attribution_weighted
     )
-    print("Relative Contribution:")
-    print(relative_contribution)
 
-    return embedding.tolist()
+    feature_contributions = {}
+    if isinstance(data, pd.DataFrame):
+        for i, col in enumerate(data.columns):
+            feature_contributions[col] = float(relative_contribution_weighted[i])
+    else:
+        # If not a DataFrame, use indices as column names
+        for i in range(len(relative_contribution_weighted)):
+            feature_contributions[f"feature_{i}"] = float(
+                relative_contribution_weighted[i]
+            )
+
+    return embedding.tolist(), feature_contributions
 
 
 def compute_tsne(data) -> List[List[float]]:
@@ -463,7 +469,7 @@ async def project_data(
     dataset_info = preprocess_dataset(filename)
 
     original_data = await get_file_data(filename)
-    global_stats = await get_global_stats(filename)
+    global_stats = await get_global_stats(filename, method)
 
     # Check if we have numeric data to project
     if len(dataset_info.numeric_cols) == 0:
@@ -472,9 +478,9 @@ async def project_data(
         )
 
     # Perform projection
+    feature_contributions = {}
     if method == "pca":
-        projected_data = compute_pca(dataset_info.numeric_df)
-        print("projected")
+        projected_data, feature_contributions = compute_pca(dataset_info.numeric_df)
     elif method == "tsne":
         projected_data = compute_tsne(dataset_info.numeric_df)
     elif method == "umap":
@@ -521,6 +527,11 @@ async def project_data(
         "numericAttributes": dataset_info.numeric_cols,
     }
 
+    if method == "pca" and feature_contributions:
+        result["featureContributions"] = {
+            k: float(v) for k, v in feature_contributions.items()
+        }
+
     if attribute_metadata:
 
         result["attributeMetadata"] = attribute_metadata
@@ -531,13 +542,14 @@ async def project_data(
 
 
 @app.get("/api/stats/")
-async def get_global_stats(filename: str):
+async def get_global_stats(filename: str, method: str):
     """
-    Compute basic statistics (mean, std, min, max) for each numeric feature.
+    Compute basic statistics for each numeric feature.
     """
 
-    if filename in stats_cache:
-        return stats_cache[filename]
+    cache_key = (filename, method)
+    if cache_key in stats_cache:
+        return stats_cache[cache_key]
 
     dataset_info = preprocess_dataset(filename)
 
@@ -545,7 +557,6 @@ async def get_global_stats(filename: str):
 
     # Process numeric columns
     for col in dataset_info.numeric_cols:
-
         if col.lower() == "id":
             continue
 
@@ -553,28 +564,33 @@ async def get_global_stats(filename: str):
 
         mean = col_data.mean()
         std = col_data.std()
+        variance = col_data.var()
         min_val = col_data.min()
         max_val = col_data.max()
         range_val = max_val - min_val
         norm_mean = (mean - min_val) / range_val if range_val > 0 else 0
         norm_std = std / range_val if range_val > 0 else 0
+        norm_var = variance / range_val**2 if range_val > 0 else 0
 
-        stats[col] = {
+        col_stats = {
             "mean": float(mean),
             "std": float(std),
+            "var": variance,
             "min": float(min_val),
             "max": float(max_val),
             "normMean": float(norm_mean),
             "normStd": float(norm_std),
+            "normVar": float(norm_var),
             "isNumeric": True,
         }
 
+        stats[col] = col_stats
     # Process non-numeric columns
     # for col in dataset_info.non_numeric_cols:
     #     unique_values = dataset_info.df[col].nunique()
     #     stats[col] = {"isNumeric": False, "uniqueValues": int(unique_values)}
 
-    stats_cache[filename] = stats
+    stats_cache[cache_key] = stats
     return stats
 
 
@@ -669,7 +685,7 @@ async def project_data_subset(
     # Check if full projection exists in cache
     full_key = (filename, method)
     if full_key not in projection_cache:
-        await project_data(filename=filename, method=method)
+        await project_data(filename, method)
 
     dataset_info = dataset_cache[filename]
 
@@ -685,8 +701,9 @@ async def project_data_subset(
         )
 
     subset_df = dataset_info.numeric_df.iloc[filtered_indices]
+    feature_contributions = {}
     if method == "pca":
-        projected_data = compute_pca(subset_df)
+        projected_data, feature_contributions = compute_pca(subset_df)
     elif method == "tsne":
         projected_data = compute_tsne(subset_df)
     elif method == "umap":
@@ -701,11 +718,18 @@ async def project_data_subset(
             "y": float(projected_data[i][1]),
         }
 
-    return {
+    result = {
         "subsetProjection": True,
         "positionMapping": position_mapping,
         "subsetSize": len(position_mapping),
     }
+
+    if method == "pca" and feature_contributions:
+        result["featureContributions"] = {
+            k: float(v) for k, v in feature_contributions.items()
+        }
+
+    return result
 
 
 @app.post("/api/projection/attributes/")
@@ -751,8 +775,9 @@ async def project_data_with_attributes(
     filtered_df = dataset_info.df[valid_attributes]
 
     # Compute the new projection
+    feature_contributions = {}
     if method == "pca":
-        projected_data = compute_pca(filtered_df)
+        projected_data, feature_contributions = compute_pca(filtered_df)
     elif method == "tsne":
         projected_data = compute_tsne(filtered_df)
     elif method == "umap":
@@ -760,34 +785,28 @@ async def project_data_with_attributes(
     else:
         raise HTTPException(status_code=400, detail="Invalid projection method")
 
-    # Get global stats for the specified attributes
-    if filename in stats_cache:
-        all_stats = stats_cache[filename]
-        filtered_stats = {
-            attr: all_stats[attr] for attr in valid_attributes if attr in all_stats
-        }
-    else:
-        # If stats aren't cached, compute them for the filtered attributes
-        filtered_stats = {}
-        for col in valid_attributes:
-            col_data = dataset_info.df[col]
-            mean = col_data.mean()
-            std = col_data.std()
-            min_val = col_data.min()
-            max_val = col_data.max()
-            range_val = max_val - min_val
-            norm_mean = (mean - min_val) / range_val if range_val > 0 else 0
-            norm_std = std / range_val if range_val > 0 else 0
+    filtered_stats = {}
+    for col in valid_attributes:
+        col_data = dataset_info.df[col]
+        mean = col_data.mean()
+        std = col_data.std()
+        min_val = col_data.min()
+        max_val = col_data.max()
+        range_val = max_val - min_val
+        norm_mean = (mean - min_val) / range_val if range_val > 0 else 0
+        norm_std = std / range_val if range_val > 0 else 0
 
-            filtered_stats[col] = {
-                "mean": float(mean),
-                "std": float(std),
-                "min": float(min_val),
-                "max": float(max_val),
-                "normMean": float(norm_mean),
-                "normStd": float(norm_std),
-                "isNumeric": True,
-            }
+        filtered_stats[col] = {
+            "mean": float(mean),
+            "std": float(std),
+            "min": float(min_val),
+            "max": float(max_val),
+            "normMean": float(norm_mean),
+            "normStd": float(norm_std),
+            "isNumeric": True,
+        }
+        if method == "pca" and col in feature_contributions:
+            filtered_stats[col]["pcaContribution"] = float(feature_contributions[col])
 
     # Get the original data (needed to reconstruct complete points)
     original_data = await get_file_data(filename)
@@ -826,6 +845,10 @@ async def project_data_with_attributes(
         "numericAttributes": valid_attributes,
         "filteredAttributes": True,
     }
+    if method == "pca" and feature_contributions:
+        result["featureContributions"] = {
+            k: float(v) for k, v in feature_contributions.items()
+        }
 
     if attribute_metadata:
         result["attributeMetadata"] = attribute_metadata
