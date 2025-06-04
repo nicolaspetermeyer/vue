@@ -170,10 +170,30 @@ export class PixiInteractionOverlay extends PixiContainer {
           if (typeof value === 'number' && stats) {
             const normalizedValue =
               (value - (stats.min || 0)) / ((stats.max || 1) - (stats.min || 0))
-            const alpha = 0.15 + normalizedValue * 0.85 // Scale alpha from 0.15 to 1.0
-            point.alpha = alpha
+            // Color interpolation
+            const lowColor = 0x0000ff // Blue for low values
+            const highColor = 0xff0000 // Red for high values
+            const r =
+              Math.round(
+                (highColor >> 16) * normalizedValue + (lowColor >> 16) * (1 - normalizedValue),
+              ) & 0xff
+            const g =
+              Math.round(
+                ((highColor >> 8) & 0xff) * normalizedValue +
+                  ((lowColor >> 8) & 0xff) * (1 - normalizedValue),
+              ) & 0xff
+            const b =
+              Math.round(
+                (highColor & 0xff) * normalizedValue + (lowColor & 0xff) * (1 - normalizedValue),
+              ) & 0xff
+            const color = (r << 16) | (g << 8) | b
+            point.tint = color
+            point.alpha = 0.8
           }
         })
+
+        this.dimred?.emit('attributeVisualization', segment.attributeKey)
+
         this.attributeRing?.clickSegment(segment.attributeKey)
       }
     }
@@ -189,14 +209,16 @@ export class PixiInteractionOverlay extends PixiContainer {
    * @param e - Keyboard event
    */
   handleKeyDown(e: KeyboardEvent) {
-    if (e.altKey) {
+    if (e.key === 'Escape') {
       if (this.dimred) {
         this.dimred.setSelection([])
         this.fingerprintStore.setSelection([])
         this.attributeRing?.clearPointRing('99')
         this.dimred?.pixiDimredPoints.forEach((point) => {
+          point.tint = 0x000000
           point.alpha = 0.5
         })
+        this.dimred.emit('resetVisualization')
       }
       return
     }

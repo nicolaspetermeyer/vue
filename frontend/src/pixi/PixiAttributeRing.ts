@@ -106,7 +106,7 @@ export class PixiAttributeRing
         this.mini,
       )
 
-      if (!this.mini && segmentCount < 30) {
+      if (!this.mini && segmentCount < 50) {
         this.drawLabelForSegment(segment, startAngle, endAngle)
       }
     }
@@ -209,7 +209,6 @@ export class PixiAttributeRing
       }
     })
 
-    // remove text label children
     this.children = this.children.filter((child) => !(child instanceof PixiText))
 
     this.segments = []

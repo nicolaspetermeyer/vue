@@ -314,7 +314,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     //limit hit detection to drawn area
     const arcWidth = this.maxOuterRadius - this.innerRadius
-    const actualOuterRadius = this.innerRadius + this.globalNorm * arcWidth
+    const actualOuterRadius = this.innerRadius + 0.5 * arcWidth
 
     const inSegment = PolarGeometry.isInSegment(
       radius,

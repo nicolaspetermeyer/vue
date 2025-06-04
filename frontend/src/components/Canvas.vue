@@ -5,13 +5,12 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { initDevtools } from '@pixi/devtools'
 import { useProjectionStore } from '@/stores/projectionStore'
-import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { Colors } from '@/config/Themes'
 import BackButton from '@/components/canvas/BackButton.vue'
 import TransitionIndicator from '@/components/canvas/TransitionIndicator.vue'
+import ColorLegend from '@/components/canvas/ColorLegend.vue'
 
 const projectionStore = useProjectionStore()
-const pointFilterStore = usePointFilterStore()
 
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -19,6 +18,11 @@ let app: PixiApp | null = null
 
 const currentProjection = ref<PixiProjection | null>(null)
 const initializationComplete = ref<boolean>(false)
+const showColorLegend = ref<boolean>(false)
+const colorLegendTitle = ref<string>('Attribute Value')
+
+const lowColor = 0x0000ff // Blue
+const highColor = 0xff0000 // Red
 
 function resetView() {
   currentProjection.value?.resetView()
@@ -66,6 +70,18 @@ function createProjectionInstance() {
   app.addContainer(projection)
   currentProjection.value = projection
 
+  // Register for attribute visualization events
+  projection.dimred?.on('attributeVisualization', (attributeName: string) => {
+    console.log('Received attributeVisualization event with name:', attributeName)
+
+    showColorLegend.value = true
+    colorLegendTitle.value = attributeName
+  })
+
+  projection.dimred?.on('resetVisualization', () => {
+    showColorLegend.value = false
+  })
+
   // Store reference in the store
   projectionStore.setProjectionInstance(projection)
 }
@@ -100,6 +116,13 @@ function debug() {
 <template>
   <div ref="wrapperRef" class="relative w-full h-full">
     <BackButton />
+    <ColorLegend
+      :visible="showColorLegend"
+      :title="colorLegendTitle"
+      :lowColor="lowColor"
+      :highColor="highColor"
+    />
+
     <TransitionIndicator />
     <canvas
       class="w-full h-full"
