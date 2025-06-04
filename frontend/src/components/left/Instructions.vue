@@ -7,7 +7,7 @@
         <ul class="instruction-list">
           <li><span class="key">Click</span> Select a single point</li>
           <li><span class="key">Drag</span> Select points with rectangle or lasso</li>
-          <li><span class="key">Alt</span> Clear selection</li>
+          <li><span class="key">ESC</span> Clear selection</li>
         </ul>
       </div>
 

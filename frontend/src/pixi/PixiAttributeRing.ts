@@ -226,6 +226,15 @@ export class PixiAttributeRing
     this.drawAttributeSegments()
   }
 
+  //   clearOtherSelections(keepAttributeKey: string): void {
+  //   this.children.forEach(child => {
+  //     if (child instanceof PixiAttributeSegment && child.attributeKey !== keepAttributeKey) {
+  //       child.isSelected = false;
+  //       child.updateVisualState();
+  //     }
+  //   });
+  // }
+
   pointerInElement(global: PointData): PixiAttributeSegment | null {
     for (const seg of this.segments) {
       if (seg.containsGlobal(global)) {

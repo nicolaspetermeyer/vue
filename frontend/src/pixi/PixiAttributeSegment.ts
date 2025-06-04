@@ -360,14 +360,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   clickSegment(selected: boolean) {
-    if (this.isSelected !== selected) {
-      this.isSelected = selected
-
-      this.updateVisualState()
-    } else {
-      this.isSelected = false
-      this.updateVisualState()
-    }
+    this.isSelected = selected
+    this.updateVisualState()
   }
 
   getTooltipContent(): string {

@@ -61,7 +61,6 @@ export class FingerprintVisualizationService {
         const colorMap = this.getComparisonColors(selectedFingerprints)
 
         selectedFingerprints.forEach((fp) => {
-          console.log('fp local', fp.localStats)
           const color = colorMap[fp.id]
           ring.setLocalRing(fp.id, fp.localStats, color, fp.name)
         })

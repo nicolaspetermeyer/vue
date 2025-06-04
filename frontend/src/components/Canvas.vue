@@ -72,8 +72,6 @@ function createProjectionInstance() {
 
   // Register for attribute visualization events
   projection.dimred?.on('attributeVisualization', (attributeName: string) => {
-    console.log('Received attributeVisualization event with name:', attributeName)
-
     showColorLegend.value = true
     colorLegendTitle.value = attributeName
   })

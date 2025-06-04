@@ -242,7 +242,6 @@ export class PixiInteractionOverlay extends PixiContainer {
   private updateAttributeRingForPoint(point: PixiDimredPoint | null) {
     if (!this.attributeRing || !point) return
     const globalStats = useProjectionStore().globalStats
-    console.log('Updating attribute ring for point:', point.dimredpoint)
 
     const attributes: Record<string, number> = {}
     for (const [key, value] of Object.entries(point.dimredpoint.original)) {
