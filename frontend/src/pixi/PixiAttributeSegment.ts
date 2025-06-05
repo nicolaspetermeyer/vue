@@ -6,14 +6,18 @@ import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
+import { usePointFilterStore } from '@/stores/pointFilterStore'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
   private globalNorm: number
   private localNorm: number | undefined
+  private localMean: number | undefined
   public stats: AttributeStats
-  private localOverlays: Map<string, { color: number; norm: number; fingerprintName: string }> =
-    new Map()
+  private localOverlays: Map<
+    string,
+    { color: number; norm: number; localMean: number; fingerprintName: string }
+  > = new Map()
 
   private static segmentRegistry: PixiAttributeSegment[] = []
 
@@ -38,6 +42,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     mini: boolean
     globalNorm: number
     localNorm?: number
+    localMean?: number
     color?: number
     stats?: AttributeStats
     fingerprintId?: string
@@ -47,6 +52,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.attributeKey = options.attributeKey
     this.globalNorm = options.globalNorm
     this.localNorm = options.localNorm
+    this.localMean = options.localMean
     this.mini = options.mini
     this.stats = options.stats || {
       mean: 0,
@@ -64,9 +70,10 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.localNorm = options.localNorm
     }
     // For global rings, handle fingerprint data as overlay
-    else if (options.localNorm !== undefined && options.fingerprintId) {
+    else if (options.localNorm !== undefined && options.localMean && options.fingerprintId) {
       this.localOverlays.set(options.fingerprintId, {
         norm: options.localNorm,
+        localMean: options.localMean,
         color: options.color ?? 0x000000,
         fingerprintName: options.attributeKey,
       })
@@ -298,8 +305,14 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.redraw()
   }
 
-  setLocalOverlay(id: string, localNorm: number, color: number, fingerprintName: string): void {
-    this.localOverlays.set(id, { norm: localNorm, color, fingerprintName })
+  setLocalOverlay(
+    id: string,
+    localNorm: number,
+    localMean: number,
+    color: number,
+    fingerprintName: string,
+  ): void {
+    this.localOverlays.set(id, { norm: localNorm, localMean, color, fingerprintName })
     this.localNorm = localNorm
     this.color = color
 
@@ -374,6 +387,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     const fingerprintStore = useFingerprintStore()
     const attributeFilterStore = useAttributeFilterStore()
 
+    const histogramDisplay = this.generateHistogram()
+
     let metadataContent = ''
     if (
       attributeFilterStore.hasMetadata &&
@@ -410,7 +425,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           const direction = delta > 0 ? 'higher' : 'lower'
           const pctDiff = Math.abs(delta * 100).toFixed(1)
 
-          content += `Fingerprint: ${fp.name}\n`
+          content += `${fp.name}\n`
           content += `Normalized Mean: ${_localNorm.toFixed(2)}`
           content += `\nMean: ${stats.mean.toFixed(2)}`
           content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
@@ -424,26 +439,22 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         `Feature: ${this.attributeKey}`,
         `Global Norm Mean: ${this.globalNorm.toFixed(2)}`,
         `Global Mean: ${this.stats.mean.toFixed(2)}`,
-        `Global Std: ${this.stats.std.toFixed(2)}`,
       ]
 
-      if (this.stats.min !== undefined) {
-        tooltipLines.push(`Global Min: ${this.stats.min.toFixed(2)}`)
-      }
-      if (this.stats.max !== undefined) {
-        tooltipLines.push(`Global Max: ${this.stats.max.toFixed(2)}`)
-      }
+      tooltipLines.push('', 'Distribution:')
+      tooltipLines.push(histogramDisplay)
 
       if (this.localOverlays && this.localOverlays.size > 0) {
-        tooltipLines.push('', 'Comparisons:')
+        tooltipLines.push('', 'Comparisons:\n (Norm Mean | Mean)')
         this.localOverlays.forEach((overlay, id) => {
           const norm = overlay.norm.toFixed(2)
+          const localMean = overlay.localMean.toFixed(2)
           const delta = overlay.norm - this.globalNorm
           const direction = delta > 0 ? 'higher' : 'lower'
           const pctDiff = Math.abs(delta * 100).toFixed(2)
 
           tooltipLines.push(
-            `Fingerprint ${overlay.fingerprintName}: ${norm} ${pctDiff}% ${direction}`,
+            `${overlay.fingerprintName}: ${norm} ${localMean} ${pctDiff}% ${direction}`,
           )
         })
       }
@@ -458,6 +469,116 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
       return tooltipLines.join('\n')
     }
+  }
+
+  /**
+   * Generate histogram for numeric data
+   */
+  private generateHistogram(): string {
+    const { min, max, mean, std } = this.stats
+    if (min === undefined || max === undefined) return ''
+
+    const width = 30
+    const height = 7.5
+    const bars: string[] = []
+
+    // Create a simple Gaussian distribution based on mean and std
+    const range = max - min
+    const step = range / width
+
+    for (let i = 0; i < width; i++) {
+      const x = min + i * step
+      // Calculate height using normal distribution formula
+      const normalizedHeight = Math.exp(-0.5 * Math.pow((x - mean) / std, 2))
+      const barHeight = Math.max(1, Math.round(normalizedHeight * height))
+
+      bars.push('█'.repeat(barHeight))
+    }
+
+    // Draw the histogram
+    const histogram: string[] = []
+    for (let h = height; h > 0; h--) {
+      let row = ''
+      for (let i = 0; i < width; i++) {
+        row += bars[i].length >= h ? '█' : ' '
+      }
+      histogram.push(row)
+    }
+
+    // Add x-axis labels (min, mean, max)
+    const baseline = '─'.repeat(width)
+    histogram.push(baseline)
+
+    // Add markers for min, mean, and max
+    const minPos = 0
+    const maxPos = width - 1
+    const meanPos = Math.round(((mean - min) / range) * (width - 1))
+
+    let markers = ' '.repeat(width)
+    // markers = this.replaceAt(markers, minPos, '↑')
+    // markers = this.replaceAt(markers, meanPos, '↑')
+    // markers = this.replaceAt(markers, maxPos, '↑')
+
+    if (this.localOverlays && this.localOverlays.size > 0) {
+      let fpMarkers = ' '.repeat(width)
+      const fpPositions = new Map<number, string[]>()
+
+      this.localOverlays.forEach((overlay, id) => {
+        const fpMeanPos = Math.round(((overlay.localMean - min) / range) * (width - 1))
+        fpMarkers = this.replaceAt(fpMarkers, fpMeanPos, '↑')
+
+        const valueLabel = overlay.localMean.toFixed(1)
+        if (fpPositions.has(fpMeanPos)) {
+          fpPositions.get(fpMeanPos)?.push(valueLabel)
+        } else {
+          fpPositions.set(fpMeanPos, [valueLabel])
+        }
+      })
+
+      histogram.push(fpMarkers)
+
+      let fpLabels = ''
+      let currentPos = 0
+
+      const sortedPositions = Array.from(fpPositions.keys()).sort((a, b) => a - b)
+
+      for (const pos of sortedPositions) {
+        const values = fpPositions.get(pos)!
+        if (pos > currentPos) {
+          fpLabels += ' '.repeat(pos - currentPos)
+        }
+
+        // Add a shortened label
+        const label = values.join('|')
+        fpLabels += label
+
+        // Update current position
+        currentPos = pos + label.length
+      }
+
+      // Add the fingerprint labels
+      if (fpLabels.trim().length > 0) {
+        histogram.push(fpLabels)
+      }
+    }
+
+    // Add values at the bottom
+    let labels = `${min.toFixed(2)}`.padEnd(meanPos, ' ')
+    labels += `${mean.toFixed(2)}`.padEnd(maxPos - meanPos, ' ')
+    labels += `${max.toFixed(2)}`
+    histogram.push(labels)
+
+    return histogram.join('\n')
+  }
+
+  /**
+   * Replace a character at a specific position in a string
+   */
+  private replaceAt(str: string, index: number, replacement: string): string {
+    if (index >= str.length) {
+      return str
+    }
+    return str.substring(0, index) + replacement + str.substring(index + 1)
   }
 
   destroy(options?: any): void {

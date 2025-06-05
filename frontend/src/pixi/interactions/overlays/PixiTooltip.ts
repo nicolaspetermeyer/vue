@@ -5,7 +5,7 @@ export class PixiTooltip extends PixiContainer {
   private bg: Graphics
   private labels: Text
   private padding = 8
-  private maxLines = 20
+  private maxLines = 30
 
   constructor() {
     super({

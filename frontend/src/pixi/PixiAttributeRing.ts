@@ -69,6 +69,7 @@ export class PixiAttributeRing
     fingerprint?: { id: string; stats: Record<string, AttributeStats>; color?: number },
   ) {
     const localNorm = fingerprint?.stats?.[attrKey]?.localNormMean
+    const localMean = fingerprint?.stats?.[attrKey]?.localMean
     const globalNorm = globalStat.normMean
 
     const segment = new PixiAttributeSegment({
@@ -76,6 +77,7 @@ export class PixiAttributeRing
       mini,
       globalNorm,
       localNorm,
+      localMean,
       color: fingerprint?.color,
       stats: globalStat,
       fingerprintId: fingerprint?.id,
@@ -144,8 +146,14 @@ export class PixiAttributeRing
       const attributeKey = segment.attributeKey
       const localStat = localStats[attributeKey]
 
-      if (localStat && localStat.localNormMean !== undefined) {
-        segment.setLocalOverlay(id, localStat.localNormMean, color, fingerprintName)
+      if (localStat && localStat.localNormMean !== undefined && localStat.localMean !== undefined) {
+        segment.setLocalOverlay(
+          id,
+          localStat.localNormMean,
+          localStat.localMean,
+          color,
+          fingerprintName,
+        )
       }
     }
   }
