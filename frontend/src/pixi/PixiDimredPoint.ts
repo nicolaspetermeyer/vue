@@ -61,19 +61,27 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
   updateVisualState() {
     if (this.Selected) {
       this.tint = Colors.SELECTED
+      this.alpha = 1.0
+      this.zIndex = 100
     } else if (this.inFingerprint) {
       this.tint = this.highlightColor
+      this.alpha = 1.0
+      this.zIndex = 100
     } else if (this.Hovered) {
       this.tint = Colors.HOVERED
+      this.alpha = 1.0
+      this.zIndex = 100
     } else {
       this.tint = Colors.NORMAL
+      this.alpha = 0.5
+      this.zIndex = 0
     }
 
-    if (this.inFingerprint && !this.Selected) {
-      this.alpha = 0.7
-    } else {
-      this.alpha = 0.5
-    }
+    // if (this.inFingerprint && !this.Selected) {
+    //   this.alpha = 0.7
+    // } else {
+    //   this.alpha = 0.5
+    // }
   }
 
   /**

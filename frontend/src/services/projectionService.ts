@@ -172,7 +172,12 @@ class ProjectionService {
       .map((point, index) => {
         if (!point.original || !category) return -1
         const value = String(point.original[category])
-        return values.includes(value) ? index : -1
+        const stringValues = values.map((v) => String(v))
+        console.log(
+          `Checking point ${point.id} for category ${category}: value=${value}, filter=${values}`,
+        )
+        console.log(stringValues.includes(value))
+        return stringValues.includes(value) ? index : -1
       })
       .filter((idx) => idx !== -1)
 

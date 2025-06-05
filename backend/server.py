@@ -57,6 +57,9 @@ class DatasetInfo:
         self.non_numeric_cols = non_numeric_cols
         self.column_types = column_types
         self.numeric_df = df[numeric_cols] if numeric_cols else pd.DataFrame()
+        self.dr_numeric_cols = []
+        self.dr_numeric_df = pd.DataFrame()
+        self.tagged_categorical_columns = []
 
         # Extract row identifiers
         if "id" in df.columns:
@@ -68,6 +71,35 @@ class DatasetInfo:
 # ============================================================================
 # DATA PREPROCESSING PIPELINE
 # ============================================================================
+
+
+def process_column_names(df):
+    """
+    Process column names to identify and handle columns with [cat] tag.
+
+    Args:
+        df: DataFrame to process
+
+    Returns:
+        Tuple of (processed_df, categorical_columns)
+    """
+    categorical_columns = []
+    rename_mapping = {}
+
+    for col in df.columns:
+        if " [cat]" in col:
+            # Remove the [cat] tag from the column name
+            base_name = col.replace(" [cat]", "")
+            rename_mapping[col] = base_name
+            categorical_columns.append(base_name)
+
+    # Rename columns to remove [cat] tags
+    if rename_mapping:
+        df = df.rename(columns=rename_mapping)
+
+    return df, categorical_columns
+
+
 def preprocess_dataset(filename: str) -> DatasetInfo:
     """
     Comprehensive dataset preprocessing pipeline that:
@@ -89,6 +121,9 @@ def preprocess_dataset(filename: str) -> DatasetInfo:
     # Load the raw data
     df = read_csv_file(filename)
 
+    # Process columns with [cat] tags
+    df, tagged_categorical_columns = process_column_names(df)
+
     # Normalize column names
     df.rename(
         columns={col: "id" for col in df.columns if col.lower() == "id"}, inplace=True
@@ -105,17 +140,31 @@ def preprocess_dataset(filename: str) -> DatasetInfo:
     non_numeric_cols = [
         col for col in df.columns if col not in numeric_cols and col.lower() != "id"
     ]
+
+    # Create filtered numeric columns for dimensionality reduction
+    dr_numeric_cols = [
+        col for col in numeric_cols if col not in tagged_categorical_columns
+    ]
+
     numeric_df = df[numeric_cols] if numeric_cols else pd.DataFrame()
+    dr_numeric_df = df[dr_numeric_cols] if dr_numeric_cols else pd.DataFrame()
 
     # Create column metadata
     column_types = {
-        col: {"isNumeric": col in numeric_cols}
+        col: {
+            "isNumeric": col in numeric_cols,
+            "isCategorical": col in tagged_categorical_columns,
+        }
         for col in df.columns
         if col.lower() != "id"
     }
 
     # Create dataset info object
     info = DatasetInfo(df, numeric_cols, non_numeric_cols, column_types, numeric_df)
+
+    info.dr_numeric_cols = dr_numeric_cols
+    info.dr_numeric_df = dr_numeric_df
+    info.tagged_categorical_columns = tagged_categorical_columns
 
     __all__ = ["app", "info", "DatasetInfo"]
 
@@ -227,6 +276,7 @@ def compute_pca(
 ) -> Tuple[List[List[float]], Dict[str, float]]:
     """Compute PCA projection"""
     if isinstance(data, pd.DataFrame):
+        print(data.columns)
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
         if id_cols:
@@ -480,11 +530,11 @@ async def project_data(
     # Perform projection
     feature_contributions = {}
     if method == "pca":
-        projected_data, feature_contributions = compute_pca(dataset_info.numeric_df)
+        projected_data, feature_contributions = compute_pca(dataset_info.dr_numeric_df)
     elif method == "tsne":
-        projected_data = compute_tsne(dataset_info.numeric_df)
+        projected_data = compute_tsne(dataset_info.dr_numeric_df)
     elif method == "umap":
-        projected_data = compute_umap(dataset_info.numeric_df)
+        projected_data = compute_umap(dataset_info.dr_numeric_df)
     else:
         raise HTTPException(status_code=400, detail="Invalid projection method")
 
@@ -504,6 +554,14 @@ async def project_data(
     for col in dataset_info.non_numeric_cols:
         unique_vals = dataset_info.df[col].unique()
         category_values[col] = [str(val) for val in unique_vals]
+
+    for col in dataset_info.tagged_categorical_columns:
+        if col in dataset_info.numeric_cols:  # Only process if it's a numeric column
+            unique_values = dataset_info.df[col].dropna().unique().tolist()
+            sorted_values = sorted(unique_values)
+
+            category_values[col] = sorted_values
+            dataset_info.non_numeric_cols.append(col)
 
     matched_data = []
     for point in projection:

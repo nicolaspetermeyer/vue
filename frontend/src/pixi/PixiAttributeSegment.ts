@@ -27,7 +27,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private mini: boolean = false
 
   private isHovered: boolean = false
-  private isSelected: boolean = false
+  public isSelected: boolean = false
   private inSegment: boolean = false
   private inInnerCircle: boolean = false
 
@@ -360,8 +360,10 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   clickSegment(selected: boolean) {
-    this.isSelected = selected
-    this.updateVisualState()
+    if (this.isSelected !== selected) {
+      this.isSelected = selected
+      this.updateVisualState()
+    }
   }
 
   getTooltipContent(): string {
@@ -459,7 +461,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   }
 
   destroy(options?: any): void {
-    const index = PixiAttributeSegment.segmentRegistry.indexOf(this)
+    const index = PixiAttributeSegment.segmentRegistry.findIndex((segment) => segment === this)
     if (index !== -1) {
       PixiAttributeSegment.segmentRegistry.splice(index, 1)
     }

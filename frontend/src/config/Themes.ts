@@ -6,7 +6,7 @@ export const Colors = {
   CANVAS_BACKGROUND: 0xd9d7d7, // Light gray
 
   // Projection
-  SELECTED: 0x0077ff, // Blue
+  SELECTED: 0xa33d37, // Blue
   HOVERED: 0xffaa00, // Orange
   POINT_SELECT: 0x3c4952, // Dark gray
 
@@ -23,7 +23,7 @@ export const Colors = {
   STANDARD_OVERLAY: 0xff4444, // Red
 
   STANDARD_BORDER: 0x3c4952, // Black
-  SELECTED_SEGMENT: 0xe2e1e1, // Green
+  SELECTED_SEGMENT: 0xb3b3b3, // Grey
 
   // Attribute Ring - Fingerprint Colors
   FINGERPRINT_COLORS: [

@@ -204,6 +204,18 @@ export class PixiInteractionOverlay extends PixiContainer {
     }
   }
 
+  handleResetVisualization(): void {
+    if (this.dimred) {
+      this.dimred.pixiDimredPoints.forEach((point) => {
+        point.tint = 0x000000
+        point.alpha = 0.5
+      })
+
+      // Emit event to hide the legend
+      this.dimred.emit('resetVisualization')
+    }
+  }
+
   /**
    * Handle keyboard events
    * @param e - Keyboard event
@@ -214,11 +226,7 @@ export class PixiInteractionOverlay extends PixiContainer {
         this.dimred.setSelection([])
         this.fingerprintStore.setSelection([])
         this.attributeRing?.clearPointRing('99')
-        this.dimred?.pixiDimredPoints.forEach((point) => {
-          point.tint = 0x000000
-          point.alpha = 0.5
-        })
-        this.dimred.emit('resetVisualization')
+        this.handleResetVisualization()
       }
       return
     }
@@ -278,6 +286,7 @@ export class PixiInteractionOverlay extends PixiContainer {
     const attributeKey = segment.attributeKey
 
     if (!this.dimred) return
+    this.handleResetVisualization()
 
     // Find points that have high values for this attribute
     const thresholdPercentile = 0.75
