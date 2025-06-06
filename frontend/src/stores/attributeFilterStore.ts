@@ -82,7 +82,6 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
     })
 
     attributeFilterActive.value = true
-    isRecalculating.value = true
   }
 
   function clearAttributeFilter() {

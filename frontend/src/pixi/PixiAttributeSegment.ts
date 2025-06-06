@@ -389,26 +389,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     const histogramDisplay = this.generateHistogram()
 
-    let metadataContent = ''
-    if (
-      attributeFilterStore.hasMetadata &&
-      attributeFilterStore.attributeMetadata &&
-      attributeFilterStore.attributeMetadata[this.attributeKey]
-    ) {
-      const metadata = attributeFilterStore.attributeMetadata[this.attributeKey]
-
-      if (metadata.categories) {
-        metadataContent += '\nMetadata:\n'
-
-        // Add each category value pair from metadata
-        Object.entries(metadata.categories).forEach(([category, value]) => {
-          if (value) {
-            metadataContent += `${category}: ${value}\n`
-          }
-        })
-      }
-    }
-
     if (this.mini) {
       const fingerprintId =
         this.parent instanceof PixiAttributeRing
@@ -429,7 +409,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           content += `Normalized Mean: ${_localNorm.toFixed(2)}`
           content += `\nMean: ${stats.mean.toFixed(2)}`
           content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
-          content += metadataContent
         }
       }
 
@@ -457,14 +436,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
             `${overlay.fingerprintName}: ${norm} ${localMean} ${pctDiff}% ${direction}`,
           )
         })
-      }
-      // Add metadata information if available
-      if (metadataContent) {
-        tooltipLines.push('', 'Metadata:')
-
-        // Get individual metadata lines (skip the header)
-        const metadataLines = metadataContent.split('\n').slice(2)
-        tooltipLines.push(...metadataLines)
       }
 
       return tooltipLines.join('\n')
@@ -548,11 +519,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           fpLabels += ' '.repeat(pos - currentPos)
         }
 
-        // Add a shortened label
         const label = values.join('|')
         fpLabels += label
-
-        // Update current position
         currentPos = pos + label.length
       }
 
@@ -563,9 +531,9 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     }
 
     // Add values at the bottom
-    let labels = `${min.toFixed(2)}`.padEnd(meanPos, ' ')
-    labels += `${mean.toFixed(2)}`.padEnd(maxPos - meanPos, ' ')
-    labels += `${max.toFixed(2)}`
+    let labels = `${min.toFixed(1)}`.padEnd(meanPos, ' ')
+    labels += `${mean.toFixed(1)}`.padEnd(maxPos - meanPos, ' ')
+    labels += `${max.toFixed(1)}`
     histogram.push(labels)
 
     return histogram.join('\n')

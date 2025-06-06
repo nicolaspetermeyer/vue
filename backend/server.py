@@ -193,9 +193,6 @@ def read_csv_file(filename: str):
     return df
 
 
-# Add this function above your API routes
-
-
 def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
     """
     Load attribute metadata from VotingAttributeMetadata.csv and match it to attributes
@@ -207,11 +204,18 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
     Returns:
         Dictionary containing attribute metadata
     """
-    # Only process metadata for the voting dataset
-    if target_filename != "Voting-data-cleaned.csv":
+    print(f"Loading metadata for {target_filename}")
+    # Only process metadata for the voting or breast dataset
+    if (
+        target_filename != "Voting-data-cleaned.csv"
+        and target_filename != "breastCancer.csv"
+    ):
         return {}
-
-    metadata_path = os.path.join("./metadata/VotingAttributeMetadata.csv")
+    print(f"Processing metadata for {target_filename}")
+    if target_filename == "Voting-data-cleaned.csv":
+        metadata_path = os.path.join("./metadata/VotingAttributeMetadata.csv")
+    elif target_filename == "breastCancer.csv":
+        metadata_path = os.path.join("./metadata/BreastCancerMetadata.csv")
 
     # Check if metadata file exists
     if not os.path.exists(metadata_path):

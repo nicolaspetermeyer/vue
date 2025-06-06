@@ -24,15 +24,11 @@ class ProjectionService {
     const datasetStore = useDatasetStore()
     const projectionStore = useProjectionStore()
 
+    projectionStore.setLoading(true)
+
     const dataset = datasetStore.selectedDatasetName
     if (!dataset) {
       console.error('No dataset selected')
-      return false
-    }
-
-    // Prevent concurrent loads
-    if (projectionStore.isLoading) {
-      console.warn('Projection loading already in progress')
       return false
     }
 
@@ -61,6 +57,8 @@ class ProjectionService {
       useFingerprintStore().clearFingerprints()
 
       // await loadFeatureRanking()
+
+      projectionStore.setLoading(false)
 
       return true
     } catch (error) {

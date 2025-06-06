@@ -16,7 +16,6 @@ const {
   attributeFilterActive,
   activeAttributes,
   allNumericAttributes,
-  isRecalculating,
 } = storeToRefs(attributeFilterStore)
 
 const { updateAttributeFilter, clearAttributeFilter } = attributeFilterStore
@@ -78,14 +77,12 @@ const clearFilter = () => {
 
 const recalculateProjection = async () => {
   if (activeAttributes.value.length > 0) {
-    attributeFilterStore.setRecalculating(true)
     try {
       await projectionService.recalculateWithAttributes(activeAttributes.value)
       projectionStore.projectionInstance?.updateAttributeRing(activeAttributes.value)
     } catch (error) {
       console.error('Failed to recalculate projection:', error)
     } finally {
-      attributeFilterStore.setRecalculating(false)
     }
   }
 }
@@ -144,16 +141,9 @@ const recalculateProjection = async () => {
         <!-- Add Recalculate button -->
         <div class="mt-2">
           <button @click="recalculateProjection" class="btn btn-sm btn-primary w-full">
-            <span v-if="!isRecalculating">Recalculate Projection</span>
-            <span v-else class="loading loading-spinner loading-xs mr-1"></span>
-            <span v-if="isRecalculating">Recalculating...</span>
+            <span>Recalculate Projection</span>
           </button>
         </div>
-      </div>
-      <!-- Loading indicator -->
-      <div v-if="isRecalculating" class="mt-3 text-center">
-        <span class="loading loading-spinner loading-sm"></span>
-        Recalculating projection...
       </div>
     </div>
   </section>

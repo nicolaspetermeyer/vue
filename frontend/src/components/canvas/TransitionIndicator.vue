@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { watch, ref } from 'vue'
 import { animationService } from '@/services/animationService'
+import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
+import { useProjectionStore } from '@/stores/projectionStore'
+
+const attributeFilterStore = useAttributeFilterStore()
+const projectionStore = useProjectionStore()
 
 const progress = ref(0)
 const isVisible = ref(false)
@@ -16,6 +21,20 @@ watch(
   () => animationService.progress.value,
   (newProgress) => {
     progress.value = newProgress
+  },
+)
+
+watch(
+  () => attributeFilterStore.isRecalculating,
+  (isRecalculating) => {
+    isVisible.value = isRecalculating
+  },
+)
+
+watch(
+  () => projectionStore.isLoading,
+  (isLoading) => {
+    isVisible.value = isLoading
   },
 )
 </script>
