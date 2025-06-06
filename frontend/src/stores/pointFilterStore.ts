@@ -5,6 +5,8 @@ import type { Projection } from '@/models/data'
 export const usePointFilterStore = defineStore('pointFilter', () => {
   const pointFilterCategories = ref<string[] | null>(null)
   const pointCategoryValues = ref<Record<string, string[]>>({})
+  const thresholdPercentile = ref(0.75)
+  const selectTopPercentile = ref(true)
 
   // Current active filter (user selection)
   const activePointFilter = ref<{
@@ -59,15 +61,27 @@ export const usePointFilterStore = defineStore('pointFilter', () => {
     return `${category} (${values.length} values)`
   }
 
+  function setThresholdPercentile(value: number) {
+    thresholdPercentile.value = Math.max(0, Math.min(1, value))
+  }
+
+  function setSelectTopPercentile(value: boolean) {
+    selectTopPercentile.value = value
+  }
+
   return {
     pointFilterCategories,
     pointCategoryValues,
     activePointFilter,
+    thresholdPercentile,
+    selectTopPercentile,
     initAvailablePointFilters,
     setPointFilter,
     clearActivePointFilter,
     getPointCategoryValues,
     filterPointIds,
     getPointFilterDescription,
+    setThresholdPercentile,
+    setSelectTopPercentile,
   }
 })

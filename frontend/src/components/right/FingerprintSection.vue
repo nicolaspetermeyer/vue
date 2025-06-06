@@ -2,7 +2,6 @@
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
-import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { SelectionMode } from '@/pixi/interactions/controllers/SelectionController'

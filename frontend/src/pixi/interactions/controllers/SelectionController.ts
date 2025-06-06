@@ -51,6 +51,8 @@ export enum SelectionEvents {
   SELECTION_CLEAR = 'selectionclear',
   /** Fired when selection mode changes */
   MODE_CHANGE = 'modechange',
+  /** Fired when threshold settings change */
+  THRESHOLD_CHANGE = 'thresholdchange',
 }
 
 /**

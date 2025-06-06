@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
@@ -8,6 +8,7 @@ import { storeToRefs } from 'pinia'
 import PointFilterPanel from './left/PointFilterPanel.vue'
 import AttributeFilterPanel from './left/AttributeFilterPanel.vue'
 import Instructions from './left/Instructions.vue'
+import ThresholdControlPanel from './left/ThresholdControlPanel.vue'
 
 const datasetStore = useDatasetStore()
 const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
@@ -58,6 +59,8 @@ onMounted(async () => {})
         </div>
       </div>
     </section>
+    <!-- Treshold Filter -->
+    <ThresholdControlPanel />
 
     <!-- Point Filter Section -->
     <PointFilterPanel />

@@ -29,6 +29,8 @@ import {
 // Stores
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { usePointFilterStore } from '@/stores/pointFilterStore'
+
 import { projectionService } from '@/services/projectionService'
 
 // Utils
@@ -42,6 +44,7 @@ export class PixiInteractionOverlay extends PixiContainer {
   private attributeRing: PixiAttributeRing | null = null
   private maskBoundary: Graphics | null = null
   private fingerprintStore = useFingerprintStore()
+  private pointFilterStore = usePointFilterStore()
   private viewportController: ViewportController | null = null
   private selectionController: SelectionController | null = null
   private hoverManager: HoverManager
@@ -288,8 +291,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     if (!this.dimred) return
     this.handleResetVisualization()
 
-    // Find points that have high values for this attribute
-    const thresholdPercentile = 0.75
     const selectedPoints: PixiDimredPoint[] = []
 
     this.dimred.pixiDimredPoints.forEach((point) => {
@@ -298,7 +299,11 @@ export class PixiInteractionOverlay extends PixiContainer {
         const normalizedValue =
           (value - (segment.stats.min || 0)) / ((segment.stats.max || 1) - (segment.stats.min || 0))
 
-        if (normalizedValue >= thresholdPercentile) {
+        if (
+          this.pointFilterStore.selectTopPercentile
+            ? normalizedValue >= this.pointFilterStore.thresholdPercentile
+            : normalizedValue <= this.pointFilterStore.thresholdPercentile
+        ) {
           selectedPoints.push(point)
         }
       }
@@ -420,6 +425,22 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   getTooltip(): PixiTooltip {
     return this.tooltip
+  }
+
+  getThresholdPercentile(): number {
+    return this.pointFilterStore.thresholdPercentile
+  }
+
+  setThresholdPercentile(value: number): void {
+    this.pointFilterStore.setThresholdPercentile(value)
+  }
+
+  getSelectTopPercentile(): boolean {
+    return this.pointFilterStore.selectTopPercentile
+  }
+
+  setSelectTopPercentile(value: boolean): void {
+    this.pointFilterStore.setSelectTopPercentile(value)
   }
 
   private onWheel(e: FederatedWheelEvent) {
