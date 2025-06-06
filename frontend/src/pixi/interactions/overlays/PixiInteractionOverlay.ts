@@ -209,6 +209,7 @@ export class PixiInteractionOverlay extends PixiContainer {
 
   handleResetVisualization(): void {
     if (this.dimred) {
+      this.dimred.setSelection([])
       this.dimred.pixiDimredPoints.forEach((point) => {
         point.tint = 0x000000
         point.alpha = 0.5
@@ -278,6 +279,7 @@ export class PixiInteractionOverlay extends PixiContainer {
           max: globalStats[key].max,
           std: globalStats[key].std,
           localNormMean: value,
+          localMean: attributes[key],
           isGlobal: false,
         }
       }
