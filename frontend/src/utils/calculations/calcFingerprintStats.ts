@@ -16,26 +16,36 @@ export function calcFingerprintStats(
       .filter((v): v is number => typeof v === 'number' && !isNaN(v))
 
     if (values.length === 0) continue
-
+    const min = Math.min(...values)
+    const max = Math.max(...values)
     const localMean = values.reduce((a, b) => a + b, 0) / values.length
 
     const variance =
       values.reduce((acc, val) => acc + Math.pow(val - localMean, 2), 0) / values.length
     const std = Math.sqrt(variance)
 
-    const { min, max, mean, normMean } = globalStats[key]
+    const median = values.slice().sort((a, b) => a - b)[Math.floor(values.length / 2)]
+    const q25 = values.slice().sort((a, b) => a - b)[Math.floor(values.length * 0.25)]
+    const q75 = values.slice().sort((a, b) => a - b)[Math.floor(values.length * 0.75)]
+    const iqr = q75 - q25
+
+    const { min: globalMin, max: GlobalMax, mean, normMean } = globalStats[key]
 
     if (min === undefined || max === undefined) {
       continue
     }
-    const range = max - min || 1 // prevent division by 0
-    const localNormMean = (localMean - min) / range
+    const range = GlobalMax - globalMin || 1 // prevent division by 0
+    const localNormMean = (localMean - globalMin) / range
     const meanDelta = localMean - mean
 
     result[key] = {
       mean,
       normMean,
       std,
+      median,
+      q25,
+      q75,
+      iqr,
       localMean,
       localNormMean,
       meanDelta,

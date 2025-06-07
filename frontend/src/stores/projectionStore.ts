@@ -1,11 +1,10 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Projection, FeatureRanking, AttributeStats } from '@/models/data'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { fetchFeatureRanking } from '@/services/api'
 import { PixiProjection } from '@/pixi/PixiProjection'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
-import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { useAttributeFilterStore } from './attributeFilterStore'
 import { useDrillDownStore } from './drillDownStore'
 
@@ -22,6 +21,9 @@ export const useProjectionStore = defineStore('projection', () => {
   const neighborhoodRadius = ref<number>(0.1)
 
   const isLoading = ref<boolean>(false)
+
+  const removedPointIds = ref<Set<string>>(new Set())
+  const hasRemovedPoints = computed(() => removedPointIds.value.size > 0)
 
   function resetToBaseProjection() {
     projection.value = unfilteredProjection.value
@@ -108,6 +110,8 @@ export const useProjectionStore = defineStore('projection', () => {
     isLoading,
     featureRanking,
     neighborhoodRadius,
+    removedPointIds,
+    hasRemovedPoints,
 
     resetToBaseProjection,
     setLoading,

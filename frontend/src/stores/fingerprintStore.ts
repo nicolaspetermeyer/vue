@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
-import type { Fingerprint, Projection } from '@/models/data'
+import type { Fingerprint, Projection, AttributeStats } from '@/models/data'
 import { ref, computed } from 'vue'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
@@ -29,6 +29,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //ACTIONS
   // triggers on brush select
   function setSelection(points: Projection[]) {
+    console.log('Setting selection:', points)
     selection.value = points
   }
 
@@ -71,8 +72,9 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
         filteredIds = projectionStore.projection
           .filter((point) => {
             if (point.original && activeFilter.category) {
-              const value = point.original[activeFilter.category]
-              return value !== undefined && activeFilter.values.includes(String(value))
+              const value = String(point.original[activeFilter.category])
+              const stringValues = activeFilter.values.map((v) => String(v))
+              return value !== undefined && stringValues.includes(value)
             }
             return false
           })
@@ -124,10 +126,11 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     fingerprints.value.push(fingerprint)
 
-    selection.value = []
-    dimredInstance?.pixiDimredPoints.forEach((point) => {
-      point.updateVisualState()
-    })
+    if (dimredInstance) {
+      selection.value = []
+      dimredInstance.clearSelection()
+      dimredInstance.app.render()
+    }
   }
 
   function removeFingerprint(id: string, projectionInstance: any | null | undefined) {
@@ -163,6 +166,10 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       projectionInstance.dimred.showPointsById(pointIds)
       projectionInstance.dimred.removeMiniRing(fingerprintToRemove)
     }
+  }
+
+  function deselectAllFingerprints() {
+    selectedFingerprints.value = []
   }
 
   function clearFingerprints() {
@@ -202,12 +209,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       selectedFingerprints.value,
     )
   }
-  // function getTopFeatures(stats: Record<string, AttributeStats>, limit = 1): string[] {
-  //   return Object.entries(stats)
-  //     .sort(([, a], [, b]) => Math.abs(b.meanDelta) - Math.abs(a.meanDelta)) // sort by deviation
-  //     .slice(0, limit)
-  //     .map(([key]) => key)
-  // }
+
   function calculateSelectionCentroid(points: Projection[]): { x: number; y: number } {
     // Calculate centroid
     const sumX = points.reduce((sum, point) => sum + point.pos.x, 0)
@@ -221,6 +223,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
   return {
     fingerprints,
+    selection,
     selectedFingerprints,
     selectedFingerprintPoints,
     filteredFingerprints,
@@ -229,13 +232,14 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     addFingerprint,
     removeFingerprint,
+    deselectAllFingerprints,
     clearFingerprints,
 
     getFingerprintById,
     toggleSelectedFingerprint,
     calculateSelectionCentroid,
     renameFingerprint,
-    // getTopFeatures,
+
     // Expose visualization service
     visualizationService,
   }

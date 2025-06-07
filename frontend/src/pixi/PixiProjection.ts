@@ -34,7 +34,7 @@ export class PixiProjection extends PixiContainer {
     this.app = app
 
     // The attribute ring
-    this.attributeRing = new PixiAttributeRing(globalStats, false)
+    this.attributeRing = new PixiAttributeRing(globalStats, false, this.app)
     this.addChild(this.attributeRing)
 
     this.maskGraphic = new Graphics()
@@ -52,6 +52,9 @@ export class PixiProjection extends PixiContainer {
     this.interactionOverlay = new PixiInteractionOverlay(this.width, this.height)
     this.interactionOverlay.setDimred(this.dimred)
     this.interactionOverlay.setAttributeRing(this.attributeRing)
+    this.interactionOverlay.on('showContextMenu', (data) => {
+      this.emit('showContextMenu', data)
+    })
 
     this.addChild(this.interactionOverlay)
 
@@ -88,6 +91,7 @@ export class PixiProjection extends PixiContainer {
     const globalStats = useProjectionStore().globalStats
     if (this.attributeRing) {
       this.attributeRing.updateVisibleAttributes(globalStats, attributes)
+      console.log('globalStats', globalStats)
     }
     if (this.dimred?.pixiGlyph) {
       this.dimred.pixiGlyph.forEach((ring, fingerprintId) => {

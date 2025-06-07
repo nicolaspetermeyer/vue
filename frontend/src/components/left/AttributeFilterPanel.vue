@@ -89,7 +89,7 @@ const recalculateProjection = async () => {
 </script>
 
 <template>
-  <section class="section" v-if="hasMetadata">
+  <section class="section">
     <div class="flex items-center justify-between">
       <h3 class="section-title">Attribute Filter</h3>
       <button v-if="hasActiveAttributeFilter" @click="clearFilter" class="btn btn-xs btn-ghost">
@@ -104,10 +104,11 @@ const recalculateProjection = async () => {
     <div class="filter-container">
       <!-- Category Selector -->
       <div class="form-control">
-        <label class="label pb-1">
-          <span class="label-text">Category</span>
-        </label>
-        <select class="select select-sm w-full" v-model="selectedMetadataCategory">
+        <select
+          class="select select-sm w-full"
+          v-model="selectedMetadataCategory"
+          :disabled="!hasMetadata"
+        >
           <option :value="null">Select category...</option>
           <option v-for="category in metadataCategories" :key="category" :value="category">
             {{ category }}

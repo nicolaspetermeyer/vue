@@ -22,18 +22,20 @@
       <div class="instruction-group">
         <h4 class="instruction-title">Attribute Ring</h4>
         <ul class="instruction-list">
-          <li><span class="key">Left-Click Segment</span> Select points with high values</li>
-          <li>
-            <span class="key">Right-Click Segment</span> Show gradient by attribute mean value
-          </li>
+          <li><span class="key">Right-Click Segment</span> Open Action Menu</li>
         </ul>
       </div>
 
       <div class="instruction-group">
-        <h4 class="instruction-title">Fingerprint Glyph</h4>
+        <h4 class="instruction-title">Fingerprint</h4>
         <ul class="instruction-list">
-          <li><span class="key">Click Glyph</span> Select fingerprint</li>
-          <li><span class="key">Right-Click Glyph</span> Drill down into fingerprint</li>
+          <li>
+            <span class="key">Click "Create Fingerprint"</span> Create Fingerprint for current
+            selection or filter
+          </li>
+          <li><span class="key">Click Glyph Symbol</span>Add FP to Projection</li>
+          <li><span class="key">Click Glyph</span> Select Fingerprint</li>
+          <li><span class="key">Right-Click Glyph</span> Recalculate DR for Fingerprint</li>
         </ul>
       </div>
     </div>

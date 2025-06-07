@@ -38,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-DATA_DIR = "./data"  # Directory where CSV files are stored
+DATA_DIR = "../data"  # Directory where CSV files are stored
 
 
 class DatasetInfo:
@@ -213,9 +213,9 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
         return {}
     print(f"Processing metadata for {target_filename}")
     if target_filename == "Voting-data-cleaned.csv":
-        metadata_path = os.path.join("./metadata/VotingAttributeMetadata.csv")
+        metadata_path = os.path.join("../metadata/VotingAttributeMetadata.csv")
     elif target_filename == "breastCancer.csv":
-        metadata_path = os.path.join("./metadata/BreastCancerMetadata.csv")
+        metadata_path = os.path.join("../metadata/BreastCancerMetadata.csv")
 
     # Check if metadata file exists
     if not os.path.exists(metadata_path):
@@ -275,9 +275,7 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
 # ============================================================================
 
 
-def compute_pca(
-    data, n_components: int = 2
-) -> Tuple[List[List[float]], Dict[str, float]]:
+def compute_pca(data, n_components: int = 2) -> List[List[float]]:
     """Compute PCA projection"""
     if isinstance(data, pd.DataFrame):
         print(data.columns)
@@ -289,40 +287,40 @@ def compute_pca(
     df_scaled = StandardScaler().fit_transform(data)
     pca = PCA(n_components=n_components)
     embedding = pca.fit_transform(df_scaled)
-    loadings = pca.components_.T
-    explained_var = pca.explained_variance_ratio_
+    # loadings = pca.components_.T
+    # explained_var = pca.explained_variance_ratio_
 
-    # Calculate feature attribution based on squared loadings
-    squared_loadings = loadings**2
-    feature_attribution = np.sum(squared_loadings, axis=1)
+    # # Calculate feature attribution based on squared loadings
+    # squared_loadings = loadings**2
+    # feature_attribution = np.sum(squared_loadings, axis=1)
 
-    # Calculate weighted feature attribution based on explained variance
-    weighted_loadings = squared_loadings * explained_var
-    feature_attribution_weighted = np.sum(weighted_loadings, axis=1)
+    # # Calculate weighted feature attribution based on explained variance
+    # weighted_loadings = squared_loadings * explained_var
+    # feature_attribution_weighted = np.sum(weighted_loadings, axis=1)
 
-    # Normalize feature attribution to get relative contributions
-    relative_contribution = feature_attribution / np.sum(feature_attribution)
-    relative_contribution_weighted = feature_attribution_weighted / np.sum(
-        feature_attribution_weighted
-    )
+    # # Normalize feature attribution to get relative contributions
+    # relative_contribution = feature_attribution / np.sum(feature_attribution)
+    # relative_contribution_weighted = feature_attribution_weighted / np.sum(
+    #     feature_attribution_weighted
+    # )
 
-    feature_contributions = {}
-    if isinstance(data, pd.DataFrame):
-        for i, col in enumerate(data.columns):
-            feature_contributions[col] = float(relative_contribution_weighted[i])
-    else:
-        # If not a DataFrame, use indices as column names
-        for i in range(len(relative_contribution_weighted)):
-            feature_contributions[f"feature_{i}"] = float(
-                relative_contribution_weighted[i]
-            )
+    # if isinstance(data, pd.DataFrame):
+    #     for i, col in enumerate(data.columns):
+    #         feature_contributions[col] = float(relative_contribution_weighted[i])
+    # else:
+    #     # If not a DataFrame, use indices as column names
+    #     for i in range(len(relative_contribution_weighted)):
+    #         feature_contributions[f"feature_{i}"] = float(
+    #             relative_contribution_weighted[i]
+    #         )
 
-    return embedding.tolist(), feature_contributions
+    return embedding.tolist()
 
 
 def compute_tsne(data) -> List[List[float]]:
     """Compute t-SNE projection"""
     # Remove ID columns
+    print(data.columns)
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
@@ -344,6 +342,7 @@ def compute_tsne(data) -> List[List[float]]:
 def compute_umap(data) -> List[List[float]]:
     """Compute UMAP projection"""
     # Remove ID columns
+    print(data.columns)
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
@@ -532,9 +531,9 @@ async def project_data(
         )
 
     # Perform projection
-    feature_contributions = {}
+
     if method == "pca":
-        projected_data, feature_contributions = compute_pca(dataset_info.dr_numeric_df)
+        projected_data = compute_pca(dataset_info.dr_numeric_df)
     elif method == "tsne":
         projected_data = compute_tsne(dataset_info.dr_numeric_df)
     elif method == "umap":
@@ -565,7 +564,8 @@ async def project_data(
             sorted_values = sorted(unique_values)
 
             category_values[col] = sorted_values
-            dataset_info.non_numeric_cols.append(col)
+            if col not in dataset_info.non_numeric_cols:
+                dataset_info.non_numeric_cols.append(col)
 
     matched_data = []
     for point in projection:
@@ -588,11 +588,6 @@ async def project_data(
         "categoryValues": category_values,
         "numericAttributes": dataset_info.numeric_cols,
     }
-
-    if method == "pca" and feature_contributions:
-        result["featureContributions"] = {
-            k: float(v) for k, v in feature_contributions.items()
-        }
 
     if attribute_metadata:
 
@@ -623,12 +618,15 @@ async def get_global_stats(filename: str, method: str):
             continue
 
         col_data = dataset_info.df[col]
-
         mean = col_data.mean()
+        median = col_data.median()
         std = col_data.std()
         variance = col_data.var()
         min_val = col_data.min()
         max_val = col_data.max()
+        quartile_25 = col_data.quantile(0.25)
+        quartile_75 = col_data.quantile(0.75)
+        iqr = quartile_75 - quartile_25
         range_val = max_val - min_val
         norm_mean = (mean - min_val) / range_val if range_val > 0 else 0
         norm_std = std / range_val if range_val > 0 else 0
@@ -636,10 +634,13 @@ async def get_global_stats(filename: str, method: str):
 
         col_stats = {
             "mean": float(mean),
+            "median": float(median),
             "std": float(std),
             "var": variance,
             "min": float(min_val),
             "max": float(max_val),
+            "q25": float(quartile_25),
+            "q75": float(quartile_75),
             "normMean": float(norm_mean),
             "normStd": float(norm_std),
             "normVar": float(norm_var),
@@ -763,9 +764,11 @@ async def project_data_subset(
         )
 
     subset_df = dataset_info.numeric_df.iloc[filtered_indices]
-    feature_contributions = {}
+    if dataset_info.tagged_categorical_columns:
+        subset_df = subset_df.drop(columns=dataset_info.tagged_categorical_columns)
+
     if method == "pca":
-        projected_data, feature_contributions = compute_pca(subset_df)
+        projected_data = compute_pca(subset_df)
     elif method == "tsne":
         projected_data = compute_tsne(subset_df)
     elif method == "umap":
@@ -785,12 +788,6 @@ async def project_data_subset(
         "positionMapping": position_mapping,
         "subsetSize": len(position_mapping),
     }
-
-    if method == "pca" and feature_contributions:
-        result["featureContributions"] = {
-            k: float(v) for k, v in feature_contributions.items()
-        }
-
     return result
 
 
@@ -837,9 +834,9 @@ async def project_data_with_attributes(
     filtered_df = dataset_info.df[valid_attributes]
 
     # Compute the new projection
-    feature_contributions = {}
+
     if method == "pca":
-        projected_data, feature_contributions = compute_pca(filtered_df)
+        projected_data = compute_pca(filtered_df)
     elif method == "tsne":
         projected_data = compute_tsne(filtered_df)
     elif method == "umap":
@@ -867,8 +864,6 @@ async def project_data_with_attributes(
             "normStd": float(norm_std),
             "isNumeric": True,
         }
-        if method == "pca" and col in feature_contributions:
-            filtered_stats[col]["pcaContribution"] = float(feature_contributions[col])
 
     # Get the original data (needed to reconstruct complete points)
     original_data = await get_file_data(filename)
@@ -907,10 +902,6 @@ async def project_data_with_attributes(
         "numericAttributes": valid_attributes,
         "filteredAttributes": True,
     }
-    if method == "pca" and feature_contributions:
-        result["featureContributions"] = {
-            k: float(v) for k, v in feature_contributions.items()
-        }
 
     if attribute_metadata:
         result["attributeMetadata"] = attribute_metadata

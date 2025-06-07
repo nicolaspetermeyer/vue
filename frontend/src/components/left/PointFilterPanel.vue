@@ -56,16 +56,13 @@ const clear = () => {
 <template>
   <section class="section">
     <div class="flex items-center justify-between">
-      <h3 class="section-title">Filters</h3>
+      <h3 class="section-title">Point Filter</h3>
       <button v-if="hasActiveFilters" @click="clear" class="btn btn-xs btn-ghost">Clear</button>
     </div>
 
     <div v-if="pointFilterCategories && pointFilterCategories.length > 0" class="filter-container">
       <!-- Category Selector -->
       <div class="form-control">
-        <label class="label pb-1">
-          <span class="label-text">Category</span>
-        </label>
         <select class="select select-sm w-full" v-model="selectedCategory">
           <option :value="null">Select category...</option>
           <option v-for="category in pointFilterCategories" :key="category" :value="category">
@@ -134,3 +131,19 @@ const clear = () => {
     <div v-else class="text-sm text-gray-500">Load a projection to enable filtering</div>
   </section>
 </template>
+<style scoped>
+.section {
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+</style>

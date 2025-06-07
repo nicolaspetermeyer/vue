@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { projectionService } from '@/services/projectionService'
+import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import PointFilterPanel from './left/PointFilterPanel.vue'
 import AttributeFilterPanel from './left/AttributeFilterPanel.vue'
@@ -15,7 +16,14 @@ const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
 const { setSelectedDatasetId } = datasetStore
 
 const projectionStore = useProjectionStore()
-const { projectionMethod } = storeToRefs(projectionStore)
+const { projectionMethod, hasRemovedPoints } = storeToRefs(projectionStore)
+
+const fingerprintStore = useFingerprintStore()
+
+// Check if there are selected points
+const hasSelectedPoints = computed(() => {
+  return fingerprintStore.selection.length > 0
+})
 
 const loadProj = async () => {
   projectionStore.clearAllProjectionData()
@@ -27,6 +35,13 @@ const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
   if (select) {
     setSelectedDatasetId(Number(select.value || null))
+  }
+}
+
+const removeSelectedPoints = () => {
+  if (hasSelectedPoints.value) {
+    const selectedIds = fingerprintStore.selection.map((p) => p.id)
+    projectionService.removePoints(selectedIds)
   }
 }
 
@@ -61,6 +76,26 @@ onMounted(async () => {})
     </section>
     <!-- Treshold Filter -->
     <ThresholdControlPanel />
+
+    <!-- Remove Points Button -->
+    <div class="mb-3 flex justify-end">
+      <button
+        @click="removeSelectedPoints"
+        class="btn btn-sm btn-error"
+        :disabled="!hasSelectedPoints"
+        title="Remove selected points from projection"
+      >
+        Remove Selected Points
+      </button>
+      <button
+        v-if="hasRemovedPoints"
+        @click="projectionService.recalculateWithoutRemovedPoints()"
+        class="btn btn-sm btn-warning ml-1"
+        title="Recalculate projection without removed points"
+      >
+        Recalculate
+      </button>
+    </div>
 
     <!-- Point Filter Section -->
     <PointFilterPanel />

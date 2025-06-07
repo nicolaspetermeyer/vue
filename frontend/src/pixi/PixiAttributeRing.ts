@@ -4,6 +4,7 @@ import { PointData } from 'pixi.js'
 import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { AttributeStats } from '@/models/data'
+import { PixiApp } from '@/pixi/Base/PixiApp'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -18,10 +19,12 @@ export class PixiAttributeRing
     | { id: string; stats: Record<string, AttributeStats>; color?: number }
     | undefined
   private visibleSegments: PixiAttributeSegment[] = []
+  app: PixiApp
 
   constructor(
     globalStats: Record<string, AttributeStats>,
     mini: boolean,
+    app: PixiApp,
     fingerprint?: {
       id: string
       stats: Record<string, AttributeStats>
@@ -36,6 +39,7 @@ export class PixiAttributeRing
     })
     this.mini = mini ?? false
     this.fingerprint = fingerprint
+    this.app = app
 
     this.eventMode = 'static'
 
@@ -52,7 +56,7 @@ export class PixiAttributeRing
 
     // Add only numeric attribute segments
     for (const [attrKey, stat] of Object.entries(globalStats)) {
-      this.addSegment(attrKey, stat, mini, fingerprint)
+      this.addSegment(this.app, attrKey, stat, mini, fingerprint)
       this.attributeKeys.add(attrKey)
     }
 
@@ -63,6 +67,7 @@ export class PixiAttributeRing
   }
 
   addSegment(
+    app: PixiApp,
     attrKey: string,
     globalStat: AttributeStats,
     mini: boolean,
@@ -73,6 +78,7 @@ export class PixiAttributeRing
     const globalNorm = globalStat.normMean
 
     const segment = new PixiAttributeSegment({
+      app,
       attributeKey: attrKey,
       mini,
       globalNorm,
@@ -226,7 +232,7 @@ export class PixiAttributeRing
 
     for (const [attrKey, stat] of Object.entries(globalStats)) {
       if (attributeSet.has(attrKey)) {
-        this.addSegment(attrKey, stat, this.mini, this.fingerprint)
+        this.addSegment(this.app, attrKey, stat, this.mini, this.fingerprint)
         this.attributeKeys.add(attrKey)
       }
     }

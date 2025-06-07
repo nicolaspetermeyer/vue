@@ -172,23 +172,6 @@ export class PixiDimredPoint extends PixiSprite implements Hoverable {
       sections.push('', 'Measurements:', ...numericFeatures)
     }
 
-    // Get feature ranking information
-    // const projectionStore = useProjectionStore()
-    // const topFeatures = projectionStore.getTopFeaturesForPoint(pointId, 3)
-
-    // let rankingSection = ''
-    // if (topFeatures.length > 0) {
-    //   rankingSection =
-    //     '\n\nTop Features by Importance:\n' +
-    //     topFeatures
-    //       .map((f, idx) => {
-    //         // Format score as percentage with 1 decimal place
-    //         const scorePercent = (f.score * 100).toFixed(1)
-    //         return `${idx + 1}. ${f.name} (${scorePercent}%)`
-    //       })
-    //       .join('\n')
-    // }
-
     return [idSection, ...sections].join('\n')
   }
 

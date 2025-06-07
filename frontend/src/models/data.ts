@@ -40,6 +40,10 @@ export interface AttributeStats {
   std: number
   min: number
   max: number
+  median: number
+  q25: number
+  q75: number
+  iqr: number
 
   localMean?: number
   localNormMean?: number

@@ -1,47 +1,33 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import FingerprintList from '@/components/right/FingerprintList.vue'
 import FingerprintSection from '@/components/right/FingerprintSection.vue'
+import StatisticsPanel from '@/components/right/StatisticsPanel.vue'
+
+const showStatistics = ref(false)
+
+const toggleStatisticsPanel = () => {
+  showStatistics.value = !showStatistics.value
+}
 </script>
 
 <template>
   <div class="panel">
     <div class="flex flex-col gap-2">
+      <div class="flex justify-between items-center"></div>
       <h2 class="text-xl font-bold">Fingerprints</h2>
-      <FingerprintSection />
-      <FingerprintList />
-      <!-- <ul class="fingerprint-list space-y-2">
-        <li
-          v-for="fingerprint in fingerprints"
-          :key="fingerprint.id"
-          :class="{ selected: selectedFingerprint?.id === fingerprint.id }"
-          @click="selectFingerprint(fingerprint)"
-          class="px-2 py-1 rounded hover:bg-gray-100 cursor-pointer bg-white shadow-sm"
-        >
-          <span>{{ fingerprint.name }}</span>
 
-          📊 Summary block 
-          <div class="text-sm text-gray-600 mt-1">
-            <div>Points: {{ fingerprint.projectedPoints.length }}</div>
-            <div>
-              Top Features:
-              <span
-                v-for="(key, i) in getTopFeatures(fingerprint.localStats)"
-                :key="key"
-                class="inline-block bg-gray-200 px-1.5 py-0.5 rounded text-xs mr-1"
-              >
-                {{ key }}
-              </span>
-            </div>
-          </div>
-          <button
-            class="text-black-500 hover:text-red-700 text-sm ml-2"
-            @click.stop="deleteFingerprint(fingerprint.id)"
-            title="Delete Fingerprint"
-          >
-            del ❌
-          </button>
-        </li>
-      </ul> -->
+      <FingerprintSection />
+      <button
+        @click="toggleStatisticsPanel"
+        class="btn btn-sm btn-primary"
+        :class="{ 'btn-active': showStatistics }"
+        title="Show Statistics Panel"
+      >
+        Statistics
+      </button>
+      <StatisticsPanel v-if="showStatistics" @close="showStatistics = false" />
+      <FingerprintList />
     </div>
   </div>
 </template>

@@ -15,6 +15,7 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
   const metadataCategories = ref<string[]>([])
   const uniqueValues = ref<Record<string, string[]>>({})
   const hasMetadata = computed(() => metadataAttributes.value.length > 0)
+  const removedAttributes = ref<string[]>([])
 
   const isRecalculating = ref<boolean>(false)
 
@@ -28,10 +29,15 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
   })
 
   const activeAttributes = computed(() => {
+    let result = []
+
     if (attributeFilterActive.value) {
-      return filteredAttributes.value
+      result = [...filteredAttributes.value]
+    } else {
+      result = [...allNumericAttributes.value]
     }
-    return allNumericAttributes.value
+
+    return result.filter((attr) => !removedAttributes.value.includes(attr))
   })
 
   function setRecalculating(value: boolean) {
@@ -108,6 +114,44 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
     }
   }
 
+  function removeAttribute(attributeKey: string) {
+    if (!allNumericAttributes.value.includes(attributeKey)) {
+      return false
+    }
+
+    if (!removedAttributes.value.includes(attributeKey)) {
+      removedAttributes.value.push(attributeKey)
+    }
+
+    return true
+  }
+
+  function restoreAttribute(attributeKey: string) {
+    if (!removedAttributes.value.includes(attributeKey)) {
+      return false
+    }
+    removedAttributes.value = removedAttributes.value.filter((attr) => attr !== attributeKey)
+    return true
+  }
+
+  function restoreAllAttributes() {
+    removedAttributes.value = []
+    return true
+  }
+
+  function setActiveAttributes(attributes: string[]) {
+    const newRemovedAttributes = allNumericAttributes.value.filter(
+      (attr) => !attributes.includes(attr),
+    )
+    removedAttributes.value = newRemovedAttributes
+
+    if (attributeFilterActive.value) {
+      filteredAttributes.value = attributes
+    }
+
+    return true
+  }
+
   return {
     featureCount,
     allNumericAttributes,
@@ -121,10 +165,15 @@ export const useAttributeFilterStore = defineStore('attributeFilter', () => {
     metadataAttributes,
     metadataCategories,
     hasMetadata,
+    removedAttributes,
     setRecalculating,
     initAttributeMetadata,
     updateAttributeFilter,
     clearAttributeFilter,
     clearAll,
+    removeAttribute,
+    restoreAttribute,
+    restoreAllAttributes,
+    setActiveAttributes,
   }
 })

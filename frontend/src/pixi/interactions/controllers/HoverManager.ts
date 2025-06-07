@@ -1,10 +1,11 @@
 import { FederatedPointerEvent, PointData } from 'pixi.js'
-import { PixiTooltip } from '@/pixi/interactions/overlays/PixiTooltip'
+import { PixiTooltip, TooltipOptions } from '@/pixi/interactions/overlays/PixiTooltip'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 
 export interface Hoverable {
   setHovered(hovered: boolean): void
-  getTooltipContent(): string
+  getTooltipContent?(): string
+  getTooltipOptions?(x: number, y: number): TooltipOptions
   getId(): string
 }
 
@@ -78,7 +79,21 @@ export class HoverManager {
       if (newHovered) {
         newHovered.setHovered(true)
         const local = this.tooltip.parent.toLocal(e.global)
-        this.tooltip.show(newHovered.getTooltipContent(), local.x + 8, local.y - 6)
+        if (
+          'getTooltipOptions' in newHovered &&
+          typeof newHovered.getTooltipOptions === 'function'
+        ) {
+          const options = newHovered.getTooltipOptions(local.x + 8, local.y - 6)
+          this.tooltip.showWithOptions(options)
+        }
+        // Fall back to text-only tooltip
+        else if (
+          'getTooltipContent' in newHovered &&
+          typeof newHovered.getTooltipContent === 'function'
+        ) {
+          const content = newHovered.getTooltipContent()
+          this.tooltip.show(content, local.x + 8, local.y - 6)
+        }
       }
 
       this.currentHovered = newHovered

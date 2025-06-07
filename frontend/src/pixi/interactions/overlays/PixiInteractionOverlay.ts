@@ -30,6 +30,7 @@ import {
 import { useProjectionStore } from '@/stores/projectionStore'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
 
 import { projectionService } from '@/services/projectionService'
 
@@ -45,9 +46,14 @@ export class PixiInteractionOverlay extends PixiContainer {
   private maskBoundary: Graphics | null = null
   private fingerprintStore = useFingerprintStore()
   private pointFilterStore = usePointFilterStore()
+  private projectionStore = useProjectionStore()
   private viewportController: ViewportController | null = null
   private selectionController: SelectionController | null = null
   private hoverManager: HoverManager
+  private contextMenuVisible = false
+  private contextMenuX = 0
+  private contextMenuY = 0
+  private contextMenuOptions: { label: string; action: () => void }[] = []
 
   constructor(width: number, height: number) {
     super({
@@ -135,6 +141,10 @@ export class PixiInteractionOverlay extends PixiContainer {
   }
 
   private onPointerTap(e: FederatedPointerEvent) {
+    if (e.button === 2) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (this.dimred) {
       let miniRingResult
       for (const [id, ring] of this.dimred.pixiGlyph.entries()) {
@@ -144,7 +154,8 @@ export class PixiInteractionOverlay extends PixiContainer {
       }
       // Handle right-click on mini ring (drill down)
       if (miniRingResult && e.button === 2) {
-        this.handleDrillDown(miniRingResult.id)
+        projectionService.drillDownToSubset(miniRingResult.id)
+        useFingerprintStore().deselectAllFingerprints
         return
       }
       // Handle left-click on mini ring (selection)
@@ -155,49 +166,58 @@ export class PixiInteractionOverlay extends PixiContainer {
         }
         return
       }
-    }
-    if (this.attributeRing && e.button === 0) {
-      const segment = this.attributeRing.pointerInElement(e.global)
-      if (segment) {
-        this.handleAttributeSegmentSelection(segment)
-        return
+      if (e.button === 2 && this.dimred) {
+        const point = this.dimred.pointerInElement(e.global)
+        const selectedPoints = this.dimred.getSelectedProjections()
+        if (point) {
+          e.stopPropagation()
+          e.preventDefault()
+
+          return
+        } else if (selectedPoints.length > 0) {
+          // Right-click in empty space but with selection active
+          e.stopPropagation()
+          e.preventDefault()
+        }
       }
-    } else if (this.attributeRing && e.button === 2) {
+    }
+
+    if (this.attributeRing && e.button === 2) {
       const segment = this.attributeRing.pointerInElement(e.global)
       if (segment) {
-        this.dimred?.pixiDimredPoints.forEach((point) => {
-          const attributeKey = segment.attributeKey
-          const value = point.dimredpoint.original[attributeKey]
-          const stats = segment.stats
+        e.stopPropagation()
+        e.preventDefault()
 
-          if (typeof value === 'number' && stats) {
-            const normalizedValue =
-              (value - (stats.min || 0)) / ((stats.max || 1) - (stats.min || 0))
-            // Color interpolation
-            const lowColor = 0x0000ff // Blue for low values
-            const highColor = 0xff0000 // Red for high values
-            const r =
-              Math.round(
-                (highColor >> 16) * normalizedValue + (lowColor >> 16) * (1 - normalizedValue),
-              ) & 0xff
-            const g =
-              Math.round(
-                ((highColor >> 8) & 0xff) * normalizedValue +
-                  ((lowColor >> 8) & 0xff) * (1 - normalizedValue),
-              ) & 0xff
-            const b =
-              Math.round(
-                (highColor & 0xff) * normalizedValue + (lowColor & 0xff) * (1 - normalizedValue),
-              ) & 0xff
-            const color = (r << 16) | (g << 8) | b
-            point.tint = color
-            point.alpha = 0.8
-          }
-        })
+        const attributeKey = segment.attributeKey
+        const options = [
+          {
+            label: `Select ${this.pointFilterStore.selectTopPercentile ? 'Top' : 'Bottom'} ${Math.round(this.pointFilterStore.thresholdPercentile * 100)}% by ${attributeKey}`,
+            action: () => {
+              this.handleAttributeSegmentSelection(segment)
+            },
+          },
+          {
+            label: `Color Points by ${attributeKey} (Gradient)`,
+            action: () => {
+              this.colorPointsByAttribute(segment)
+            },
+          },
+          {
+            label: `Remove Attribute "${attributeKey}" from Projection`,
+            action: () => {
+              this.removeAttributeFromProjection(attributeKey)
+            },
+          },
+          {
+            label: `Restore all removed Attributes`,
+            action: () => {
+              this.restoreAllRemovedAttributes()
+            },
+          },
+        ]
 
-        this.dimred?.emit('attributeVisualization', segment.attributeKey)
-
-        this.attributeRing?.clickSegment(segment.attributeKey)
+        this.showContextMenuWithOptions(e.global.x, e.global.y, options)
+        return
       }
     }
 
@@ -205,6 +225,77 @@ export class PixiInteractionOverlay extends PixiContainer {
     if (this.selectionController) {
       this.selectionController.handleTap(e)
     }
+  }
+
+  private removeAttributeFromProjection(attributeKey: string): void {
+    const attributeFilterStore = useAttributeFilterStore()
+
+    const currentActiveAttributes = attributeFilterStore.activeAttributes
+    console.log('Current active attributes:', currentActiveAttributes)
+
+    if (currentActiveAttributes.length <= 1) {
+      alert('Cannot remove attribute: At least one attribute must remain for projection.')
+      return
+    }
+    attributeFilterStore.removeAttribute(attributeKey)
+    const updatedActiveAttributes = attributeFilterStore.activeAttributes
+    console.log(updatedActiveAttributes)
+    projectionService.recalculateWithAttributes(updatedActiveAttributes)
+  }
+
+  private restoreAllRemovedAttributes(): void {
+    const attributeFilterStore = useAttributeFilterStore()
+
+    if (attributeFilterStore.removedAttributes.length === 0) {
+      return
+    }
+
+    attributeFilterStore.restoreAllAttributes()
+
+    const updatedActiveAttributes = attributeFilterStore.activeAttributes
+
+    projectionService.recalculateWithAttributes(updatedActiveAttributes).then((success) => {
+      if (!success) {
+        console.error('Failed to restore all attributes')
+      }
+    })
+  }
+
+  colorPointsByAttribute(segment: PixiAttributeSegment): void {
+    if (!this.dimred) return
+
+    const attributeKey = segment.attributeKey
+    const stats = segment.stats
+
+    this.dimred.pixiDimredPoints.forEach((point) => {
+      const value = point.dimredpoint.original[attributeKey]
+
+      if (typeof value === 'number' && stats) {
+        const normalizedValue = (value - (stats.min || 0)) / ((stats.max || 1) - (stats.min || 0))
+        // Color interpolation
+        const lowColor = 0x0000ff // Blue for low values
+        const highColor = 0xff0000 // Red for high values
+        const r =
+          Math.round(
+            (highColor >> 16) * normalizedValue + (lowColor >> 16) * (1 - normalizedValue),
+          ) & 0xff
+        const g =
+          Math.round(
+            ((highColor >> 8) & 0xff) * normalizedValue +
+              ((lowColor >> 8) & 0xff) * (1 - normalizedValue),
+          ) & 0xff
+        const b =
+          Math.round(
+            (highColor & 0xff) * normalizedValue + (lowColor & 0xff) * (1 - normalizedValue),
+          ) & 0xff
+        const color = (r << 16) | (g << 8) | b
+        point.tint = color
+        point.alpha = 0.8
+      }
+    })
+
+    this.dimred.emit('attributeVisualization', attributeKey)
+    this.attributeRing?.clickSegment(attributeKey)
   }
 
   handleResetVisualization(): void {
@@ -234,14 +325,6 @@ export class PixiInteractionOverlay extends PixiContainer {
       }
       return
     }
-  }
-
-  /**
-   * Handle drill-down into a fingerprint when right-clicking on a mini ring
-   * Creates a new projection that only includes points from this fingerprint
-   */
-  private handleDrillDown(fingerprintId: string): void {
-    projectionService.drillDownToSubset(fingerprintId)
   }
 
   private handleMiniRingSelection(fingerprintId: string): void {
@@ -275,6 +358,10 @@ export class PixiInteractionOverlay extends PixiContainer {
         localStats[key] = {
           mean: globalStats[key].mean,
           normMean: globalStats[key].normMean,
+          median: globalStats[key].median,
+          q25: globalStats[key].q25,
+          q75: globalStats[key].q75,
+          iqr: globalStats[key].iqr,
           min: globalStats[key].min,
           max: globalStats[key].max,
           std: globalStats[key].std,
@@ -295,18 +382,32 @@ export class PixiInteractionOverlay extends PixiContainer {
 
     const selectedPoints: PixiDimredPoint[] = []
 
+    const allValues: number[] = []
+
     this.dimred.pixiDimredPoints.forEach((point) => {
       const value = point.dimredpoint.original[attributeKey]
-      if (typeof value === 'number' && segment.stats?.normMean) {
-        const normalizedValue =
-          (value - (segment.stats.min || 0)) / ((segment.stats.max || 1) - (segment.stats.min || 0))
+      if (typeof value === 'number') {
+        allValues.push(value)
+      }
+    })
 
-        if (
-          this.pointFilterStore.selectTopPercentile
-            ? normalizedValue >= this.pointFilterStore.thresholdPercentile
-            : normalizedValue <= this.pointFilterStore.thresholdPercentile
-        ) {
-          selectedPoints.push(point)
+    allValues.sort((a, b) => a - b)
+
+    const percentile = this.pointFilterStore.thresholdPercentile
+    const thresholdIndex = Math.floor(allValues.length * percentile)
+    const thresholdValue = allValues[thresholdIndex]
+
+    this.dimred.pixiDimredPoints.forEach((point) => {
+      const value = point.dimredpoint.original[attributeKey]
+      if (typeof value === 'number') {
+        if (this.pointFilterStore.selectTopPercentile) {
+          if (value >= thresholdValue) {
+            selectedPoints.push(point)
+          }
+        } else {
+          if (value <= thresholdValue) {
+            selectedPoints.push(point)
+          }
         }
       }
     })
@@ -448,6 +549,29 @@ export class PixiInteractionOverlay extends PixiContainer {
   private onWheel(e: FederatedWheelEvent) {
     if (!this.viewportController) return
     this.viewportController.handleWheel(e)
+  }
+
+  private showContextMenuWithOptions(
+    x: number,
+    y: number,
+    options: { label: string; action: () => void }[],
+  ) {
+    this.contextMenuVisible = true
+    this.contextMenuX = x
+    this.contextMenuY = y
+    this.contextMenuOptions = options
+
+    this.emit('showContextMenu', {
+      show: true,
+      x,
+      y,
+      options: this.contextMenuOptions,
+    })
+  }
+
+  public closeContextMenu() {
+    this.contextMenuVisible = false
+    this.emit('showContextMenu', { show: false, x: 0, y: 0, options: [] })
   }
 
   /**

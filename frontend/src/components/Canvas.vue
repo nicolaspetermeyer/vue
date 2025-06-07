@@ -9,6 +9,7 @@ import { Colors } from '@/config/Themes'
 import BackButton from '@/components/canvas/BackButton.vue'
 import TransitionIndicator from '@/components/canvas/TransitionIndicator.vue'
 import ColorLegend from '@/components/canvas/ColorLegend.vue'
+import ContextMenu from './ContextMenu.vue'
 
 const projectionStore = useProjectionStore()
 
@@ -23,6 +24,21 @@ const colorLegendTitle = ref<string>('Attribute Value')
 
 const lowColor = 0x0000ff // Blue
 const highColor = 0xff0000 // Red
+
+const contextMenu = ref({
+  show: false,
+  x: 0,
+  y: 0,
+  options: [] as { label: string; action: () => void }[],
+})
+
+const handleContextMenu = (data: any) => {
+  contextMenu.value = data
+}
+
+const closeContextMenu = () => {
+  contextMenu.value.show = false
+}
 
 function resetView() {
   currentProjection.value?.resetView()
@@ -80,6 +96,8 @@ function createProjectionInstance() {
     showColorLegend.value = false
   })
 
+  projection.on('showContextMenu', handleContextMenu)
+
   // Store reference in the store
   projectionStore.setProjectionInstance(projection)
 }
@@ -98,11 +116,26 @@ watch(
 onMounted(async () => {
   await init()
   update()
+  const visualizationElement = document.getElementById('visualization-container')
+  if (visualizationElement) {
+    visualizationElement.addEventListener('contextmenu', (e) => {
+      e.preventDefault()
+      return false
+    })
+  }
 })
 
 onBeforeUnmount(() => {
   if (currentProjection.value) {
     currentProjection.value.unregisterKeyboardEvents()
+    currentProjection.value.off('showContextMenu', handleContextMenu)
+  }
+  const visualizationElement = document.getElementById('visualization-container')
+  if (visualizationElement) {
+    visualizationElement.removeEventListener('contextmenu', (e) => {
+      e.preventDefault()
+      return false
+    })
   }
 })
 
@@ -122,6 +155,13 @@ function debug() {
     />
 
     <TransitionIndicator />
+    <ContextMenu
+      :show="contextMenu.show"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :options="contextMenu.options"
+      @close="closeContextMenu()"
+    />
     <canvas
       class="w-full h-full"
       ref="canvasRef"

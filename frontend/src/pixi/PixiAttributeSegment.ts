@@ -6,7 +6,11 @@ import { PolarGeometry } from '@/utils/geometry/PolarGeometry'
 import { PixiAttributeRing } from '@/pixi/PixiAttributeRing'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { useAttributeFilterStore } from '@/stores/attributeFilterStore'
-import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { useProjectionStore } from '@/stores/projectionStore'
+import { Texture } from 'pixi.js'
+import * as PIXI from 'pixi.js'
+import { PixiApp } from '@/pixi/Base/PixiApp'
+import { TooltipOptions } from '@/pixi/interactions/overlays/PixiTooltip'
 
 export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   public attributeKey: string
@@ -18,6 +22,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     string,
     { color: number; norm: number; localMean: number; fingerprintName: string }
   > = new Map()
+  app: PixiApp
 
   private static segmentRegistry: PixiAttributeSegment[] = []
 
@@ -38,6 +43,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
   private featureCount = useAttributeFilterStore().featureCount
 
   constructor(options: {
+    app: PixiApp
     attributeKey: string
     mini: boolean
     globalNorm: number
@@ -57,11 +63,16 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.stats = options.stats || {
       mean: 0,
       normMean: 0,
+      median: 0,
+      q25: 0,
+      q75: 0,
+      iqr: 0,
       std: 0,
       min: 0,
       max: 0,
       isGlobal: true,
     }
+    this.app = options.app
 
     if (this.mini) {
       if (options.color !== undefined) {
@@ -313,8 +324,8 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     fingerprintName: string,
   ): void {
     this.localOverlays.set(id, { norm: localNorm, localMean, color, fingerprintName })
-    this.localNorm = localNorm
-    this.color = color
+    // this.localNorm = localNorm
+    // this.color = color
 
     this.redraw()
   }
@@ -379,17 +390,27 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     }
   }
 
-  getTooltipContent(): string {
-    if (this.mini && !this.inSegment) {
-      return 'Right click to drill down'
+  getTooltipOptions(x: number, y: number): TooltipOptions {
+    // Create the density plot texture
+    const texture = this.createDensityPlotTexture()
+
+    // Prepare tooltip options
+    const options: TooltipOptions = {
+      title: `Feature: ${this.attributeKey}`,
+      texture: texture,
+      x: x,
+      y: y,
     }
-    let content = `Attribute: ${this.attributeKey}\n`
-    const fingerprintStore = useFingerprintStore()
-    const attributeFilterStore = useAttributeFilterStore()
 
-    const histogramDisplay = this.generateHistogram()
-
+    // Add text content based on segment type
     if (this.mini) {
+      if (!this.inSegment) {
+        options.text = 'Right click to drill down'
+        options.texture = undefined
+        return options
+      }
+
+      const fingerprintStore = useFingerprintStore()
       const fingerprintId =
         this.parent instanceof PixiAttributeRing
           ? (this.parent as PixiAttributeRing).getFingerprint() || 'Unknown'
@@ -405,26 +426,23 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           const direction = delta > 0 ? 'higher' : 'lower'
           const pctDiff = Math.abs(delta * 100).toFixed(1)
 
-          content += `${fp.name}\n`
-          content += `Normalized Mean: ${_localNorm.toFixed(2)}`
-          content += `\nMean: ${stats.mean.toFixed(2)}`
-          content += `\nSegment ${this.attributeKey}: ${pctDiff}% ${direction}`
+          options.text = [
+            `${fp.name}`,
+            `Normalized Mean: ${_localNorm.toFixed(2)}`,
+            `Mean: ${stats.mean.toFixed(2)}`,
+            `Segment ${this.attributeKey}: ${pctDiff}% ${direction}`,
+          ].join('\n')
         }
       }
-
-      return content
     } else {
       const tooltipLines = [
-        `Feature: ${this.attributeKey}`,
         `Global Norm Mean: ${this.globalNorm.toFixed(2)}`,
         `Global Mean: ${this.stats.mean.toFixed(2)}`,
+        `Global Std: ${this.stats.std.toFixed(2)}`,
       ]
 
-      tooltipLines.push('', 'Distribution:')
-      tooltipLines.push(histogramDisplay)
-
       if (this.localOverlays && this.localOverlays.size > 0) {
-        tooltipLines.push('', 'Comparisons:\n (Norm Mean | Mean)')
+        tooltipLines.push('', 'Comparisons:')
         this.localOverlays.forEach((overlay, id) => {
           const norm = overlay.norm.toFixed(2)
           const localMean = overlay.localMean.toFixed(2)
@@ -438,115 +456,233 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         })
       }
 
-      return tooltipLines.join('\n')
+      options.text = tooltipLines.join('\n')
     }
+
+    return options
   }
 
-  /**
-   * Generate histogram for numeric data
-   */
-  private generateHistogram(): string {
+  createDensityPlotTexture(): Texture {
     const { min, max, mean, std } = this.stats
-    if (min === undefined || max === undefined) return ''
+    const width = 200
+    const height = 80
 
-    const width = 30
-    const height = 7.5
-    const bars: string[] = []
+    const container = new PIXI.Container()
 
-    // Create a simple Gaussian distribution based on mean and std
-    const range = max - min
-    const step = range / width
+    // Create a graphics object to draw the plot
+    const graphics = new PIXI.Graphics()
+    container.addChild(graphics)
 
-    for (let i = 0; i < width; i++) {
-      const x = min + i * step
-      // Calculate height using normal distribution formula
-      const normalizedHeight = Math.exp(-0.5 * Math.pow((x - mean) / std, 2))
-      const barHeight = Math.max(1, Math.round(normalizedHeight * height))
+    // Draw background
+    graphics.fill({ color: 0xffffff })
+    graphics.rect(0, 0, width, height)
+    graphics.stroke()
 
-      bars.push('█'.repeat(barHeight))
-    }
+    // Set up coordinate mapping functions
+    const mapX = (x: number) => 10 + ((x - min) / (max - min)) * (width - 20)
+    const mapY = (y: number, maxDensity: number) => height - 20 - (y / maxDensity) * (height - 30)
 
-    // Draw the histogram
-    const histogram: string[] = []
-    for (let h = height; h > 0; h--) {
-      let row = ''
-      for (let i = 0; i < width; i++) {
-        row += bars[i].length >= h ? '█' : ' '
-      }
-      histogram.push(row)
-    }
+    const projectionStore = useProjectionStore()
+    const fingerprintStore = useFingerprintStore()
 
-    // Add x-axis labels (min, mean, max)
-    const baseline = '─'.repeat(width)
-    histogram.push(baseline)
+    const globalValues = projectionStore.projection
+      .map((d) => d.original[this.attributeKey])
+      .filter((v): v is number => typeof v === 'number' && !isNaN(v))
 
-    // Add markers for min, mean, and max
-    const minPos = 0
-    const maxPos = width - 1
-    const meanPos = Math.round(((mean - min) / range) * (width - 1))
-
-    let markers = ' '.repeat(width)
-    // markers = this.replaceAt(markers, minPos, '↑')
-    // markers = this.replaceAt(markers, meanPos, '↑')
-    // markers = this.replaceAt(markers, maxPos, '↑')
-
+    const fingerprintValues = new Map<string, number[]>()
     if (this.localOverlays && this.localOverlays.size > 0) {
-      let fpMarkers = ' '.repeat(width)
-      const fpPositions = new Map<number, string[]>()
-
       this.localOverlays.forEach((overlay, id) => {
-        const fpMeanPos = Math.round(((overlay.localMean - min) / range) * (width - 1))
-        fpMarkers = this.replaceAt(fpMarkers, fpMeanPos, '↑')
+        const fp = fingerprintStore.getFingerprintById(id)
+        if (fp) {
+          const values = fp.projectedPoints
+            .map((point) => {
+              return point ? point.original[this.attributeKey] : null
+            })
+            .filter((v): v is number => typeof v === 'number' && !isNaN(v))
 
-        const valueLabel = overlay.localMean.toFixed(1)
-        if (fpPositions.has(fpMeanPos)) {
-          fpPositions.get(fpMeanPos)?.push(valueLabel)
-        } else {
-          fpPositions.set(fpMeanPos, [valueLabel])
+          fingerprintValues.set(id, values)
+        }
+      })
+    }
+
+    // Generate kernel density estimation for normal distribution
+    const binCount = 50
+    const binSize = (max - min) / binCount
+    // Function to estimate kernel density from values
+    const estimateKDE = (values: number[], bandwidth = 0.2 * std) => {
+      const bins = new Array(binCount).fill(0)
+
+      // For each data point, add its contribution to all bins
+      values.forEach((val) => {
+        if (val >= min && val <= max) {
+          for (let i = 0; i < binCount; i++) {
+            const binCenter = min + (i + 0.5) * binSize
+            // Gaussian kernel
+            const kernelValue = Math.exp(-0.5 * Math.pow((val - binCenter) / bandwidth, 2))
+            bins[i] += kernelValue
+          }
         }
       })
 
-      histogram.push(fpMarkers)
+      // Normalize by number of values
+      if (values.length > 0) {
+        for (let i = 0; i < binCount; i++) {
+          bins[i] /= values.length * bandwidth * Math.sqrt(2 * Math.PI)
+        }
+      }
 
-      let fpLabels = ''
-      let currentPos = 0
+      return bins
+    }
+    const globalBins = estimateKDE(globalValues)
 
-      const sortedPositions = Array.from(fpPositions.keys()).sort((a, b) => a - b)
+    let maxDensity = Math.max(...globalBins, 0.00001) // Prevent division by zero
 
-      for (const pos of sortedPositions) {
-        const values = fpPositions.get(pos)!
-        if (pos > currentPos) {
-          fpLabels += ' '.repeat(pos - currentPos)
+    // Draw global density curve
+    graphics.stroke({ width: 1, color: 0x000000 })
+    graphics.fill({ color: 0xcccccc, alpha: 0.3 })
+
+    // Start path at the bottom left
+    graphics.moveTo(mapX(min), height - 20)
+
+    // Draw the curve
+    for (let i = 0; i < binCount; i++) {
+      const x = min + i * binSize + binSize / 2
+      const y = globalBins[i]
+      graphics.lineTo(mapX(x), mapY(y, maxDensity))
+    }
+
+    // Close the path to the bottom right
+    graphics.lineTo(mapX(max), height - 20)
+    graphics.closePath()
+    graphics.fill()
+    graphics.stroke()
+
+    // Draw mean marker for global
+    graphics.stroke({ width: 1.5, color: 0x666666 })
+    graphics.moveTo(mapX(mean), height - 20)
+    graphics.lineTo(mapX(mean), height - 17)
+
+    // Draw fingerprint density curves
+    if (this.localOverlays && this.localOverlays.size > 0) {
+      this.localOverlays.forEach((overlay, id) => {
+        const fpValues = fingerprintValues.get(id) || []
+        if (fpValues.length === 0) return
+
+        // Estimate fingerprint density
+        const fpBins = estimateKDE(fpValues, 0.15 * std)
+
+        const fpMaxDensity = Math.max(...fpBins)
+        if (fpMaxDensity > maxDensity) {
+          maxDensity = fpMaxDensity
+
+          // Redraw global curve with new scale
+          graphics.clear()
+
+          // Redraw background
+          graphics.fill({ color: 0xffffff, alpha: 0.1 })
+          graphics.rect(0, 0, width, height)
+          graphics.stroke({ width: 1, color: 0x666666, alpha: 0.3 })
+
+          // Redraw global curve
+          graphics.stroke({ width: 1, color: 0x666666 })
+          graphics.fill({ color: 0x666666, alpha: 0.2 })
+
+          graphics.moveTo(mapX(min), height - 20)
+          for (let i = 0; i < binCount; i++) {
+            const x = min + (i + 0.5) * binSize
+            const y = globalBins[i]
+            graphics.lineTo(mapX(x), mapY(y, maxDensity))
+          }
+          graphics.lineTo(mapX(max), height - 20)
+          graphics.closePath()
+          graphics.fill()
+          graphics.stroke()
+
+          // Redraw mean marker
+          graphics.stroke({ width: 1.5, color: 0x666666 })
+          graphics.moveTo(mapX(mean), height - 20)
+          graphics.lineTo(mapX(mean), height - 17)
         }
 
-        const label = values.join('|')
-        fpLabels += label
-        currentPos = pos + label.length
-      }
+        graphics.stroke({ width: 1.5, color: overlay.color })
+        graphics.fill({ color: overlay.color, alpha: 0.3 })
 
-      // Add the fingerprint labels
-      if (fpLabels.trim().length > 0) {
-        histogram.push(fpLabels)
+        // Start path
+        graphics.moveTo(mapX(min), height - 20)
+
+        // Draw the curve
+        for (let i = 0; i < binCount; i++) {
+          const x = min + (i + 0.5) * binSize
+          const y = fpBins[i]
+          graphics.lineTo(mapX(x), mapY(y, maxDensity))
+        }
+
+        // Close the path
+        graphics.lineTo(mapX(max), height - 20)
+        graphics.closePath()
+        graphics.fill()
+        graphics.stroke()
+
+        // Draw mean marker
+        graphics.stroke({ width: 1.5, color: overlay.color })
+        graphics.moveTo(mapX(overlay.localMean), height - 20)
+        graphics.lineTo(mapX(overlay.localMean), height - 25)
+      })
+    }
+
+    const selectedPoints = projectionStore.projectionInstance?.dimred.getSelectedProjections() || []
+
+    let selectedPointValue = null
+    if (selectedPoints.length === 1) {
+      const selectedPoint = selectedPoints[0]
+      if (selectedPoint.original[this.attributeKey] !== undefined) {
+        selectedPointValue = selectedPoint.original[this.attributeKey]
+
+        if (typeof selectedPointValue === 'number' && !isNaN(selectedPointValue)) {
+          graphics.moveTo(mapX(selectedPointValue), height - 20)
+          graphics.lineTo(mapX(selectedPointValue), 5)
+          graphics.stroke({ width: 2, color: 0xff0000 })
+
+          graphics.fill({ color: 0xff0000 })
+          graphics.poly([
+            mapX(selectedPointValue),
+            height - 20,
+            mapX(selectedPointValue) - 5,
+            height - 15,
+            mapX(selectedPointValue) + 5,
+            height - 15,
+          ])
+        }
       }
     }
 
-    // Add values at the bottom
-    let labels = `${min.toFixed(1)}`.padEnd(meanPos, ' ')
-    labels += `${mean.toFixed(1)}`.padEnd(maxPos - meanPos, ' ')
-    labels += `${max.toFixed(1)}`
-    histogram.push(labels)
+    // Draw axis
+    graphics.stroke({ width: 1, color: 0x000000 })
+    graphics.moveTo(10, height - 20)
+    graphics.lineTo(width - 10, height - 20)
 
-    return histogram.join('\n')
-  }
+    const textStyle = new PIXI.TextStyle({
+      fontSize: 10,
+      fill: 0x000000,
+      align: 'center' as const,
+    })
 
-  /**
-   * Replace a character at a specific position in a string
-   */
-  private replaceAt(str: string, index: number, replacement: string): string {
-    if (index >= str.length) {
-      return str
-    }
-    return str.substring(0, index) + replacement + str.substring(index + 1)
+    const minText = new PIXI.Text({ text: min.toFixed(1), style: textStyle })
+    minText.position.set(10, height - 15)
+    container.addChild(minText)
+
+    const maxText = new PIXI.Text({ text: max.toFixed(1), style: textStyle })
+    maxText.position.set(width - 25, height - 15)
+    container.addChild(maxText)
+
+    const meanText = new PIXI.Text({ text: mean.toFixed(1), style: textStyle })
+    meanText.anchor.set(0.5, 0)
+    meanText.position.set(mapX(mean), height - 15)
+    container.addChild(meanText)
+
+    // Create a texture from the graphics
+    const texture = this.app.renderer.generateTexture(container)
+    return texture
   }
 
   destroy(options?: any): void {

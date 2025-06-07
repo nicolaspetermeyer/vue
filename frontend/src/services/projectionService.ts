@@ -12,6 +12,7 @@ import {
 } from '@/services/api'
 import { animationService } from '@/services/animationService'
 import type { Projection, AttributeStats, FeatureRanking } from '@/models/data'
+import { calcFingerprintStats } from '@/utils/calculations/calcFingerprintStats'
 
 /**
  * Centralized service for handling all projection-related operations
@@ -171,6 +172,7 @@ class ProjectionService {
         if (!point.original || !category) return -1
         const value = String(point.original[category])
         const stringValues = values.map((v) => String(v))
+
         return stringValues.includes(value) ? index : -1
       })
       .filter((idx) => idx !== -1)
@@ -188,6 +190,123 @@ class ProjectionService {
 
     // Show all points in the visualization
     projectionStore.projectionInstance.showAllPoints()
+  }
+
+  removePoint(pointId: string): void {
+    const projectionStore = useProjectionStore()
+
+    projectionStore.removedPointIds.add(pointId)
+
+    if (projectionStore.projectionInstance?.dimred) {
+      projectionStore.projectionInstance.dimred.hidePointsById([pointId])
+    }
+
+    this.updateDrillDownHistoryForRemovedPoints([pointId])
+  }
+
+  removePoints(pointIds: string[]): void {
+    const projectionStore = useProjectionStore()
+
+    pointIds.forEach((id) => {
+      projectionStore.removedPointIds.add(id)
+    })
+
+    if (projectionStore.projectionInstance?.dimred) {
+      projectionStore.projectionInstance.dimred.hidePointsById(pointIds)
+    }
+
+    this.updateDrillDownHistoryForRemovedPoints(pointIds)
+  }
+
+  cancelRemovedPoints(): void {
+    const projectionStore = useProjectionStore()
+
+    projectionStore.removedPointIds.clear()
+
+    if (projectionStore.projectionInstance?.dimred) {
+      projectionStore.projectionInstance.dimred.showAllPoints()
+    }
+  }
+
+  /**
+   * Recalculate projection without removed points
+   */
+  async recalculateWithoutRemovedPoints(): Promise<boolean> {
+    const datasetStore = useDatasetStore()
+    const projectionStore = useProjectionStore()
+    const attributeFilterStore = useAttributeFilterStore()
+
+    const dataset = datasetStore.selectedDatasetName
+    if (!dataset) {
+      console.error('No dataset selected')
+      return false
+    }
+
+    projectionStore.setLoading(true)
+
+    try {
+      // Get all point IDs except the removed ones
+      const removedIds = Array.from(projectionStore.removedPointIds)
+      const validPointIds = projectionStore.projection
+        .map((p) => p.id)
+        .filter((id) => !removedIds.includes(id))
+
+      // Preserve current positions for animation
+      const currentPositions = new Map<string, { x: number; y: number }>()
+      projectionStore.projection
+        .filter((point) => !removedIds.includes(point.id))
+        .forEach((point) => {
+          currentPositions.set(point.id, { ...point.pos })
+        })
+
+      // Request recalculation with subset of points
+      const result = await fetchSubsetProjection(
+        dataset,
+        projectionStore.projectionMethod,
+        validPointIds,
+      )
+
+      if (!result || !result.positionMapping) {
+        throw new Error('Invalid response from recalculation')
+      }
+
+      // Prepare new projection with animation base positions
+      const newProjection = projectionStore.projection
+        .filter((point) => !removedIds.includes(point.id))
+        .map((point) => {
+          const currentPos = { ...point.pos }
+          if (point.id in result.positionMapping) {
+            return {
+              ...point,
+              basePos: currentPos,
+              pos: { ...result.positionMapping[point.id] },
+            }
+          }
+          return point
+        })
+
+      const match = newProjection.map((point) => point.original)
+      const newGlobalStats = calcFingerprintStats(match)
+
+      // Update stores
+      projectionStore.setGlobalStats(newGlobalStats)
+      projectionStore.setProjection(newProjection)
+      projectionStore.unfilteredProjection = newProjection
+      projectionStore.removedPointIds.clear()
+
+      // Update visualization with animation
+      this.updateVisualizationWithAnimation(newProjection)
+
+      if (projectionStore.projectionInstance) {
+        const numericAttributes = attributeFilterStore.allNumericAttributes
+        projectionStore.projectionInstance.updateAttributeRing(numericAttributes)
+      }
+
+      return true
+    } catch (error) {
+      return false
+    } finally {
+    }
   }
 
   /**
@@ -226,7 +345,6 @@ class ProjectionService {
         parentId: drillDownStore.currentParentId,
         originalPositions: currentPositions,
       })
-      console.log('Saved current projection state to history:', drillDownStore.projectionHistory)
 
       // Fetch subprojection from backend
       const result = await fetchSubsetProjection(
@@ -257,7 +375,12 @@ class ProjectionService {
           // Convert local values to global values in the new context
           mean: stat.localMean || stat.mean,
           normMean: stat.localNormMean || stat.normMean,
+
           std: stat.std,
+          median: stat.median,
+          q25: stat.q25,
+          q75: stat.q75,
+          iqr: stat.iqr,
           min: stat.min,
           max: stat.max,
 
@@ -294,6 +417,7 @@ class ProjectionService {
   navigateBack(): boolean {
     const projectionStore = useProjectionStore()
     const drillDownStore = useDrillDownStore()
+    const fingerprintStore = useFingerprintStore()
 
     if (!drillDownStore.canGoBack) {
       return false
@@ -303,6 +427,7 @@ class ProjectionService {
     if (!previousState) {
       return false
     }
+    fingerprintStore.deselectAllFingerprints
 
     // Calculate current positions for transition animation
     const currentPositions = new Map<string, { x: number; y: number }>()
@@ -334,6 +459,31 @@ class ProjectionService {
     })
 
     return true
+  }
+
+  private updateDrillDownHistoryForRemovedPoints(pointIds: string[]): void {
+    const drillDownStore = useDrillDownStore()
+
+    if (!drillDownStore.isDrilledDownView) return
+
+    const removedPointsSet = new Set(pointIds)
+
+    drillDownStore.projectionHistory = drillDownStore.projectionHistory.map((state) => {
+      const filteredProjection = state.projection.filter((point) => !removedPointsSet.has(point.id))
+
+      if (state.originalPositions) {
+        const newPositions = new Map(state.originalPositions)
+        pointIds.forEach((id) => {
+          newPositions.delete(id)
+        })
+        state.originalPositions = newPositions
+      }
+
+      return {
+        ...state,
+        projection: filteredProjection,
+      }
+    })
   }
 
   /**
