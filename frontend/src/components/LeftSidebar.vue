@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
-
+import { onMounted } from 'vue'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { projectionService } from '@/services/projectionService'
-import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { storeToRefs } from 'pinia'
 import PointFilterPanel from './left/PointFilterPanel.vue'
 import AttributeFilterPanel from './left/AttributeFilterPanel.vue'
@@ -16,14 +14,7 @@ const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
 const { setSelectedDatasetId } = datasetStore
 
 const projectionStore = useProjectionStore()
-const { projectionMethod, hasRemovedPoints } = storeToRefs(projectionStore)
-
-const fingerprintStore = useFingerprintStore()
-
-// Check if there are selected points
-const hasSelectedPoints = computed(() => {
-  return fingerprintStore.selection.length > 0
-})
+const { projectionMethod } = storeToRefs(projectionStore)
 
 const loadProj = async () => {
   projectionStore.clearAllProjectionData()
@@ -33,15 +24,9 @@ const loadProj = async () => {
 
 const handleSelect = (event: Event) => {
   const select = event.target as HTMLSelectElement
+
   if (select) {
     setSelectedDatasetId(Number(select.value || null))
-  }
-}
-
-const removeSelectedPoints = () => {
-  if (hasSelectedPoints.value) {
-    const selectedIds = fingerprintStore.selection.map((p) => p.id)
-    projectionService.removePoints(selectedIds)
   }
 }
 
@@ -77,26 +62,6 @@ onMounted(async () => {})
     <!-- Treshold Filter -->
     <ThresholdControlPanel />
 
-    <!-- Remove Points Button -->
-    <div class="mb-3 flex justify-end">
-      <button
-        @click="removeSelectedPoints"
-        class="btn btn-sm btn-error"
-        :disabled="!hasSelectedPoints"
-        title="Remove selected points from projection"
-      >
-        Remove Selected Points
-      </button>
-      <button
-        v-if="hasRemovedPoints"
-        @click="projectionService.recalculateWithoutRemovedPoints()"
-        class="btn btn-sm btn-warning ml-1"
-        title="Recalculate projection without removed points"
-      >
-        Recalculate
-      </button>
-    </div>
-
     <!-- Point Filter Section -->
     <PointFilterPanel />
 
@@ -110,14 +75,14 @@ onMounted(async () => {})
 <style scoped>
 .sidebar {
   padding: 1rem;
-  background: #f1f1f1;
+  background: #ffffff;
   height: 100%;
   overflow-y: auto;
 }
 
 .section {
   padding: 0.75rem;
-  background: white;
+  background: #d1d1d1;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -130,17 +95,17 @@ onMounted(async () => {})
   color: #333;
 }
 
-.checkboxes-container {
+/* .checkboxes-container {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #d7dadf;
   border-radius: 0.375rem;
   padding: 0.5rem;
   margin-top: 0.5rem;
   background-color: #f9fafb;
-}
+} */
 
-/* Custom scrollbar */
+/* Custom scrollbar
 .checkboxes-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -156,5 +121,5 @@ onMounted(async () => {})
 
 .checkboxes-container::-webkit-scrollbar-thumb:hover {
   background: #a0aec0;
-}
+} */
 </style>

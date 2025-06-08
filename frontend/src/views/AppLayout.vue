@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue'
 import LeftSidebar from '@/components/LeftSidebar.vue'
 import Canvas from '@/components/Canvas.vue'
 import RightPanel from '@/components/RightPanel.vue'
-
 import { useDatasetStore } from '@/stores/datasetStore'
 
 const datasetStore = useDatasetStore()
@@ -43,7 +42,6 @@ onMounted(async () => {
 .left {
   width: 350px;
   flex-shrink: 0;
-  background-color: #f1f1f1;
   border-right: 1px solid #ddd;
   overflow-y: auto;
 }
@@ -51,7 +49,6 @@ onMounted(async () => {
 .right {
   width: 350px;
   flex-shrink: 0;
-  background-color: #f1f1f1;
   border-left: 1px solid #ddd;
   overflow-y: auto;
 }

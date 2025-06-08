@@ -43,7 +43,11 @@ const topLevelFingerprints = computed(() => {
 </template>
 <style scoped>
 .fingerprint-list {
-  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #d1d1d1;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .fingerprint-header {

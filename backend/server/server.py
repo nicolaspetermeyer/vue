@@ -13,9 +13,9 @@ import os
 
 app = FastAPI()
 router = APIRouter()
-projection_cache = {}
-stats_cache = {}
-feature_ranking_cache = {}
+# projection_cache = {}
+# stats_cache = {}
+# feature_ranking_cache = {}
 dataset_cache = {}
 
 
@@ -115,8 +115,8 @@ def preprocess_dataset(filename: str) -> DatasetInfo:
         DatasetInfo object with processed dataset and metadata
     """
     # Check if we have this dataset already preprocessed in cache
-    if filename in dataset_cache:
-        return dataset_cache[filename]
+    # if filename in dataset_cache:
+    #     return dataset_cache[filename]
 
     # Load the raw data
     df = read_csv_file(filename)
@@ -204,14 +204,12 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
     Returns:
         Dictionary containing attribute metadata
     """
-    print(f"Loading metadata for {target_filename}")
     # Only process metadata for the voting or breast dataset
     if (
         target_filename != "Voting-data-cleaned.csv"
         and target_filename != "breastCancer.csv"
     ):
         return {}
-    print(f"Processing metadata for {target_filename}")
     if target_filename == "Voting-data-cleaned.csv":
         metadata_path = os.path.join("../metadata/VotingAttributeMetadata.csv")
     elif target_filename == "breastCancer.csv":
@@ -278,7 +276,7 @@ def load_attribute_metadata(target_filename: str) -> Dict[str, Any]:
 def compute_pca(data, n_components: int = 2) -> List[List[float]]:
     """Compute PCA projection"""
     if isinstance(data, pd.DataFrame):
-        print(data.columns)
+        print("calculating pca")
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
         if id_cols:
@@ -320,7 +318,6 @@ def compute_pca(data, n_components: int = 2) -> List[List[float]]:
 def compute_tsne(data) -> List[List[float]]:
     """Compute t-SNE projection"""
     # Remove ID columns
-    print(data.columns)
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
@@ -342,7 +339,6 @@ def compute_tsne(data) -> List[List[float]]:
 def compute_umap(data) -> List[List[float]]:
     """Compute UMAP projection"""
     # Remove ID columns
-    print(data.columns)
     if isinstance(data, pd.DataFrame):
         # Filter out any ID-like columns
         id_cols = [col for col in data.columns if col.lower() == "id"]
@@ -516,8 +512,8 @@ async def project_data(
     """
     key = (filename, method)
 
-    if key in projection_cache:
-        return projection_cache[key]
+    # if key in projection_cache:
+    #     return projection_cache[key]
 
     dataset_info = preprocess_dataset(filename)
 
@@ -593,7 +589,7 @@ async def project_data(
 
         result["attributeMetadata"] = attribute_metadata
 
-    projection_cache[key] = result
+    # projection_cache[key] = result
 
     return result
 
@@ -604,9 +600,9 @@ async def get_global_stats(filename: str, method: str):
     Compute basic statistics for each numeric feature.
     """
 
-    cache_key = (filename, method)
-    if cache_key in stats_cache:
-        return stats_cache[cache_key]
+    # cache_key = (filename, method)
+    # if cache_key in stats_cache:
+    #     return stats_cache[cache_key]
 
     dataset_info = preprocess_dataset(filename)
 
@@ -653,78 +649,78 @@ async def get_global_stats(filename: str, method: str):
     #     unique_values = dataset_info.df[col].nunique()
     #     stats[col] = {"isNumeric": False, "uniqueValues": int(unique_values)}
 
-    stats_cache[cache_key] = stats
+    # stats_cache[cache_key] = stats
     return stats
 
 
-@app.get("/api/feature-ranking/")
-async def get_feature_ranking(
-    filename: str, method: Literal["pca", "tsne", "umap"] = "pca", radius: float = 0.1
-):
-    """
-    Compute variance-based feature ranking for each point in the dataset.
+# @app.get("/api/feature-ranking/")
+# async def get_feature_ranking(
+#     filename: str, method: Literal["pca", "tsne", "umap"] = "pca", radius: float = 0.1
+# ):
+#     """
+#     Compute variance-based feature ranking for each point in the dataset.
 
-    Args:
-        filename (str): Name of the CSV file to analyze
-        method (str): Projection method to use ('pca', 'tsne' or 'umap')
-        radius (float): Neighborhood radius to consider in projection space
+#     Args:
+#         filename (str): Name of the CSV file to analyze
+#         method (str): Projection method to use ('pca', 'tsne' or 'umap')
+#         radius (float): Neighborhood radius to consider in projection space
 
-    Returns:
-        JSON with feature ranking information for each point
-    """
-    cache_key = (filename, method, radius)
-    if cache_key in feature_ranking_cache:
-        return feature_ranking_cache[cache_key]
+#     Returns:
+#         JSON with feature ranking information for each point
+#     """
+#     # cache_key = (filename, method, radius)
+#     # if cache_key in feature_ranking_cache:
+#     #     return feature_ranking_cache[cache_key]
 
-    # Get the original data
-    dataset_info = preprocess_dataset(filename)
+#     # Get the original data
+#     dataset_info = preprocess_dataset(filename)
 
-    # Check if we have numeric data to analyze
-    if len(dataset_info.numeric_cols) == 0:
-        raise HTTPException(
-            status_code=400, detail="No numeric columns available for feature ranking"
-        )
+#     # Check if we have numeric data to analyze
+#     if len(dataset_info.numeric_cols) == 0:
+#         raise HTTPException(
+#             status_code=400, detail="No numeric columns available for feature ranking"
+#         )
 
-    # Get the projection (or compute it if not cached)
-    key = (filename, method)
-    if key not in projection_cache:
-        # Use the existing projection endpoint to compute and cache
-        await project_data(filename=filename, method=method)
-    projection_data = projection_cache[key]
+#     # Get the projection (or compute it if not cached)
+#     # key = (filename, method)
+#     # if key not in projection_cache:
+#     #     # Use the existing projection endpoint to compute and cache
+#     #     await project_data(filename=filename, method=method)
+#     # projection_data = projection_cache[key]
 
-    # Extract the projection coordinates as numpy array
-    proj_coords = np.array([[item["x"], item["y"]] for item in projection_data])
+#     # Extract the projection coordinates as numpy array
+#     proj_coords = np.array([[item["x"], item["y"]] for item in projection_data])
 
-    # Compute local variances
-    local_vars = compute_local_variance(
-        dataset_info.numeric_df.values, proj_coords, radius
-    )
-    # Compute global variances for each feature
-    global_vars = dataset_info.numeric_df.var().values
+#     # Compute local variances
+#     local_vars = compute_local_variance(
+#         dataset_info.numeric_df.values, proj_coords, radius
+#     )
+#     # Compute global variances for each feature
+#     global_vars = dataset_info.numeric_df.var().values
 
-    # Compute feature ranking
-    xi_scores, rankings = compute_feature_ranking(local_vars, global_vars)
+#     # Compute feature ranking
+#     xi_scores, rankings = compute_feature_ranking(local_vars, global_vars)
 
-    # Prepare results
-    feature_names = dataset_info.numeric_cols
+#     # Prepare results
+#     feature_names = dataset_info.numeric_cols
 
-    result = []
-    for i in range(len(dataset_info.numeric_df)):
-        # Get feature names in order of importance for this point
-        ranked_features = [feature_names[feat_idx] for feat_idx in rankings[i]]
+#     result = []
+#     for i in range(len(dataset_info.numeric_df)):
+#         # Get feature names in order of importance for this point
+#         ranked_features = [feature_names[feat_idx] for feat_idx in rankings[i]]
 
-        # Get corresponding importance scores
-        importance_scores = [float(xi_scores[i, feat_idx]) for feat_idx in rankings[i]]
+#         # Get corresponding importance scores
+#         importance_scores = [float(xi_scores[i, feat_idx]) for feat_idx in rankings[i]]
 
-        point_result = {
-            "id": dataset_info.ids[i],
-            "features": ranked_features,
-            "scores": importance_scores,
-        }
-        result.append(point_result)
+#         point_result = {
+#             "id": dataset_info.ids[i],
+#             "features": ranked_features,
+#             "scores": importance_scores,
+#         }
+#         result.append(point_result)
 
-    feature_ranking_cache[cache_key] = result
-    return result
+#     # feature_ranking_cache[cache_key] = result
+#     return result
 
 
 @app.post("/api/projection/subset/")
@@ -746,9 +742,9 @@ async def project_data_subset(
         JSON: New positions for the subset points
     """
     # Check if full projection exists in cache
-    full_key = (filename, method)
-    if full_key not in projection_cache:
-        await project_data(filename, method)
+    # full_key = (filename, method)
+    # if full_key not in projection_cache:
+    #     await project_data(filename, method)
 
     dataset_info = dataset_cache[filename]
 
@@ -810,12 +806,12 @@ async def project_data_with_attributes(
         JSON: New projection data calculated only with the specified attributes
     """
     # Check if full projection exists in cache
-    full_key = (filename, method)
-    if full_key not in projection_cache:
-        await project_data(filename=filename, method=method)
+    # full_key = (filename, method)
+    # if full_key not in projection_cache:
+    #     await project_data(filename=filename, method=method)
 
     # Get the full projection data to preserve original attributes
-    full_projection = projection_cache[full_key]
+    # full_projection = projection_cache[full_key]
 
     dataset_info = dataset_cache[filename]
 

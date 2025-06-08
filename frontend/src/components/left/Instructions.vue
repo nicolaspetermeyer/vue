@@ -1,7 +1,27 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const isExpanded = ref(false)
+
+const toggleExpanded = () => {
+  isExpanded.value = !isExpanded.value
+}
+</script>
+
 <template>
   <section class="section">
-    <h3 class="section-title">Instructions</h3>
-    <div class="instructions-container">
+    <div class="flex justify-between items-center mb-2 cursor-pointer" @click="toggleExpanded">
+      <div class="flex items-center">
+        <h3 class="section-title">Instructions</h3>
+        <span class="text-xs text-gray-500 ml-2 flex items-center" v-if="!isExpanded">
+          <i class="fas fa-info-circle mr-1"></i> Click to expand
+        </span>
+      </div>
+      <button class="btn btn-xs btn-ghost" @click.stop="toggleExpanded">
+        <i :class="isExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+      </button>
+    </div>
+    <div class="instructions-container" v-if="isExpanded">
       <div class="instruction-group">
         <h4 class="instruction-title">Selection</h4>
         <ul class="instruction-list">
@@ -30,12 +50,12 @@
         <h4 class="instruction-title">Fingerprint</h4>
         <ul class="instruction-list">
           <li>
-            <span class="key">Click "Create Fingerprint"</span> Create Fingerprint for current
-            selection or filter
+            <span class="key">Click "Create Fingerprint"</span> Aggregate Selection or Current
+            Filter
           </li>
           <li><span class="key">Click Glyph Symbol</span>Add FP to Projection</li>
-          <li><span class="key">Click Glyph</span> Select Fingerprint</li>
-          <li><span class="key">Right-Click Glyph</span> Recalculate DR for Fingerprint</li>
+          <li><span class="key">Click Glyph</span> Toggle Fingerprint</li>
+          <li><span class="key">Right-Click Glyph</span> Recalculate DR for Aggregated Points</li>
         </ul>
       </div>
     </div>
@@ -43,6 +63,21 @@
 </template>
 
 <style scoped>
+.section {
+  padding: 0.75rem;
+  background: #d1d1d1;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  color: #333;
+}
+
 .instructions-container {
   font-size: 0.85rem;
 }
@@ -53,9 +88,9 @@
 
 .instruction-title {
   font-weight: 600;
-  color: #4a5568;
+  color: #000000;
   margin-bottom: 0.25rem;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid #000000;
   padding-bottom: 0.25rem;
 }
 
@@ -71,14 +106,14 @@
 }
 
 .key {
-  background-color: #edf2f7;
+  background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0.25rem;
   padding: 0.1rem 0.35rem;
   margin-right: 0.5rem;
   font-family: monospace;
   font-size: 0.8rem;
-  color: #4a5568;
+  color: #373a41;
   display: inline-block;
   min-width: 80px;
 }

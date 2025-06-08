@@ -28,6 +28,8 @@ class ProjectionService {
     projectionStore.setLoading(true)
 
     const dataset = datasetStore.selectedDatasetName
+    const previousDataset = datasetStore.currentDatasetName
+
     if (!dataset) {
       console.error('No dataset selected')
       return false
@@ -55,10 +57,14 @@ class ProjectionService {
 
       // Clear history and selections
       useDrillDownStore().clearHistory()
-      useFingerprintStore().clearFingerprints()
+
+      if (previousDataset !== dataset) {
+        console.log('Clearing fingerprints due to dataset change')
+        useFingerprintStore().clearFingerprints()
+      }
 
       // await loadFeatureRanking()
-
+      datasetStore.setCurrentDatasetName(dataset)
       projectionStore.setLoading(false)
 
       return true

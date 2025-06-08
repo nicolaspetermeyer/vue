@@ -4,22 +4,17 @@ import { useProjectionStore } from '@/stores/projectionStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
-import { SelectionMode } from '@/pixi/interactions/controllers/SelectionController'
+import StatisticsPanel from './StatisticsPanel.vue'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints } = storeToRefs(fingerprintStore)
 const { addFingerprint, removeFingerprint } = fingerprintStore
 
 const projectionStore = useProjectionStore()
-const { projectionInstance } = storeToRefs(projectionStore)
+const { projectionInstance, projectionMethod, hasRemovedPoints } = storeToRefs(projectionStore)
 
 const pointFilterStore = usePointFilterStore()
 const { activePointFilter } = storeToRefs(pointFilterStore)
-
-const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
-const selectionModeText = computed(() =>
-  currentMode.value === SelectionMode.RECTANGLE ? 'Rectangle Selection' : 'Lasso Selection',
-)
 
 const hasactivePointFilters = computed(() => {
   return activePointFilter.value.category && activePointFilter.value.values.length > 0
@@ -47,11 +42,41 @@ function clear() {
   }
 }
 
-const toggleSelectionMode = () => {
-  if (projectionInstance.value) {
-    projectionInstance.value.toggleSelectionMode()
-    currentMode.value =
-      currentMode.value === SelectionMode.RECTANGLE ? SelectionMode.LASSO : SelectionMode.RECTANGLE
+const showStatistics = ref(false)
+
+const toggleStatisticsPanel = () => {
+  showStatistics.value = !showStatistics.value
+}
+
+const hasSelectedFingerprints = computed(() => {
+  return fingerprintStore.selectedFingerprints.length > 1
+})
+
+const combineFingerprints = () => {
+  if (!hasSelectedFingerprints.value) return
+
+  const selectedFingerprints = fingerprintStore.selectedFingerprints
+
+  // Create a Set to track unique point IDs
+  const uniquePointIds = new Set<string>()
+  const combinedPoints = []
+
+  // Collect all points from selected fingerprints, avoiding duplicates
+  for (const fingerprint of selectedFingerprints) {
+    for (const point of fingerprint.projectedPoints) {
+      if (!uniquePointIds.has(point.id)) {
+        uniquePointIds.add(point.id)
+        combinedPoints.push(point)
+      }
+    }
+  }
+
+  // Create a new fingerprint with the combined points
+  if (combinedPoints.length > 0) {
+    const fpNames = selectedFingerprints.map((fp) => fp.name).join(' + ')
+    const name = fpNames.length > 30 ? fpNames.substring(0, 27) + '...' : fpNames
+    fingerprintStore.setSelection(combinedPoints)
+    fingerprintStore.addFingerprint(name)
   }
 }
 </script>
@@ -59,32 +84,49 @@ const toggleSelectionMode = () => {
 <template>
   <section class="section">
     <h3 class="section-title">Actions</h3>
-    <div class="flex items-center space-x-2 mb-2">
+    <div class="flex space-x-2 mb-1">
       <button @click="addFingerprint()" class="btn btn-sm btn-primary flex-1">
         Create Fingerprint
       </button>
-    </div>
 
-    <div class="text-xs text-gray-500">
+      <button @click="clear()" class="btn btn-sm btn-primary flex-1">Clear Fingerprints</button>
+    </div>
+    <div class="text-xs text-black-500">
       <span v-if="hasactivePointFilters">
         <span class="font-medium">Filter applied:</span> {{ filterDescription }}
       </span>
-      <span v-else> If no selection, will create fingerprint from all points. </span>
+      <span v-else> If no selection, creates fingerprint from all points. </span>
+    </div>
+    <!-- Fingerprint Combination Button -->
+    <div class="flex space-x-2 mb-1">
+      <button
+        @click="combineFingerprints"
+        class="btn btn-sm btn-primary flex-1 mt-2"
+        :disabled="!hasSelectedFingerprints"
+        title="Combine selected fingerprints into a new one"
+      >
+        Combine Fingerprints
+      </button>
+    </div>
+    <div class="flex space-x-2 mb-1">
+      <button
+        @click="toggleStatisticsPanel"
+        class="btn btn-sm btn-primary flex-1 mt-2"
+        :class="{ 'btn-active': showStatistics }"
+        title="Show Statistics Panel"
+      >
+        Statistics
+      </button>
     </div>
 
-    <div class="flex items-center space-x-2 mb-2">
-      <button @click="clear()" class="btn btn-sm btn-primary flex-1">Clear Fingerprints</button>
-    </div>
-    <button @click="toggleSelectionMode" class="btn btn-sm btn-primary flex-1">
-      <a>{{ selectionModeText }}</a>
-    </button>
+    <StatisticsPanel v-if="showStatistics" @close="showStatistics = false" />
   </section>
 </template>
 
 <style scoped>
 .section {
   padding: 0.75rem;
-  background: white;
+  background: #d1d1d1;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);

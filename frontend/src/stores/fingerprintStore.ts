@@ -47,7 +47,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   }
 
   // on button click computes fingerprint from brush selection
-  function addFingerprint() {
+  function addFingerprint(customName: string | null = null) {
     const projectionStore = useProjectionStore()
     let pointsToUse: Projection[] = []
     let name: string
@@ -63,7 +63,11 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     if (selection.value.length > 0) {
       pointsToUse = selection.value
-      name = `Fingerprint ${fingerprintCounter.value++}`
+      if (customName) {
+        name = customName
+      } else {
+        name = `Fingerprint ${fingerprintCounter.value++}`
+      }
     } else {
       const activeFilter = usePointFilterStore().activePointFilter
       let filteredIds: string[] = []

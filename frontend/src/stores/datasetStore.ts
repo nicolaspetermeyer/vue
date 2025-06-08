@@ -9,7 +9,7 @@ export const useDatasetStore = defineStore('dataset', () => {
   //state
   const datasets = ref(new Map<number, Dataset>()) // Store datasets
   const selectedDatasetId = ref<number | null>(null) // Store selectedDatasetId
-
+  const currentDatasetName = ref<string | null>(null) // Store current dataset ID
   // 🔹 COMPUTED
   const datasetsArray = computed(() => Array.from(datasets.value.values()))
   const selectedDataset = computed(() => getDataset(selectedDatasetId.value))
@@ -22,6 +22,11 @@ export const useDatasetStore = defineStore('dataset', () => {
 
   function setSelectedDatasetId(id: number | null) {
     selectedDatasetId.value = id
+  }
+
+  function setCurrentDatasetName(name: string | null) {
+    console.log('Setting current dataset name:', name)
+    currentDatasetName.value = name
   }
 
   // 🔹 API CALLS
@@ -41,6 +46,8 @@ export const useDatasetStore = defineStore('dataset', () => {
     selectedDatasetId,
     selectedDataset,
     selectedDatasetName,
+    currentDatasetName,
+    setCurrentDatasetName,
     getDataset,
     setSelectedDatasetId,
     loadDatasets,

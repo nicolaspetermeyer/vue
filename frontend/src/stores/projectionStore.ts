@@ -50,7 +50,6 @@ export const useProjectionStore = defineStore('projection', () => {
     featureRanking.value = []
     useDrillDownStore().clearHistory()
     useAttributeFilterStore().clearAll()
-    useFingerprintStore().clearFingerprints()
   }
 
   async function loadFeatureRanking() {

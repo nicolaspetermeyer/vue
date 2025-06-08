@@ -4,6 +4,7 @@ export const Colors = {
   PROJECTION_BACKGROUND_LIGHT: 0xffffff, // White
   PROJECTION_BACKGROUND_DARK: 0x8a9493, // Dark gray
   CANVAS_BACKGROUND: 0xd9d7d7, // Light gray
+  LEFT_BACKGROUND: 0xffffff, // White
 
   // Projection
   SELECTED: 0xa33d37, // Blue

@@ -1,45 +1,50 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import FingerprintList from '@/components/right/FingerprintList.vue'
 import FingerprintSection from '@/components/right/FingerprintSection.vue'
-import StatisticsPanel from '@/components/right/StatisticsPanel.vue'
-
-const showStatistics = ref(false)
-
-const toggleStatisticsPanel = () => {
-  showStatistics.value = !showStatistics.value
-}
 </script>
 
 <template>
-  <div class="panel">
-    <div class="flex flex-col gap-2">
-      <div class="flex justify-between items-center"></div>
-      <h2 class="text-xl font-bold">Fingerprints</h2>
+  <div class="sidebar">
+    <h2 class="text-xl font-bold mb-2">Fingerprint Explorer</h2>
 
-      <FingerprintSection />
-      <button
-        @click="toggleStatisticsPanel"
-        class="btn btn-sm btn-primary"
-        :class="{ 'btn-active': showStatistics }"
-        title="Show Statistics Panel"
-      >
-        Statistics
-      </button>
-      <StatisticsPanel v-if="showStatistics" @close="showStatistics = false" />
-      <FingerprintList />
-    </div>
+    <FingerprintSection />
+    <FingerprintList />
   </div>
 </template>
 
 <style scoped>
-.panel {
+.sidebar {
   padding: 1rem;
-  background: #f1f1f1;
+  background: #ffffff;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.panel {
+  padding: 0.75rem;
+  background: #d1d1d1;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .fingerprint-list li.selected {
   background-color: #d1e3ff;
   font-weight: bold;
+}
+
+.section {
+  padding: 0.75rem;
+  background: #d1d1d1;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
 }
 </style>

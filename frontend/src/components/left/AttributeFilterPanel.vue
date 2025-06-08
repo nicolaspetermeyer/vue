@@ -7,8 +7,6 @@ import { projectionService } from '@/services/projectionService'
 
 const attributeFilterStore = useAttributeFilterStore()
 const {
-  attributeMetadata,
-  metadataAttributes,
   metadataCategories,
   uniqueValues,
   hasMetadata,

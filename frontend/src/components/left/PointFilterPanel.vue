@@ -4,6 +4,10 @@ import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { projectionService } from '@/services/projectionService'
 import { storeToRefs } from 'pinia'
 import { useFingerprintStore } from '@/stores/fingerprintStore'
+import { useProjectionStore } from '@/stores/projectionStore'
+
+const projectionStore = useProjectionStore()
+const { projection } = storeToRefs(projectionStore)
 
 const pointFilterStore = usePointFilterStore()
 const { pointFilterCategories, activePointFilter } = storeToRefs(pointFilterStore)
@@ -51,6 +55,26 @@ const deselectAllValues = () => {
 const clear = () => {
   projectionService.clearPointFilter()
 }
+
+const createFingerprintPerValue = () => {
+  if (!selectedCategory.value || availableCategoryValues.value.length === 0) return
+
+  const valuesToProcess =
+    selectedValues.value.length > 0 ? selectedValues.value : availableCategoryValues.value
+
+  valuesToProcess.forEach((value) => {
+    const pointsForValue = projection.value.filter((point) => {
+      return point.original[selectedCategory.value as string] === value
+    })
+
+    if (pointsForValue.length > 0) {
+      fingerprintStore.setSelection(pointsForValue)
+
+      const name = `${selectedCategory.value}: ${value}`
+      addFingerprint(name)
+    }
+  })
+}
 </script>
 
 <template>
@@ -78,13 +102,6 @@ const clear = () => {
             <label class="label-text">Values</label>
             <div class="flex gap-1">
               <button
-                @click="addFingerprint()"
-                class="btn btn-xs btn-ghost py-1"
-                :disabled="selectedValues.length === availableCategoryValues.length"
-              >
-                Create Fingerprint
-              </button>
-              <button
                 @click="selectAllValues"
                 class="btn btn-xs btn-ghost py-1"
                 :disabled="selectedValues.length === availableCategoryValues.length"
@@ -100,6 +117,24 @@ const clear = () => {
               </button>
             </div>
           </div>
+          <div class="flex space-x-2 mb-2">
+            <button
+              @click="addFingerprint()"
+              class="btn btn-xs btn-primary flex-1"
+              :disabled="selectedValues.length === 0"
+              title="Create fingerprint from selected values"
+            >
+              Create Fingerprint
+            </button>
+            <button
+              @click="createFingerprintPerValue"
+              class="btn btn-xs btn-primary flex-1"
+              :disabled="availableCategoryValues.length === 0"
+              title="Create separate fingerprint for each category value"
+            >
+              Create Per Value
+            </button>
+          </div>
 
           <div class="mt-1 text-xs text-gray-500" v-if="selectedValues.length > 0">
             {{ selectedValues.length }} selected
@@ -107,7 +142,7 @@ const clear = () => {
 
           <div class="checkboxes-container">
             <div v-for="value in availableCategoryValues" :key="value" class="form-control">
-              <label class="label cursor-pointer justify-start py-1">
+              <label class="label cursor-pointer justify-start py-1 text-black">
                 <input
                   type="checkbox"
                   :value="value"
