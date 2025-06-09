@@ -63,7 +63,6 @@ export const useProjectionStore = defineStore('projection', () => {
   }
 
   function clearAllProjectionData() {
-    console.log('Clearing all projection data')
     projection.value = []
     featureRanking.value = []
     useDrillDownStore().clearHistory()

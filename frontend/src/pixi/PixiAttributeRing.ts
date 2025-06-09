@@ -5,6 +5,7 @@ import { HoverableProvider } from '@/pixi/interactions/controllers/HoverManager'
 import { PixiAttributeSegment } from '@/pixi/PixiAttributeSegment'
 import type { AttributeStats } from '@/models/data'
 import { PixiApp } from '@/pixi/Base/PixiApp'
+import { Graphics } from 'pixi.js'
 
 export class PixiAttributeRing
   extends PixiContainer
@@ -98,6 +99,10 @@ export class PixiAttributeRing
     const segmentCount = this.visibleSegments.length
     const anglePerSegment = (Math.PI * 2) / segmentCount
 
+    if (this.mini && this.fingerprint) {
+      this.drawMiniRadarBase(segmentCount, anglePerSegment)
+    }
+
     for (let i = 0; i < segmentCount; i++) {
       const segment = this.visibleSegments[i]
       const slotStart = i * anglePerSegment
@@ -117,6 +122,43 @@ export class PixiAttributeRing
       if (!this.mini && segmentCount < 50) {
         this.drawLabelForSegment(segment, startAngle, endAngle)
       }
+    }
+  }
+
+  private drawMiniRadarBase(segmentCount: number, anglePerSegment: number) {
+    const graphics = new Graphics()
+    this.addChild(graphics)
+
+    const centerX = this.layoutProps.width / 2
+    const centerY = this.layoutProps.height / 2
+
+    const arcWidth = this.maxOuterRadius - this.innerRadius
+    const globalOuterRadius = this.innerRadius + 0.5 * arcWidth
+    // Draw outer circle
+    graphics.stroke({ width: 1, color: 0x000000, alpha: 0.6 })
+    graphics.circle(centerX, centerY, globalOuterRadius)
+
+    // Draw max outer circle
+    graphics.stroke({ width: 1, color: 0x000000, alpha: 0.6 })
+    graphics.circle(centerX, centerY, this.maxOuterRadius)
+
+    // Draw inner circle
+    graphics.stroke({ width: 0.5, color: 0x000000, alpha: 0.4 })
+    graphics.circle(centerX, centerY, this.innerRadius)
+
+    // Draw axis lines
+    for (let i = 0; i < segmentCount; i++) {
+      const angle = i * anglePerSegment
+      graphics
+        .moveTo(
+          centerX + this.innerRadius * Math.cos(angle),
+          centerY + this.innerRadius * Math.sin(angle),
+        )
+        .lineTo(
+          centerX + this.maxOuterRadius * Math.cos(angle),
+          centerY + this.maxOuterRadius * Math.sin(angle),
+        )
+      graphics.stroke({ width: 0.5, color: 0x000000, alpha: 0.4 })
     }
   }
 

@@ -38,6 +38,7 @@ export interface AttributeStats {
   mean: number // global
   normMean: number // global
   std: number
+  normStd: number
   min: number
   max: number
   median: number

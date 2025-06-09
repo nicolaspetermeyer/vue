@@ -34,23 +34,25 @@ export function calcFingerprintStats(
     if (min === undefined || max === undefined) {
       continue
     }
-    const range = GlobalMax - globalMin || 1 // prevent division by 0
+    const range = GlobalMax - globalMin || 1
     const localNormMean = (localMean - globalMin) / range
     const meanDelta = localMean - mean
+    const normStd = std / range
 
     result[key] = {
       mean,
       normMean,
-      std,
-      median,
-      q25,
-      q75,
-      iqr,
-      localMean,
-      localNormMean,
-      meanDelta,
-      min,
-      max,
+      std, // local standard deviation
+      normStd, // normalized standard deviation
+      median, // local median
+      q25, // local quartiles
+      q75, // local quartiles
+      iqr, // local interquartile range
+      localMean, // local mean
+      localNormMean, // normalized local mean
+      meanDelta, // difference to global mean
+      min, // local min
+      max, // local max
       isGlobal: false,
     }
   }

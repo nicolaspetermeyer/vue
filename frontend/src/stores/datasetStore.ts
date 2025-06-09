@@ -25,7 +25,6 @@ export const useDatasetStore = defineStore('dataset', () => {
   }
 
   function setCurrentDatasetName(name: string | null) {
-    console.log('Setting current dataset name:', name)
     currentDatasetName.value = name
   }
 

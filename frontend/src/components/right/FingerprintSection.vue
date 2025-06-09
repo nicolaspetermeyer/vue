@@ -5,13 +5,14 @@ import { usePointFilterStore } from '@/stores/pointFilterStore'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import StatisticsPanel from './StatisticsPanel.vue'
+import GlyphIntroductionModal from './GlyphIntroductionModal.vue'
 
 const fingerprintStore = useFingerprintStore()
 const { fingerprints } = storeToRefs(fingerprintStore)
 const { addFingerprint, removeFingerprint } = fingerprintStore
 
 const projectionStore = useProjectionStore()
-const { projectionInstance, projectionMethod, hasRemovedPoints } = storeToRefs(projectionStore)
+const { projectionInstance } = storeToRefs(projectionStore)
 
 const pointFilterStore = usePointFilterStore()
 const { activePointFilter } = storeToRefs(pointFilterStore)
@@ -43,9 +44,14 @@ function clear() {
 }
 
 const showStatistics = ref(false)
+const showGlyphIntro = ref(false)
 
 const toggleStatisticsPanel = () => {
   showStatistics.value = !showStatistics.value
+}
+
+const toggleGlyphIntro = () => {
+  showGlyphIntro.value = !showGlyphIntro.value
 }
 
 const hasSelectedFingerprints = computed(() => {
@@ -118,8 +124,20 @@ const combineFingerprints = () => {
         Statistics
       </button>
     </div>
+    <!-- Glyph Introduction Button -->
+    <div class="flex space-x-2 mb-1">
+      <button
+        @click="toggleGlyphIntro"
+        class="btn btn-sm btn-primary flex-1 mt-2"
+        :class="{ 'btn-active': showGlyphIntro }"
+        title="Learn about the glyph visualization"
+      >
+        Glyph Introduction
+      </button>
+    </div>
 
     <StatisticsPanel v-if="showStatistics" @close="showStatistics = false" />
+    <GlyphIntroductionModal v-if="showGlyphIntro" @close="showGlyphIntro = false" />
   </section>
 </template>
 

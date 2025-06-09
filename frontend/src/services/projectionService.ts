@@ -59,6 +59,8 @@ class ProjectionService {
         projectionParams,
       )
 
+      console.log('Projection result:', result)
+
       // Update projection store with results
       projectionStore.setGlobalStats(result.globalStats)
       projectionStore.setProjection(result.projectionData)
@@ -78,7 +80,6 @@ class ProjectionService {
       useDrillDownStore().clearHistory()
 
       if (previousDataset !== dataset) {
-        console.log('Clearing fingerprints due to dataset change')
         useFingerprintStore().clearFingerprints()
       }
 
@@ -436,6 +437,7 @@ class ProjectionService {
           normMean: stat.localNormMean || stat.normMean,
 
           std: stat.std,
+          normStd: stat.normStd,
           median: stat.median,
           q25: stat.q25,
           q75: stat.q75,

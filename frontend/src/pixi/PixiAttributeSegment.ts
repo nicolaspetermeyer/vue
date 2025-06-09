@@ -63,6 +63,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     this.stats = options.stats || {
       mean: 0,
       normMean: 0,
+      normStd: 0,
       median: 0,
       q25: 0,
       q75: 0,
@@ -150,7 +151,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     let innerScale = this.innerRadius
 
     if (this.isHovered) {
-      const expansionFactor = 1.1
+      const expansionFactor = 1
       outerRadius = Math.min(outerRadius * expansionFactor, this.maxOuterRadius * 1.05)
       innerScale = Math.min(this.innerRadius * expansionFactor, outerRadius * 0.95)
       this.alpha = 1
@@ -167,6 +168,53 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       this.alpha,
       lineWidth,
     )
+    const fingerprintStore = useFingerprintStore()
+    const fingerprintId =
+      this.parent instanceof PixiAttributeRing
+        ? (this.parent as PixiAttributeRing).getFingerprint() || 'Unknown'
+        : 'Unknown'
+
+    const fp = fingerprintStore.getFingerprintById(fingerprintId)
+    if (fp) {
+      const stats = fp?.localStats[this.attributeKey]
+
+      if (stats && typeof stats.normStd === 'number') {
+        // Calculate standard deviation band
+
+        const normalizedStd = stats.normStd
+
+        // Calculate std radius offsets based on normalized std
+        const stdOffset = normalizedStd * arcWidth
+
+        // Calculate upper and lower std bounds
+        const stdUpperRadius = Math.min(outerRadius + stdOffset)
+        const stdLowerRadius = Math.max(outerRadius - stdOffset)
+
+        // Draw the standard deviation band
+        const stdColor = 0x8a9493 // Gray color for std deviation
+        this.fill({ color: stdColor, alpha: 0.5 }) // Semi-transparent
+        this.stroke({ color: stdColor, width: 0.5, alpha: 1 })
+
+        // Upper std band
+        this.moveTo(
+          this.centerX + stdLowerRadius * Math.cos(this.startAngle),
+          this.centerY + stdLowerRadius * Math.sin(this.startAngle),
+        )
+          .lineTo(
+            this.centerX + stdUpperRadius * Math.cos(this.startAngle),
+            this.centerY + stdUpperRadius * Math.sin(this.startAngle),
+          )
+          .arc(this.centerX, this.centerY, stdUpperRadius, this.startAngle, this.endAngle)
+          .lineTo(
+            this.centerX + stdLowerRadius * Math.cos(this.endAngle),
+            this.centerY + stdLowerRadius * Math.sin(this.endAngle),
+          )
+          .arc(this.centerX, this.centerY, stdLowerRadius, this.endAngle, this.startAngle, true)
+        this.closePath()
+        this.fill()
+        this.stroke()
+      }
+    }
   }
 
   /**

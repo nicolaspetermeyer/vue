@@ -29,7 +29,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
   //ACTIONS
   // triggers on brush select
   function setSelection(points: Projection[]) {
-    console.log('Setting selection:', points)
     selection.value = points
   }
 
@@ -109,6 +108,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     const centroid = calculateSelectionCentroid(pointsToUse)
     const color = visualizationService.assignColor(id)
     const parentId = currentParentId.value
+    console.log('stats', localStats)
 
     const fingerprint: Fingerprint = {
       id,

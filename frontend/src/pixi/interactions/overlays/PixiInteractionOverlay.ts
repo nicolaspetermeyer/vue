@@ -363,6 +363,7 @@ export class PixiInteractionOverlay extends PixiContainer {
           min: globalStats[key].min,
           max: globalStats[key].max,
           std: globalStats[key].std,
+          normStd: globalStats[key].normStd,
           localNormMean: value,
           localMean: attributes[key],
           isGlobal: false,
