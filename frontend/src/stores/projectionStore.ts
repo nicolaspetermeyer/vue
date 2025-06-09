@@ -16,6 +16,9 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const projectionInstance = ref<PixiProjection | null>(null) // Holds PixiProjection instance
   const projectionMethod = ref<'pca' | 'tsne' | 'umap'>('pca')
+  const perplexity = ref<number>(30)
+  const umapNeighbors = ref<number>(15)
+  const umapMinDist = ref<number>(0.1)
 
   const featureRanking = ref<FeatureRanking[]>([])
   const neighborhoodRadius = ref<number>(0.1)
@@ -24,6 +27,21 @@ export const useProjectionStore = defineStore('projection', () => {
 
   const removedPointIds = ref<Set<string>>(new Set())
   const hasRemovedPoints = computed(() => removedPointIds.value.size > 0)
+
+  const showPerplexityControl = computed(() => projectionMethod.value === 'tsne')
+  const showUmapControls = computed(() => projectionMethod.value === 'umap')
+
+  function setPerplexity(value: number) {
+    perplexity.value = value
+  }
+
+  function setUmapNeighbors(value: number) {
+    umapNeighbors.value = value
+  }
+
+  function setUmapMinDist(value: number) {
+    umapMinDist.value = value
+  }
 
   function resetToBaseProjection() {
     projection.value = unfilteredProjection.value
@@ -111,6 +129,11 @@ export const useProjectionStore = defineStore('projection', () => {
     neighborhoodRadius,
     removedPointIds,
     hasRemovedPoints,
+    perplexity,
+    umapNeighbors,
+    umapMinDist,
+    showPerplexityControl,
+    showUmapControls,
 
     resetToBaseProjection,
     setLoading,
@@ -121,6 +144,9 @@ export const useProjectionStore = defineStore('projection', () => {
     setProjectionInstance,
     setProjection,
     setGlobalStats,
+    setPerplexity,
+    setUmapNeighbors,
+    setUmapMinDist,
     clearProjectionInstance,
     clearAllProjectionData,
   }

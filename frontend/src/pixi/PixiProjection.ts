@@ -91,7 +91,6 @@ export class PixiProjection extends PixiContainer {
     const globalStats = useProjectionStore().globalStats
     if (this.attributeRing) {
       this.attributeRing.updateVisibleAttributes(globalStats, attributes)
-      console.log('globalStats', globalStats)
     }
     if (this.dimred?.pixiGlyph) {
       this.dimred.pixiGlyph.forEach((ring, fingerprintId) => {

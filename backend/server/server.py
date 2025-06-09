@@ -315,7 +315,7 @@ def compute_pca(data, n_components: int = 2) -> List[List[float]]:
     return embedding.tolist()
 
 
-def compute_tsne(data) -> List[List[float]]:
+def compute_tsne(data, perplexity=30) -> List[List[float]]:
     """Compute t-SNE projection"""
     # Remove ID columns
     if isinstance(data, pd.DataFrame):
@@ -327,7 +327,7 @@ def compute_tsne(data) -> List[List[float]]:
     df_scaled = StandardScaler().fit_transform(data)
     tsne = TSNE(
         n_components=2,
-        perplexity=30,
+        perplexity=perplexity,
         learning_rate="auto",
         init="random",
         max_iter=250,
@@ -336,7 +336,7 @@ def compute_tsne(data) -> List[List[float]]:
     return embedding.tolist()
 
 
-def compute_umap(data) -> List[List[float]]:
+def compute_umap(data, n_neighbors=15, min_dist=0.1) -> List[List[float]]:
     """Compute UMAP projection"""
     # Remove ID columns
     if isinstance(data, pd.DataFrame):
@@ -348,8 +348,8 @@ def compute_umap(data) -> List[List[float]]:
     df_scaled = StandardScaler().fit_transform(data)
     reducer = umap.UMAP(
         n_components=2,
-        n_neighbors=15,
-        min_dist=0.1,
+        n_neighbors=n_neighbors,
+        min_dist=min_dist,
         metric="euclidean",
     )
 
@@ -500,6 +500,9 @@ async def get_organized_data(filename: str):
 async def project_data(
     filename: str = Query(...),
     method: Literal["pca", "tsne", "umap"] = "pca",
+    perplexity: int = Query(30, ge=5, le=100),
+    n_neighbors: int = Query(15, ge=2, le=100),
+    min_dist: float = Query(0.1, ge=0.0, le=1.0),
 ):
     """
     Perform PCA, t-SNE or umap on the provided data.
@@ -531,9 +534,11 @@ async def project_data(
     if method == "pca":
         projected_data = compute_pca(dataset_info.dr_numeric_df)
     elif method == "tsne":
-        projected_data = compute_tsne(dataset_info.dr_numeric_df)
+        projected_data = compute_tsne(dataset_info.dr_numeric_df, perplexity=perplexity)
     elif method == "umap":
-        projected_data = compute_umap(dataset_info.dr_numeric_df)
+        projected_data = compute_umap(
+            dataset_info.dr_numeric_df, n_neighbors=n_neighbors, min_dist=min_dist
+        )
     else:
         raise HTTPException(status_code=400, detail="Invalid projection method")
 
@@ -728,6 +733,9 @@ async def project_data_subset(
     filename: str = Query(...),
     method: Literal["pca", "tsne", "umap"] = "pca",
     point_ids: List[str] = Body(...),
+    perplexity: int = Query(30, ge=5, le=100),
+    n_neighbors: int = Query(15, ge=2, le=100),
+    min_dist: float = Query(0.1, ge=0.0, le=1.0),
 ):
     """
     Perform PCA, t-SNE or umap on a subset of points identified by their IDs.
@@ -766,9 +774,11 @@ async def project_data_subset(
     if method == "pca":
         projected_data = compute_pca(subset_df)
     elif method == "tsne":
-        projected_data = compute_tsne(subset_df)
+        projected_data = compute_tsne(subset_df, perplexity=perplexity)
     elif method == "umap":
-        projected_data = compute_umap(subset_df)
+        projected_data = compute_umap(
+            subset_df, n_neighbors=n_neighbors, min_dist=min_dist
+        )
 
     # Create minimal response with just the new positions
     position_mapping = {}
@@ -792,6 +802,9 @@ async def project_data_with_attributes(
     filename: str = Query(...),
     method: Literal["pca", "tsne", "umap"] = "pca",
     attributes: List[str] = Body(...),
+    perplexity: int = Query(30, ge=5, le=100),
+    n_neighbors: int = Query(15, ge=2, le=100),
+    min_dist: float = Query(0.1, ge=0.0, le=1.0),
 ):
     """
     Perform PCA, t-SNE or umap on the dataset using only the specified attributes.
@@ -834,9 +847,11 @@ async def project_data_with_attributes(
     if method == "pca":
         projected_data = compute_pca(filtered_df)
     elif method == "tsne":
-        projected_data = compute_tsne(filtered_df)
+        projected_data = compute_tsne(filtered_df, perplexity=perplexity)
     elif method == "umap":
-        projected_data = compute_umap(filtered_df)
+        projected_data = compute_umap(
+            filtered_df, n_neighbors=n_neighbors, min_dist=min_dist
+        )
     else:
         raise HTTPException(status_code=400, detail="Invalid projection method")
 

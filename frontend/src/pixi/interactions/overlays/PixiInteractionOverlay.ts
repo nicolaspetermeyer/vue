@@ -231,7 +231,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     const attributeFilterStore = useAttributeFilterStore()
 
     const currentActiveAttributes = attributeFilterStore.activeAttributes
-    console.log('Current active attributes:', currentActiveAttributes)
 
     if (currentActiveAttributes.length <= 1) {
       alert('Cannot remove attribute: At least one attribute must remain for projection.')
@@ -239,7 +238,6 @@ export class PixiInteractionOverlay extends PixiContainer {
     }
     attributeFilterStore.removeAttribute(attributeKey)
     const updatedActiveAttributes = attributeFilterStore.activeAttributes
-    console.log(updatedActiveAttributes)
     projectionService.recalculateWithAttributes(updatedActiveAttributes)
   }
 

@@ -14,7 +14,14 @@ const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
 const { setSelectedDatasetId } = datasetStore
 
 const projectionStore = useProjectionStore()
-const { projectionMethod } = storeToRefs(projectionStore)
+const {
+  projectionMethod,
+  perplexity,
+  umapNeighbors,
+  umapMinDist,
+  showPerplexityControl,
+  showUmapControls,
+} = storeToRefs(projectionStore)
 
 const loadProj = async () => {
   projectionStore.clearAllProjectionData()
@@ -57,6 +64,78 @@ onMounted(async () => {})
           </select>
           <button @click="loadProj()" class="btn btn-sm btn-primary">Compute</button>
         </div>
+        <!-- t-SNE Perplexity Slider -->
+        <div v-if="showPerplexityControl" class="mt-2">
+          <div class="flex justify-between items-center text-sm">
+            <span>Perplexity:</span>
+            <span class="font-medium">{{ perplexity }}</span>
+          </div>
+          <input
+            type="range"
+            v-model.number="perplexity"
+            min="5"
+            max="100"
+            step="1"
+            class="range range-sm w-full"
+          />
+          <div class="flex justify-between text-xs text-gray-500 px-1">
+            <span>5</span>
+            <span>50</span>
+            <span>100</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">
+            Higher values consider more global structure. Lower values focus on local neighborhoods.
+          </div>
+        </div>
+
+        <!-- UMAP Parameter Controls -->
+        <div v-if="showUmapControls" class="mt-2">
+          <!-- n_neighbors slider -->
+          <div class="flex justify-between items-center text-sm">
+            <span>Neighbors:</span>
+            <span class="font-medium">{{ umapNeighbors }}</span>
+          </div>
+          <input
+            type="range"
+            v-model.number="umapNeighbors"
+            min="2"
+            max="100"
+            step="1"
+            class="range range-sm w-full"
+          />
+          <div class="flex justify-between text-xs text-gray-500 px-1">
+            <span>2</span>
+            <span>50</span>
+            <span>100</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-1 mb-3">
+            Controls how UMAP balances local versus global structure. Higher values preserve more
+            global structure.
+          </div>
+
+          <!-- min_dist slider -->
+          <div class="flex justify-between items-center text-sm">
+            <span>Minimum Distance:</span>
+            <span class="font-medium">{{ umapMinDist.toFixed(2) }}</span>
+          </div>
+          <input
+            type="range"
+            v-model.number="umapMinDist"
+            min="0.0"
+            max="1.0"
+            step="0.01"
+            class="range range-sm w-full"
+          />
+          <div class="flex justify-between text-xs text-gray-500 px-1">
+            <span>0.0</span>
+            <span>0.5</span>
+            <span>1.0</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">
+            Controls how tightly points are packed together. Lower values create more clustered
+            embeddings.
+          </div>
+        </div>
       </div>
     </section>
     <!-- Treshold Filter -->
@@ -93,6 +172,34 @@ onMounted(async () => {})
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: #333;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgb(66, 42, 213);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgb(60, 80, 251);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  background: #e5e7eb;
+  border: none;
+  height: 8px;
 }
 
 /* .checkboxes-container {

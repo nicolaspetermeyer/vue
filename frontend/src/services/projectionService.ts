@@ -38,7 +38,26 @@ class ProjectionService {
     projectionStore.setLoading(true)
 
     try {
-      const result = await fetchProjection(dataset, projectionStore.projectionMethod)
+      let projectionParams
+
+      switch (projectionStore.projectionMethod) {
+        case 'tsne':
+          projectionParams = { perplexity: projectionStore.perplexity }
+          break
+        case 'umap':
+          projectionParams = {
+            n_neighbors: projectionStore.umapNeighbors,
+            min_dist: projectionStore.umapMinDist,
+          }
+          break
+        default:
+          projectionParams = undefined
+      }
+      const result = await fetchProjection(
+        dataset,
+        projectionStore.projectionMethod,
+        projectionParams,
+      )
 
       // Update projection store with results
       projectionStore.setGlobalStats(result.globalStats)
@@ -98,11 +117,28 @@ class ProjectionService {
         currentPositions.set(point.id, { ...point.pos })
       })
 
+      let projectionParams
+
+      switch (projectionStore.projectionMethod) {
+        case 'tsne':
+          projectionParams = { perplexity: projectionStore.perplexity }
+          break
+        case 'umap':
+          projectionParams = {
+            n_neighbors: projectionStore.umapNeighbors,
+            min_dist: projectionStore.umapMinDist,
+          }
+          break
+        default:
+          projectionParams = undefined
+      }
+
       // Request recalculation with filtered attributes
       const result = await fetchAttributeSubset(
         dataset,
         projectionStore.projectionMethod,
         attributes,
+        projectionParams,
       )
 
       if (!result || !result.projectionData) {
@@ -265,11 +301,28 @@ class ProjectionService {
           currentPositions.set(point.id, { ...point.pos })
         })
 
+      let projectionParams
+
+      switch (projectionStore.projectionMethod) {
+        case 'tsne':
+          projectionParams = { perplexity: projectionStore.perplexity }
+          break
+        case 'umap':
+          projectionParams = {
+            n_neighbors: projectionStore.umapNeighbors,
+            min_dist: projectionStore.umapMinDist,
+          }
+          break
+        default:
+          projectionParams = undefined
+      }
+
       // Request recalculation with subset of points
       const result = await fetchSubsetProjection(
         dataset,
         projectionStore.projectionMethod,
         validPointIds,
+        projectionParams,
       )
 
       if (!result || !result.positionMapping) {

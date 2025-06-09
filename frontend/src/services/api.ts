@@ -22,12 +22,31 @@ export async function fetchRawData(filename: string): Promise<Data[]> {
 export async function fetchProjection(
   filename: string,
   method: 'pca' | 'tsne' | 'umap',
+  params?: {
+    perplexity?: number
+    n_neighbors?: number
+    min_dist?: number
+  },
 ): Promise<ProjectionApiResponse> {
+  const requestParams: Record<string, any> = {
+    filename,
+    method,
+  }
+  if (params) {
+    if (method === 'tsne' && params.perplexity !== undefined) {
+      requestParams.perplexity = params.perplexity
+    }
+    if (method === 'umap') {
+      if (params.n_neighbors !== undefined) {
+        requestParams.n_neighbors = params.n_neighbors
+      }
+      if (params.min_dist !== undefined) {
+        requestParams.min_dist = params.min_dist
+      }
+    }
+  }
   const response = await api.get<ProjectionApiResponse>(`/projection/`, {
-    params: {
-      filename,
-      method,
-    },
+    params: requestParams,
   })
   return response.data
 }
@@ -66,16 +85,38 @@ export async function fetchSubsetProjection(
   dataset: string,
   method: 'pca' | 'tsne' | 'umap',
   pointIds: string[],
+  params?: {
+    perplexity?: number
+    n_neighbors?: number
+    min_dist?: number
+  },
 ): Promise<{
   subsetProjection: boolean
   positionMapping: Record<string, { x: number; y: number }>
   subsetSize: number
 }> {
+  const requestParams: Record<string, any> = {
+    filename: dataset,
+    method: method,
+  }
+
+  // Add method-specific parameters
+  if (params) {
+    if (method === 'tsne' && params.perplexity !== undefined) {
+      requestParams.perplexity = params.perplexity
+    }
+    if (method === 'umap') {
+      if (params.n_neighbors !== undefined) {
+        requestParams.n_neighbors = params.n_neighbors
+      }
+      if (params.min_dist !== undefined) {
+        requestParams.min_dist = params.min_dist
+      }
+    }
+  }
+
   const response = await api.post(`/projection/subset/`, pointIds, {
-    params: {
-      filename: dataset,
-      method: method,
-    },
+    params: requestParams,
   })
   return response.data
 }
@@ -84,16 +125,37 @@ export async function fetchAttributeSubset(
   dataset: string,
   method: 'pca' | 'tsne' | 'umap',
   attributes: string[],
+  params?: {
+    perplexity?: number
+    n_neighbors?: number
+    min_dist?: number
+  },
 ): Promise<{
   projectionData: any[]
   globalStats: Record<string, AttributeStats>
   numericAttributes: string[]
 }> {
+  const requestParams: Record<string, any> = {
+    filename: dataset,
+    method: method,
+  }
+
+  // Add method-specific parameters
+  if (params) {
+    if (method === 'tsne' && params.perplexity !== undefined) {
+      requestParams.perplexity = params.perplexity
+    }
+    if (method === 'umap') {
+      if (params.n_neighbors !== undefined) {
+        requestParams.n_neighbors = params.n_neighbors
+      }
+      if (params.min_dist !== undefined) {
+        requestParams.min_dist = params.min_dist
+      }
+    }
+  }
   const response = await api.post(`/projection/attributes/`, attributes, {
-    params: {
-      filename: dataset,
-      method: method,
-    },
+    params: requestParams,
   })
   return response.data
 }
