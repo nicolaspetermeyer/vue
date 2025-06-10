@@ -130,6 +130,8 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
 
     fingerprints.value.push(fingerprint)
 
+    toggleSelectedFingerprint(fingerprint, projectionStore.projectionInstance)
+
     if (dimredInstance) {
       selection.value = []
       dimredInstance.clearSelection()

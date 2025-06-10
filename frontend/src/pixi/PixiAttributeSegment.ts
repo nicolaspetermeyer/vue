@@ -452,12 +452,6 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
     // Add text content based on segment type
     if (this.mini) {
-      if (!this.inSegment) {
-        options.text = 'Right click to drill down'
-        options.texture = undefined
-        return options
-      }
-
       const fingerprintStore = useFingerprintStore()
       const fingerprintId =
         this.parent instanceof PixiAttributeRing
@@ -476,15 +470,16 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
           options.text = [
             `${fp.name}`,
-            `Normalized Mean: ${_localNorm.toFixed(2)}`,
-            `Mean: ${stats.mean.toFixed(2)}`,
+            `Global Normalized Mean: ${_localNorm.toFixed(2)}`,
+            `Global Mean: ${stats.mean.toFixed(2)}`,
+            `Global Std: ${this.stats.std.toFixed(2)}`,
             `Segment ${this.attributeKey}: ${pctDiff}% ${direction}`,
           ].join('\n')
         }
       }
     } else {
       const tooltipLines = [
-        `Global Norm Mean: ${this.globalNorm.toFixed(2)}`,
+        `Global Normalized Mean: ${this.globalNorm.toFixed(2)}`,
         `Global Mean: ${this.stats.mean.toFixed(2)}`,
         `Global Std: ${this.stats.std.toFixed(2)}`,
       ]
@@ -537,7 +532,42 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
       .map((d) => d.original[this.attributeKey])
       .filter((v): v is number => typeof v === 'number' && !isNaN(v))
 
-    const fingerprintValues = new Map<string, number[]>()
+    let currentFingerprintValues: number[] = []
+    let currentFingerprintColor = this.color
+    let currentFingerprintMean = mean
+
+    if (this.mini) {
+      const fingerprintId =
+        this.parent instanceof PixiAttributeRing
+          ? (this.parent as PixiAttributeRing).getFingerprint() || 'Unknown'
+          : 'Unknown'
+
+      const fp = fingerprintStore.getFingerprintById(fingerprintId)
+      if (fp) {
+        currentFingerprintValues = fp.projectedPoints
+          .map((point) => (point ? point.original[this.attributeKey] : null))
+          .filter((v): v is number => typeof v === 'number' && !isNaN(v))
+
+        const stats = fp.localStats[this.attributeKey]
+        if (stats) {
+          currentFingerprintMean = stats.mean
+        }
+      }
+    }
+
+    const fingerprintData: Map<
+      string,
+      { values: number[]; color: number; mean: number; bins?: number[] }
+    > = new Map()
+
+    if (this.mini && currentFingerprintValues.length > 0) {
+      fingerprintData.set('current', {
+        values: currentFingerprintValues,
+        color: currentFingerprintColor,
+        mean: currentFingerprintMean,
+      })
+    }
+
     if (this.localOverlays && this.localOverlays.size > 0) {
       this.localOverlays.forEach((overlay, id) => {
         const fp = fingerprintStore.getFingerprintById(id)
@@ -548,7 +578,11 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
             })
             .filter((v): v is number => typeof v === 'number' && !isNaN(v))
 
-          fingerprintValues.set(id, values)
+          fingerprintData.set(id, {
+            values,
+            color: overlay.color,
+            mean: overlay.localMean,
+          })
         }
       })
     }
@@ -583,18 +617,33 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     }
     const globalBins = estimateKDE(globalValues)
 
-    let maxDensity = Math.max(...globalBins, 0.00001) // Prevent division by zero
+    let maxDensity = Math.max(...globalBins, 0.00001)
+
+    fingerprintData.forEach((data, id) => {
+      const bins = estimateKDE(data.values, 0.15 * std)
+      data.bins = bins
+
+      const fpMaxDensity = Math.max(...bins)
+      if (fpMaxDensity > maxDensity) {
+        maxDensity = fpMaxDensity
+      }
+    })
+
+    graphics.clear()
+    graphics.fill({ color: 0xffffff })
+    graphics.rect(0, 0, width, height)
+    graphics.stroke({ width: 1, color: 0x666666, alpha: 0.3 })
 
     // Draw global density curve
-    graphics.stroke({ width: 1, color: 0x000000 })
-    graphics.fill({ color: 0xcccccc, alpha: 0.3 })
+    graphics.stroke({ width: 1, color: 0x666666 })
+    graphics.fill({ color: 0x666666, alpha: 0.2 })
 
     // Start path at the bottom left
     graphics.moveTo(mapX(min), height - 20)
 
     // Draw the curve
     for (let i = 0; i < binCount; i++) {
-      const x = min + i * binSize + binSize / 2
+      const x = min + (i + 0.5) * binSize
       const y = globalBins[i]
       graphics.lineTo(mapX(x), mapY(y, maxDensity))
     }
@@ -610,73 +659,34 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     graphics.moveTo(mapX(mean), height - 20)
     graphics.lineTo(mapX(mean), height - 17)
 
-    // Draw fingerprint density curves
-    if (this.localOverlays && this.localOverlays.size > 0) {
-      this.localOverlays.forEach((overlay, id) => {
-        const fpValues = fingerprintValues.get(id) || []
-        if (fpValues.length === 0) return
+    // Draw all fingerprint density curves
+    fingerprintData.forEach((data, id) => {
+      if (!data.bins || data.bins.length === 0) return
 
-        // Estimate fingerprint density
-        const fpBins = estimateKDE(fpValues, 0.15 * std)
+      graphics.stroke({ width: 1.5, color: data.color })
+      graphics.fill({ color: data.color, alpha: 0.3 })
 
-        const fpMaxDensity = Math.max(...fpBins)
-        if (fpMaxDensity > maxDensity) {
-          maxDensity = fpMaxDensity
+      // Start path
+      graphics.moveTo(mapX(min), height - 20)
 
-          // Redraw global curve with new scale
-          graphics.clear()
+      // Draw the curve
+      for (let i = 0; i < binCount; i++) {
+        const x = min + (i + 0.5) * binSize
+        const y = data.bins[i]
+        graphics.lineTo(mapX(x), mapY(y, maxDensity))
+      }
 
-          // Redraw background
-          graphics.fill({ color: 0xffffff, alpha: 0.1 })
-          graphics.rect(0, 0, width, height)
-          graphics.stroke({ width: 1, color: 0x666666, alpha: 0.3 })
+      // Close the path
+      graphics.lineTo(mapX(max), height - 20)
+      graphics.closePath()
+      graphics.fill()
+      graphics.stroke()
 
-          // Redraw global curve
-          graphics.stroke({ width: 1, color: 0x666666 })
-          graphics.fill({ color: 0x666666, alpha: 0.2 })
-
-          graphics.moveTo(mapX(min), height - 20)
-          for (let i = 0; i < binCount; i++) {
-            const x = min + (i + 0.5) * binSize
-            const y = globalBins[i]
-            graphics.lineTo(mapX(x), mapY(y, maxDensity))
-          }
-          graphics.lineTo(mapX(max), height - 20)
-          graphics.closePath()
-          graphics.fill()
-          graphics.stroke()
-
-          // Redraw mean marker
-          graphics.stroke({ width: 1.5, color: 0x666666 })
-          graphics.moveTo(mapX(mean), height - 20)
-          graphics.lineTo(mapX(mean), height - 17)
-        }
-
-        graphics.stroke({ width: 1.5, color: overlay.color })
-        graphics.fill({ color: overlay.color, alpha: 0.3 })
-
-        // Start path
-        graphics.moveTo(mapX(min), height - 20)
-
-        // Draw the curve
-        for (let i = 0; i < binCount; i++) {
-          const x = min + (i + 0.5) * binSize
-          const y = fpBins[i]
-          graphics.lineTo(mapX(x), mapY(y, maxDensity))
-        }
-
-        // Close the path
-        graphics.lineTo(mapX(max), height - 20)
-        graphics.closePath()
-        graphics.fill()
-        graphics.stroke()
-
-        // Draw mean marker
-        graphics.stroke({ width: 1.5, color: overlay.color })
-        graphics.moveTo(mapX(overlay.localMean), height - 20)
-        graphics.lineTo(mapX(overlay.localMean), height - 25)
-      })
-    }
+      // Draw mean marker
+      graphics.stroke({ width: 1.5, color: data.color })
+      graphics.moveTo(mapX(data.mean), height - 20)
+      graphics.lineTo(mapX(data.mean), height - 25)
+    })
 
     const selectedPoints = projectionStore.projectionInstance?.dimred.getSelectedProjections() || []
 
