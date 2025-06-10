@@ -64,7 +64,7 @@ onMounted(async () => {})
       <!-- Projection options -->
       <div class="mt-3">
         <div class="flex space-x-2 mb-3">
-          <select class="select-sm select-primary" v-model="projectionMethod">
+          <select class="select select-sm select-soft w-20" v-model="projectionMethod">
             <option value="pca">PCA</option>
             <option value="tsne">t-SNE</option>
             <option value="umap">UMAP</option>
@@ -72,10 +72,10 @@ onMounted(async () => {})
           <!-- Dimensionality Reduction Info Button -->
           <button
             @click="toggleDimReductionModal"
-            class="btn btn-soft btn-sm btn-info btn-primary flex-1"
+            class="btn btn-soft btn-sm btn-info btn-primary flex-1 whitespace-nowrap"
             :class="{ 'btn-active': showDimReductionModal }"
           >
-            <span class="mr-1">ℹ️</span> About DR
+            <span>ℹ️</span> About DR
           </button>
           <!-- Load Projection Button -->
           <button @click="loadProj()" class="btn btn-sm btn-primary flex-1">Compute</button>
