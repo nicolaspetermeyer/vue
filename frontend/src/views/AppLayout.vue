@@ -40,7 +40,7 @@ onMounted(async () => {
 }
 
 .left {
-  width: 350px;
+  width: 355px;
   flex-shrink: 0;
   border-right: 1px solid #ddd;
   overflow-y: auto;

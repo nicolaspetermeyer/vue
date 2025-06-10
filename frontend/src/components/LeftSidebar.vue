@@ -63,8 +63,8 @@ onMounted(async () => {})
 
       <!-- Projection options -->
       <div class="mt-3">
-        <div class="flex space-x-2 mb-1">
-          <select class="select-sm" v-model="projectionMethod">
+        <div class="flex space-x-2 mb-3">
+          <select class="select-sm select-primary" v-model="projectionMethod">
             <option value="pca">PCA</option>
             <option value="tsne">t-SNE</option>
             <option value="umap">UMAP</option>
