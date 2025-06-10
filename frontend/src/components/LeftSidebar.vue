@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useDatasetStore } from '@/stores/datasetStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { projectionService } from '@/services/projectionService'
@@ -8,6 +8,7 @@ import PointFilterPanel from './left/PointFilterPanel.vue'
 import AttributeFilterPanel from './left/AttributeFilterPanel.vue'
 import Instructions from './left/Instructions.vue'
 import ThresholdControlPanel from './left/ThresholdControlPanel.vue'
+import DimReductionExplanationModal from './left/DimReductionExplanationModal.vue'
 
 const datasetStore = useDatasetStore()
 const { datasetsArray, selectedDatasetId } = storeToRefs(datasetStore)
@@ -22,6 +23,12 @@ const {
   showPerplexityControl,
   showUmapControls,
 } = storeToRefs(projectionStore)
+
+const showDimReductionModal = ref(false)
+
+const toggleDimReductionModal = () => {
+  showDimReductionModal.value = !showDimReductionModal.value
+}
 
 const loadProj = async () => {
   projectionStore.clearAllProjectionData()
@@ -56,14 +63,24 @@ onMounted(async () => {})
 
       <!-- Projection options -->
       <div class="mt-3">
-        <div class="flex items-center justify-between">
+        <div class="flex space-x-2 mb-1">
           <select class="select-sm" v-model="projectionMethod">
             <option value="pca">PCA</option>
             <option value="tsne">t-SNE</option>
             <option value="umap">UMAP</option>
           </select>
-          <button @click="loadProj()" class="btn btn-sm btn-primary">Compute</button>
+          <!-- Dimensionality Reduction Info Button -->
+          <button
+            @click="toggleDimReductionModal"
+            class="btn btn-soft btn-sm btn-info btn-primary flex-1"
+            :class="{ 'btn-active': showDimReductionModal }"
+          >
+            <span class="mr-1">ℹ️</span> About DR
+          </button>
+          <!-- Load Projection Button -->
+          <button @click="loadProj()" class="btn btn-sm btn-primary flex-1">Compute</button>
         </div>
+
         <!-- t-SNE Perplexity Slider -->
         <div v-if="showPerplexityControl" class="mt-2">
           <div class="flex justify-between items-center text-sm">
@@ -148,6 +165,11 @@ onMounted(async () => {})
     <AttributeFilterPanel />
     <!-- Instructions Section -->
     <Instructions />
+    <!-- Dimensionality Reduction Modal -->
+    <DimReductionExplanationModal
+      :show="showDimReductionModal"
+      @close="showDimReductionModal = false"
+    />
   </div>
 </template>
 

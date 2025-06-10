@@ -121,18 +121,18 @@ const combineFingerprints = () => {
         :class="{ 'btn-active': showStatistics }"
         title="Show Statistics Panel"
       >
-        Statistics
+        Show Descriptive Statistics
       </button>
     </div>
     <!-- Glyph Introduction Button -->
     <div class="flex space-x-2 mb-1">
       <button
         @click="toggleGlyphIntro"
-        class="btn btn-sm btn-primary flex-1 mt-2"
+        class="btn btn-soft btn-sm btn-primary flex-1 mt-2"
         :class="{ 'btn-active': showGlyphIntro }"
         title="Learn about the glyph visualization"
       >
-        Glyph Introduction
+        <span class="mr-1">ℹ️</span> Glyph Introduction
       </button>
     </div>
 

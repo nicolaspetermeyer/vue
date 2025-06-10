@@ -8,19 +8,14 @@ import { SelectionMode } from '@/pixi/interactions/controllers/SelectionControll
 import { projectionService } from '@/services/projectionService'
 
 const fingerprintStore = useFingerprintStore()
-const { fingerprints } = storeToRefs(fingerprintStore)
-const { addFingerprint, removeFingerprint } = fingerprintStore
 
 const projectionStore = useProjectionStore()
-const { projectionInstance, projectionMethod, hasRemovedPoints } = storeToRefs(projectionStore)
+const { projectionInstance, hasRemovedPoints } = storeToRefs(projectionStore)
 
 const pointFilterStore = usePointFilterStore()
 const { thresholdPercentile, selectTopPercentile } = storeToRefs(pointFilterStore)
 
-const currentMode = ref<SelectionMode>(SelectionMode.RECTANGLE)
-const selectionModeText = computed(() =>
-  currentMode.value === SelectionMode.RECTANGLE ? 'Rectangle Selection' : 'Lasso Selection',
-)
+const currentMode = ref<string>(SelectionMode.RECTANGLE)
 
 const sliderStyles = computed(() => {
   const percent = thresholdPercentile.value * 100
@@ -68,12 +63,23 @@ const removeSelectedPoints = () => {
   <section class="section">
     <div class="instruction-group">
       <h4 class="instruction-title">Controls</h4>
-      <!-- Remove Points Button -->
-      <div class="flex space-x-2 mb-1">
-        <button @click="toggleSelectionMode" class="btn btn-sm btn-primary flex-1 mt-2">
-          <a>{{ selectionModeText }}</a>
-        </button>
+      <!-- Selection Mode Toggle Switch -->
+      <div class="flex items-center mb-3 mt-2">
+        <span class="text-sm font-medium">Selection Mode:</span>
+        <div class="toggle-switch-container" @click="toggleSelectionMode">
+          <div
+            class="toggle-switch"
+            :class="{
+              'active-rectangle': currentMode === SelectionMode.RECTANGLE,
+              'active-lasso': currentMode === SelectionMode.LASSO,
+            }"
+          >
+            <span class="toggle-option">Rectangle</span>
+            <span class="toggle-option">Lasso</span>
+          </div>
+        </div>
       </div>
+      <!-- Remove Points Button -->
       <div class="flex space-x-2 mb-1">
         <button
           @click="removeSelectedPoints"
@@ -192,5 +198,72 @@ input[type='range']::-webkit-slider-runnable-track {
   margin-bottom: 0.25rem;
   border-bottom: 1px solid #000000;
   padding-bottom: 0.25rem;
+}
+
+.toggle-switch-container {
+  display: inline-block;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  padding: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid #e5e7eb;
+}
+
+.toggle-switch {
+  display: flex;
+  position: relative;
+  width: 200px;
+  height: 28px;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.toggle-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1;
+  transition: color 0.3s ease;
+}
+
+.active-rectangle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #422ad5;
+  border-radius: 9999px;
+  transition: transform 0.3s ease;
+}
+
+.active-lasso::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #422ad5;
+  border-radius: 9999px;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.active-rectangle .toggle-option:first-child,
+.active-lasso .toggle-option:last-child {
+  color: white;
+}
+
+.active-rectangle .toggle-option:last-child,
+.active-lasso .toggle-option:first-child {
+  color: #333333;
 }
 </style>
