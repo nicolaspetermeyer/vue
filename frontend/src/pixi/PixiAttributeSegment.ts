@@ -268,7 +268,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
           this.endAngle,
           fillColor,
           borderColor,
-          this.alpha,
+          0.1,
           lineWidth,
         )
       })

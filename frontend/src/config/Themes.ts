@@ -48,8 +48,8 @@ export const Colors = {
 }
 
 export const Styles = {
-  LINEWIDTH: 2,
-  LINEWIDTH_HOVER: 2,
+  LINEWIDTH: 2.5,
+  LINEWIDTH_HOVER: 3,
 
   LINEWIDTH_MINI: 1,
   LINEWIDTH_HOVER_MINI: 1.5,
