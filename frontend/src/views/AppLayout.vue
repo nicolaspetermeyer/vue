@@ -24,7 +24,6 @@ onMounted(async () => {
     <div class="h-full w-full flex-1 overflow-hidden">
       <Canvas></Canvas>
     </div>
-
     <div class="right">
       <RightPanel />
     </div>

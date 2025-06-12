@@ -920,6 +920,62 @@ async def project_data_with_attributes(
     return result
 
 
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+
+
+@app.get("/api/clustering/kmeans/")
+async def compute_kmeans_clusters(
+    filename: str = Query(...),
+    n_clusters: int = Query(3, ge=2, le=10),
+):
+    """
+    Perform K-means clustering on the dataset.
+
+    Args:
+        filename: Name of the dataset file
+        n_clusters: Number of clusters to create
+        attribute_subset: Optional list of attributes to use for clustering
+    """
+    dataset_info = preprocess_dataset(filename)
+
+    data_for_clustering = dataset_info.dr_numeric_df.values
+
+    # Standardize the data
+    scaled_data = StandardScaler().fit_transform(data_for_clustering)
+
+    # Perform K-means clustering
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    cluster_labels = kmeans.fit_predict(scaled_data)
+
+    # Calculate silhouette score to evaluate clustering quality
+    try:
+        silhouette_avg = float(silhouette_score(scaled_data, cluster_labels))
+    except:
+        silhouette_avg = 0.0
+
+    # Create result mapping - point ID to cluster assignment
+    cluster_assignments = {}
+    for idx, point_id in enumerate(dataset_info.ids):
+        cluster_assignments[point_id] = int(cluster_labels[idx])
+
+    # Calculate point IDs for each cluster
+    clusters = {}
+    for i in range(n_clusters):
+        clusters[i] = []
+
+    for idx, cluster_id in enumerate(cluster_labels):
+        point_id = dataset_info.ids[idx]
+        clusters[int(cluster_id)].append(point_id)
+
+    return {
+        "clusterAssignments": cluster_assignments,
+        "clusters": clusters,
+        "numberOfClusters": n_clusters,
+        "silhouetteScore": silhouette_avg,
+    }
+
+
 # Run the server using:
 # uvicorn script_name:app --reload
 # uvicorn backend.mock_server:app --reload

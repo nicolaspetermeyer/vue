@@ -85,11 +85,11 @@ export class HoverManager {
         ) {
           let newHeight = 0
           if (local.y > 800) {
-            newHeight = local.y - 200
+            newHeight = local.y - 100
           } else if (local.y < 800) {
-            newHeight = local.y - 6
+            newHeight = local.y - 16
           }
-          const options = newHovered.getTooltipOptions(local.x + 8, newHeight)
+          const options = newHovered.getTooltipOptions(local.x + 20, newHeight)
           this.tooltip.showWithOptions(options)
         }
         // Fall back to text-only tooltip

@@ -162,7 +162,7 @@ onMounted(async () => {})
     <PointFilterPanel />
 
     <!-- Attribute Filter Section (only show if metadata is available) -->
-    <AttributeFilterPanel />
+    <!-- <AttributeFilterPanel /> -->
     <!-- Instructions Section -->
     <Instructions />
     <!-- Dimensionality Reduction Modal -->

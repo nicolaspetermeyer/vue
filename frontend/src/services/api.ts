@@ -159,3 +159,30 @@ export async function fetchAttributeSubset(
   })
   return response.data
 }
+
+/**
+ * Perform K-means clustering analysis on a dataset
+ * @param dataset Name of the dataset
+ * @param numClusters Number of clusters to create (between 2-10)
+ * @returns Clustering results with point assignments and cluster information
+ */
+export async function fetchKMeansClustering(
+  dataset: string,
+  numClusters: number = 3,
+): Promise<{
+  clusterAssignments: Record<string, number>
+  clusters: Record<string, string[]>
+  numberOfClusters: number
+  silhouetteScore: number
+}> {
+  const requestParams: Record<string, any> = {
+    filename: dataset,
+    n_clusters: numClusters,
+  }
+
+  const response = await api.get(`/clustering/kmeans/`, {
+    params: requestParams,
+  })
+
+  return response.data
+}

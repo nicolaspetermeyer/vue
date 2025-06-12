@@ -470,32 +470,25 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
 
           options.text = [
             `${fp.name}`,
-            `Global Normalized Mean: ${_localNorm.toFixed(2)}`,
-            `Global Mean: ${stats.mean.toFixed(2)}`,
-            `Global Std: ${this.stats.std.toFixed(2)}`,
+            `Dataset Mean: ${stats.mean.toFixed(2)}`,
+            `Dataset Std: ${this.stats.std.toFixed(2)}`,
             `Segment ${this.attributeKey}: ${pctDiff}% ${direction}`,
           ].join('\n')
         }
       }
     } else {
       const tooltipLines = [
-        `Global Normalized Mean: ${this.globalNorm.toFixed(2)}`,
-        `Global Mean: ${this.stats.mean.toFixed(2)}`,
-        `Global Std: ${this.stats.std.toFixed(2)}`,
+        `Dataset Mean: ${this.stats.mean.toFixed(2)}`,
+        `Dataset Std: ${this.stats.std.toFixed(2)}`,
       ]
 
       if (this.localOverlays && this.localOverlays.size > 0) {
         tooltipLines.push('', 'Comparisons:')
         this.localOverlays.forEach((overlay, id) => {
-          const norm = overlay.norm.toFixed(2)
           const localMean = overlay.localMean.toFixed(2)
-          const delta = overlay.norm - this.globalNorm
-          const direction = delta > 0 ? 'higher' : 'lower'
-          const pctDiff = Math.abs(delta * 100).toFixed(2)
+          const localStd = this.stats.std.toFixed(2)
 
-          tooltipLines.push(
-            `${overlay.fingerprintName}: ${norm} ${localMean} ${pctDiff}% ${direction}`,
-          )
+          tooltipLines.push(`${overlay.fingerprintName}: Mean: ${localMean} Std: ${localStd}`)
         })
       }
 
@@ -635,7 +628,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     graphics.stroke({ width: 1, color: 0x666666, alpha: 0.3 })
 
     // Draw global density curve
-    graphics.stroke({ width: 1, color: 0x666666 })
+    graphics.stroke({ width: 1, color: 0xd9d9d9 })
     graphics.fill({ color: 0x666666, alpha: 0.2 })
 
     // Start path at the bottom left
@@ -699,7 +692,7 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
         if (typeof selectedPointValue === 'number' && !isNaN(selectedPointValue)) {
           graphics.moveTo(mapX(selectedPointValue), height - 20)
           graphics.lineTo(mapX(selectedPointValue), 5)
-          graphics.stroke({ width: 2, color: 0xff0000 })
+          graphics.stroke({ width: 2, color: 0xffffff })
 
           graphics.fill({ color: 0xff0000 })
           graphics.poly([
@@ -715,13 +708,13 @@ export class PixiAttributeSegment extends PixiGraphic implements Hoverable {
     }
 
     // Draw axis
-    graphics.stroke({ width: 1, color: 0x000000 })
+    graphics.stroke({ width: 1, color: 0xffffff })
     graphics.moveTo(10, height - 20)
     graphics.lineTo(width - 10, height - 20)
 
     const textStyle = new PIXI.TextStyle({
       fontSize: 10,
-      fill: 0x000000,
+      fill: 0xffffff,
       align: 'center' as const,
     })
 

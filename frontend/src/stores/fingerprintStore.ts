@@ -65,7 +65,7 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
       if (customName) {
         name = customName
       } else {
-        name = `Fingerprint ${fingerprintCounter.value++}`
+        name = `Subset ${fingerprintCounter.value++}`
       }
     } else {
       const activeFilter = usePointFilterStore().activePointFilter
@@ -101,7 +101,6 @@ export const useFingerprintStore = defineStore('fingerprintStore', () => {
     }
 
     if (pointsToUse.length === 0) return
-
     const originals = pointsToUse.map((p) => p.original)
     const localStats = calcFingerprintStats(originals)
     const id = crypto.randomUUID()

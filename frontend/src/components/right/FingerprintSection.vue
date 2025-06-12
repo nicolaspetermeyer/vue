@@ -2,6 +2,7 @@
 import { useFingerprintStore } from '@/stores/fingerprintStore'
 import { useProjectionStore } from '@/stores/projectionStore'
 import { usePointFilterStore } from '@/stores/pointFilterStore'
+import { projectionService } from '@/services/projectionService'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import StatisticsPanel from './StatisticsPanel.vue'
@@ -85,6 +86,22 @@ const combineFingerprints = () => {
     fingerprintStore.addFingerprint(name)
   }
 }
+
+// Add these for K-means clustering
+const isClusteringLoading = ref(false)
+const numClusters = ref(3)
+
+// Function to generate clusters
+async function generateClusters() {
+  isClusteringLoading.value = true
+  try {
+    await projectionService.createClusterFingerprints(numClusters.value)
+  } catch (error) {
+    console.error('Error generating clusters:', error)
+  } finally {
+    isClusteringLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -114,6 +131,27 @@ const combineFingerprints = () => {
         Combine Fingerprints
       </button>
     </div>
+    <!-- <div class="flex space-x-2 mb-1">
+      <div class="w-16 flex items-center">
+        <input
+          type="number"
+          v-model.number="numClusters"
+          min="2"
+          max="10"
+          class="input input-sm input-bordered w-full"
+          title="Number of clusters"
+        />
+      </div> -->
+    <!-- <button
+        @click="generateClusters"
+        class="btn btn-sm btn-primary flex-1 mt-2"
+        :disabled="isClusteringLoading"
+        title="Generate fingerprints using K-means clustering"
+      >
+        <span v-if="isClusteringLoading">Clustering...</span>
+        <span v-else>Create Clusters</span>
+      </button> -->
+    <!-- </div> -->
     <div class="flex space-x-2 mb-1">
       <button
         @click="toggleStatisticsPanel"

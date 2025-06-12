@@ -181,7 +181,15 @@ export class PixiInteractionOverlay extends PixiContainer {
         }
       }
     }
-
+    if (this.attributeRing && e.button === 0) {
+      const segment = this.attributeRing.pointerInElement(e.global)
+      if (segment) {
+        e.stopPropagation()
+        e.preventDefault()
+        this.handleAttributeSegmentSelection(segment)
+        console.log('Middle click on attribute ring')
+      }
+    }
     if (this.attributeRing && e.button === 2) {
       const segment = this.attributeRing.pointerInElement(e.global)
       if (segment) {

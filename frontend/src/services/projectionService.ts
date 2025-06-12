@@ -9,6 +9,7 @@ import {
   fetchAttributeSubset,
   fetchFeatureRanking,
   fetchSubsetProjection,
+  fetchKMeansClustering,
 } from '@/services/api'
 import { animationService } from '@/services/animationService'
 import type { Projection, AttributeStats, FeatureRanking } from '@/models/data'
@@ -639,6 +640,69 @@ class ProjectionService {
     drillDownStore.clearHistory()
     attributeFilterStore.clearAll()
     fingerprintStore.clearFingerprints()
+  }
+
+  /**
+   * Perform K-means clustering and create fingerprints for each cluster
+   *
+   * @param numClusters Number of clusters to generate
+   * @returns Promise resolving to true if successful, false otherwise
+   */
+  async createClusterFingerprints(numClusters: number = 3): Promise<boolean> {
+    const datasetStore = useDatasetStore()
+    const fingerprintStore = useFingerprintStore()
+    const projectionStore = useProjectionStore()
+
+    const dataset = datasetStore.selectedDatasetName
+    if (!dataset) {
+      console.error('No dataset selected')
+      return false
+    }
+
+    try {
+      const result = await fetchKMeansClustering(dataset, numClusters)
+
+      const clusterResults = result.clusters
+      const projection = projectionStore.projection
+
+      const dimredInstance = projectionStore.projectionInstance?.dimred
+      const screenPositions = new Map<string, { x: number; y: number }>()
+
+      if (dimredInstance) {
+        dimredInstance.pixiDimredPoints.forEach((point, id) => {
+          screenPositions.set(id, { x: point.x, y: point.y })
+        })
+      }
+
+      for (const [clusterId, pointIds] of Object.entries(clusterResults)) {
+        const clusterPoints = projection
+          .filter((point) => pointIds.includes(point.id))
+          .map((point) => {
+            const screenPos = screenPositions.get(point.id)
+            if (screenPos) {
+              return {
+                ...point,
+                pos: screenPos, // Use the current screen position
+              }
+            }
+            return point
+          })
+        if (clusterPoints.length === 0) continue
+
+        fingerprintStore.setSelection(clusterPoints)
+
+        const clusterName = `Cluster ${Number(clusterId) + 1})`
+
+        fingerprintStore.addFingerprint(clusterName)
+      }
+
+      fingerprintStore.setSelection([])
+
+      return true
+    } catch (error) {
+      console.error('Error performing K-means clustering:', error)
+      return false
+    }
   }
 }
 
