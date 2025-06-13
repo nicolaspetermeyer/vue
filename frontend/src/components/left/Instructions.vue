@@ -47,15 +47,14 @@ const toggleExpanded = () => {
       </div>
 
       <div class="instruction-group">
-        <h4 class="instruction-title">Fingerprint</h4>
+        <h4 class="instruction-title">Subset</h4>
         <ul class="instruction-list">
           <li>
-            <span class="key">Click "Create Fingerprint"</span> Aggregate Selection or Current
-            Filter
+            <span class="key">Click "Create Subset"</span> Aggregate Selection or Current Filter
           </li>
-          <li><span class="key">Click Glyph Symbol</span>Add FP to Projection</li>
-          <li><span class="key">Click Glyph</span> Toggle Fingerprint</li>
-          <li><span class="key">Right-Click Glyph</span> Recalculate DR for Aggregated Points</li>
+          <li><span class="key">Click Glyph Symbol</span>Add Glyph of Subset to Projection</li>
+          <li><span class="key">Click Glyph</span> Toggle Subset Ring Display</li>
+          <li><span class="key">Right-Click Glyph</span> Recalculate DR for Subset</li>
         </ul>
       </div>
     </div>

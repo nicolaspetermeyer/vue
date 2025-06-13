@@ -221,7 +221,6 @@ export class PixiAttributeRing
     const maxWidth = Math.min(arcLength * 0.7, 80)
 
     let displayText = segment.attrkey + '\n' + segment.stats?.mean?.toFixed(2)
-    console.log('Drawing label for segment:', displayText, 'at angle:', segment)
     let fontSize = 14
 
     // Adjust font size and text based on available space

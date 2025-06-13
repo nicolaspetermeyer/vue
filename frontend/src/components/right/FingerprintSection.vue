@@ -108,17 +108,15 @@ async function generateClusters() {
   <section class="section">
     <h3 class="section-title">Actions</h3>
     <div class="flex space-x-2 mb-1">
-      <button @click="addFingerprint()" class="btn btn-sm btn-primary flex-1">
-        Create Fingerprint
-      </button>
+      <button @click="addFingerprint()" class="btn btn-sm btn-primary flex-1">Create Subset</button>
 
-      <button @click="clear()" class="btn btn-sm btn-primary flex-1">Clear Fingerprints</button>
+      <button @click="clear()" class="btn btn-sm btn-primary flex-1">Delete Subsets</button>
     </div>
     <div class="text-xs text-black-500">
       <span v-if="hasactivePointFilters">
         <span class="font-medium">Filter applied:</span> {{ filterDescription }}
       </span>
-      <span v-else> If no selection, creates fingerprint from all points. </span>
+      <span v-else> If no selection, creates subset from all points. </span>
     </div>
     <!-- Fingerprint Combination Button -->
     <div class="flex space-x-2 mb-1">
@@ -128,10 +126,10 @@ async function generateClusters() {
         :disabled="!hasSelectedFingerprints"
         title="Combine selected fingerprints into a new one"
       >
-        Combine Fingerprints
+        Combine Subsets
       </button>
     </div>
-    <!-- <div class="flex space-x-2 mb-1">
+    <div class="flex space-x-2 mb-1">
       <div class="w-16 flex items-center">
         <input
           type="number"
@@ -141,8 +139,8 @@ async function generateClusters() {
           class="input input-sm input-bordered w-full"
           title="Number of clusters"
         />
-      </div> -->
-    <!-- <button
+      </div>
+      <button
         @click="generateClusters"
         class="btn btn-sm btn-primary flex-1 mt-2"
         :disabled="isClusteringLoading"
@@ -150,8 +148,8 @@ async function generateClusters() {
       >
         <span v-if="isClusteringLoading">Clustering...</span>
         <span v-else>Create Clusters</span>
-      </button> -->
-    <!-- </div> -->
+      </button>
+    </div>
     <div class="flex space-x-2 mb-1">
       <button
         @click="toggleStatisticsPanel"

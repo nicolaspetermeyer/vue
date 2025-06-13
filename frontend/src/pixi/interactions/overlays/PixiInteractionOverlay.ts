@@ -187,7 +187,6 @@ export class PixiInteractionOverlay extends PixiContainer {
         e.stopPropagation()
         e.preventDefault()
         this.handleAttributeSegmentSelection(segment)
-        console.log('Middle click on attribute ring')
       }
     }
     if (this.attributeRing && e.button === 2) {

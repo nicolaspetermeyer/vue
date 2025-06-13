@@ -691,7 +691,7 @@ class ProjectionService {
 
         fingerprintStore.setSelection(clusterPoints)
 
-        const clusterName = `Cluster ${Number(clusterId) + 1})`
+        const clusterName = `Cluster ${Number(clusterId) + 1}`
 
         fingerprintStore.addFingerprint(clusterName)
       }

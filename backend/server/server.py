@@ -329,8 +329,9 @@ def compute_tsne(data, perplexity=30) -> List[List[float]]:
         n_components=2,
         perplexity=perplexity,
         learning_rate="auto",
-        init="random",
-        max_iter=250,
+        init="pca",
+        max_iter=1000,
+        metric="euclidean",
     )
     embedding = tsne.fit_transform(df_scaled)
     return embedding.tolist()

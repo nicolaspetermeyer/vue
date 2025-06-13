@@ -20,14 +20,14 @@ const topLevelFingerprints = computed(() => {
 <template>
   <div class="fingerprint-list">
     <div class="fingerprint-header">
-      <h2 class="text-lg font-semibold mb-2">Fingerprints</h2>
+      <h2 class="text-lg font-semibold mb-2">Subsets</h2>
       <div v-if="currentParentId" class="drilled-down-indicator">
         Drilled down level {{ currentViewLevel }}
       </div>
     </div>
 
     <div v-if="topLevelFingerprints.length === 0" class="text-sm text-gray-500">
-      No fingerprints created {{ currentParentId ? 'in this view' : 'yet' }}.
+      No subsets created {{ currentParentId ? 'in this view' : 'yet' }}.
     </div>
 
     <ul v-else class="space-y-1 fingerprint-tree">
